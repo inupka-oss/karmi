@@ -53,6 +53,11 @@ export default function AdminPanel({ userEmail, genres, initialAnime }: {
     setSelectedGenres([])
   }
 
+  const getAccessToken = () => {
+    const match = document.cookie.match(/sb-access-token=([^;]+)/)
+    return match ? match[1] : ''
+  }
+
   const handleLogout = () => {
     document.cookie = 'sb-access-token=; path=/; max-age=0'
     document.cookie = 'sb-refresh-token=; path=/; max-age=0'
@@ -67,14 +72,14 @@ export default function AdminPanel({ userEmail, genres, initialAnime }: {
 
   const handleSaveAnime = async (e: React.FormEvent) => {
     e.preventDefault()
+    const accessToken = getAccessToken()
 
-    // 1. Создаём аниме
     const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/anime`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        'Authorization': `Bearer ${getAccessToken()}`,
+        'Authorization': `Bearer ${accessToken}`,
       },
       body: JSON.stringify({
         title_ru: titleRu,
@@ -93,7 +98,6 @@ export default function AdminPanel({ userEmail, genres, initialAnime }: {
     }
     const newAnime = await res.json()
 
-    // 2. Связываем жанры
     if (selectedGenres.length > 0) {
       await Promise.all(
         selectedGenres.map(genreId =>
@@ -102,7 +106,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime }: {
             headers: {
               'Content-Type': 'application/json',
               'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-              'Authorization': `Bearer ${getAccessToken()}`,
+              'Authorization': `Bearer ${accessToken}`,
             },
             body: JSON.stringify({ anime_id: newAnime.id, genre_id: genreId }),
           })
@@ -110,7 +114,6 @@ export default function AdminPanel({ userEmail, genres, initialAnime }: {
       )
     }
 
-    // 3. Обновляем список (добавляем новое аниме с жанрами)
     const newAnimeWithGenres = {
       ...newAnime,
       genres: genres.filter(g => selectedGenres.includes(g.id)),
@@ -120,13 +123,35 @@ export default function AdminPanel({ userEmail, genres, initialAnime }: {
     resetForm()
   }
 
-  // Вспомогательная функция для получения токена из cookie
-  function getAccessToken() {
-    const match = document.cookie.match(/sb-access-token=([^;]+)/)
-    return match ? match[1] : ''
+  const handleDelete = async (id: string) => {
+    if (!confirm('Вы уверены, что хотите удалить это аниме?')) return
+
+    const accessToken = getAccessToken()
+    // Удаляем связи с жанрами
+    await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/anime_genres?anime_id=eq.${id}`, {
+      method: 'DELETE',
+      headers: {
+        'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    })
+
+    // Удаляем само аниме
+    const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/anime?id=eq.${id}`, {
+      method: 'DELETE',
+      headers: {
+        'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    })
+
+    if (res.ok) {
+      setAnimeList(prev => prev.filter(anime => anime.id !== id))
+    } else {
+      alert('Ошибка при удалении')
+    }
   }
 
-  // При монтировании можно подгрузить аниме, если initialAnime устарел, но пока используем пропсы
   useEffect(() => {
     setAnimeList(initialAnime)
   }, [initialAnime])
@@ -154,11 +179,10 @@ export default function AdminPanel({ userEmail, genres, initialAnime }: {
         </div>
       </div>
 
-      {/* Список аниме */}
       <div className="grid gap-4">
         {animeList.map(anime => (
           <div key={anime.id} className="glass p-4 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center">
-            <div>
+            <div className="flex-1">
               <h3 className="font-bold text-lg text-white">{anime.title_ru}</h3>
               <div className="flex gap-2 flex-wrap mt-1">
                 {anime.genres?.map(g => (
@@ -168,12 +192,19 @@ export default function AdminPanel({ userEmail, genres, initialAnime }: {
                 ))}
               </div>
             </div>
-            <span className="text-sm text-gray-400 mt-2 sm:mt-0">{anime.type} / {anime.year}</span>
+            <div className="flex items-center gap-4 mt-2 sm:mt-0">
+              <span className="text-sm text-gray-400">{anime.type} / {anime.year}</span>
+              <button
+                onClick={() => handleDelete(anime.id)}
+                className="bg-red-500/20 hover:bg-red-500/40 text-red-400 hover:text-red-300 px-3 py-1 rounded-lg text-sm transition"
+              >
+                Удалить
+              </button>
+            </div>
           </div>
         ))}
       </div>
 
-      {/* Модальное окно добавления аниме */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-neo-dark border border-white/10 rounded-2xl p-6 w-full max-w-md max-h-[80vh] overflow-y-auto">
@@ -245,7 +276,6 @@ export default function AdminPanel({ userEmail, genres, initialAnime }: {
                 <option value="announced">Анонсирован</option>
               </select>
 
-              {/* Жанры */}
               <div>
                 <p className="text-sm text-white mb-1">Жанры:</p>
                 <div className="flex flex-wrap gap-2">
