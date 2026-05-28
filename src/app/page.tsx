@@ -30,7 +30,6 @@ export default async function HomePage({
       <h1 className="text-5xl md:text-7xl font-bold mb-2">
         Кар<span className="text-neo-pink">ми</span>
       </h1>
-      <p className="text-gray-400 mb-8">Смотри аниме бесплатно в стиле нео-брутализма</p>
       <SearchBar />
       <AnimeGrid anime={anime || []} />
     </div>
