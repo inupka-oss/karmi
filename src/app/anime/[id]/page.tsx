@@ -27,17 +27,16 @@ export default async function AnimePage({ params }: { params: { id: string } }) 
   const animeGenres = await fetchSupabase(`anime_genres?select=genre_id&anime_id=eq.${anime.id}`)
   const genreIds = animeGenres.map((ag: any) => ag.genre_id)
 
-  // 3. Получаем сами жанры
+  // 3. Получаем сами жанры (исправленный запрос)
   let genres: any[] = []
   if (genreIds.length > 0) {
-    const idsFilter = genreIds.map((id: number) => `id=eq.${id}`).join('&')
-    genres = await fetchSupabase(`genres?or=(${idsFilter})`)
+    const orFilter = genreIds.map((id: number) => `id.eq.${id}`).join(',')
+    genres = await fetchSupabase(`genres?or=(${orFilter})`)
   }
 
   // 4. Получаем эпизоды
   const episodes = await fetchSupabase(`episodes?anime_id=eq.${anime.id}&order=episode_number.asc`)
 
-  // Прикрепляем жанры к объекту аниме
   const animeWithGenres = { ...anime, genres }
 
   return (
