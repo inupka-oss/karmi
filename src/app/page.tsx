@@ -16,14 +16,17 @@ async function getGenres() {
   return res.json()
 }
 
+const PAGE_SIZE = 20
+
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams?: Promise<{ q?: string; genre?: string; year?: string }>
+  searchParams?: Promise<{ q?: string; genre?: string; year?: string; page?: string }>
 }) {
   const sp = await searchParams
+  const currentPage = parseInt(sp?.page || '1') || 1
   const supabase = await createServerSupabase()
-  let query = supabase.from('anime').select(`*, genres(name, slug)`)
+  let query = supabase.from('anime').select(`*, genres(name, slug)`, { count: 'exact' })
 
   if (sp?.q) {
     query = query.or(`title_ru.ilike.%${sp.q}%,title_en.ilike.%${sp.q}%`)
@@ -35,14 +38,26 @@ export default async function HomePage({
     query = query.eq('year', parseInt(sp.year))
   }
 
-  const { data: anime } = await query.order('created_at', { ascending: false })
+  const from = (currentPage - 1) * PAGE_SIZE
+  const to = from + PAGE_SIZE - 1
+  query = query.range(from, to).order('created_at', { ascending: false })
+
+  const { data: anime, count } = await query
   const genres = await getGenres()
+  const totalPages = Math.ceil((count || 0) / PAGE_SIZE)
+
+  // Функция для создания URL с параметрами
+  const buildPageUrl = (page: number) => {
+    const params = new URLSearchParams()
+    if (sp?.q) params.set('q', sp.q)
+    if (sp?.genre) params.set('genre', sp.genre)
+    if (sp?.year) params.set('year', sp.year)
+    params.set('page', page.toString())
+    return `/?${params.toString()}`
+  }
 
   return (
     <div className="min-h-screen px-4 py-8 max-w-7xl mx-auto">
-      <h1 className="text-5xl md:text-7xl font-bold mb-2 text-glow-white">
-        Кар<span className="text-neo-pink text-glow-pink">ми</span>
-      </h1>
       <div className="flex flex-wrap gap-4 items-center mb-6">
         <SearchBar />
         <RandomAnimeButton />
@@ -79,6 +94,21 @@ export default async function HomePage({
         </button>
       </form>
       <AnimeGrid anime={anime || []} />
+      {totalPages > 1 && (
+        <div className="flex justify-center gap-4 mt-8">
+          {currentPage > 1 && (
+            <Link href={buildPageUrl(currentPage - 1)} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl">
+              ← Назад
+            </Link>
+          )}
+          <span className="text-white py-2">Страница {currentPage} из {totalPages}</span>
+          {currentPage < totalPages && (
+            <Link href={buildPageUrl(currentPage + 1)} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl">
+              Вперед →
+            </Link>
+          )}
+        </div>
+      )}
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
+import { Metadata } from 'next'
 import EpisodeList from '@/components/EpisodeList'
 import StarRating from '@/components/StarRating'
 import CommentSection from '@/components/CommentSection'
@@ -20,9 +21,19 @@ async function fetchSupabase(endpoint: string) {
   return res.json()
 }
 
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params
+  const animeArray = await fetchSupabase(`anime?id=eq.${id}`)
+  const anime = animeArray?.[0]
+  if (!anime) return { title: 'Аниме не найдено' }
+  return {
+    title: `${anime.title_ru} — смотреть онлайн бесплатно`,
+    description: anime.description?.slice(0, 160) || 'Смотрите аниме на Карми',
+  }
+}
+
 export default async function AnimePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-
   const animeArray = await fetchSupabase(`anime?id=eq.${id}`)
   const anime = animeArray?.[0]
   if (!anime) notFound()
@@ -41,7 +52,6 @@ export default async function AnimePage({ params }: { params: Promise<{ id: stri
   }
 
   const episodes = await fetchSupabase(`episodes?anime_id=eq.${anime.id}&order=episode_number.asc`)
-
   const animeWithGenres = { ...anime, genres }
 
   return (
