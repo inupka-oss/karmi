@@ -78,3 +78,39 @@ body::after {
     box-shadow: 0 0 30px rgba(255, 46, 99, 0.6), 0 0 60px rgba(255, 46, 99, 0.3);
   }
 }
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(135deg, #0d0d0d 0%, #1a0a1e 30%, #0d0d0d 70%, #1a0a1e 100%);
+  background-size: 300% 300%;
+  animation: gradientShift 15s ease infinite;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: radial-gradient(2px 2px at 20px 30px, #ff2e63, transparent),
+                    radial-gradient(2px 2px at 40px 70px, #fff, transparent),
+                    radial-gradient(1px 1px at 90px 40px, #ff2e63, transparent),
+                    radial-gradient(1px 1px at 160px 120px, #fff, transparent),
+                    radial-gradient(2px 2px at 230px 80px, #ff2e63, transparent),
+                    radial-gradient(1px 1px at 300px 200px, #fff, transparent);
+  background-repeat: no-repeat;
+  background-size: 300px 300px;
+  animation: twinkle 10s infinite alternate;
+}
+
+@keyframes twinkle {
+  0% { opacity: 0.3; }
+  100% { opacity: 0.7; }
+}

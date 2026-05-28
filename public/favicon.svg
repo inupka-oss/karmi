@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="32" height="32" rx="8" fill="#0d0d0d"/>
+  <text x="16" y="24" font-family="Rubik, sans-serif" font-size="22" font-weight="bold" fill="#ff2e63" filter="url(#glow)" text-anchor="middle">К</text>
+</svg>
