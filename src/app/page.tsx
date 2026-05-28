@@ -2,6 +2,7 @@ import { createServerSupabase } from '@/lib/supabase/server'
 import AnimeGrid from '@/components/AnimeGrid'
 import SearchBar from '@/components/SearchBar'
 import RandomAnimeButton from '@/components/RandomAnimeButton'
+import Link from 'next/link'
 
 async function getGenres() {
   const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/genres?select=*`, {
@@ -40,11 +41,20 @@ export default async function HomePage({
   return (
     <div className="min-h-screen px-4 py-8 max-w-7xl mx-auto">
       <h1 className="text-5xl md:text-7xl font-bold mb-2 text-glow-white">
-        Kar<span className="text-neo-pink text-glow-pink">mi</span>
+        Кар<span className="text-neo-pink text-glow-pink">ми</span>
       </h1>
       <div className="flex flex-wrap gap-4 items-center mb-6">
         <SearchBar />
         <RandomAnimeButton />
+        <Link href="/favorites" className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl transition">
+          ♥ Избранное
+        </Link>
+        <Link href="/ongoing" className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl transition">
+          📅 Онгоинги
+        </Link>
+        <Link href="/profile" className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl transition">
+          👤 Профиль
+        </Link>
       </div>
       <form className="flex flex-wrap gap-4 mb-6">
         <select

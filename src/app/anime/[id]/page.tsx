@@ -2,6 +2,8 @@ import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import EpisodeList from '@/components/EpisodeList'
 import StarRating from '@/components/StarRating'
+import CommentSection from '@/components/CommentSection'
+import RatingForm from '@/components/RatingForm'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -68,9 +70,11 @@ export default async function AnimePage({ params }: { params: Promise<{ id: stri
             </div>
             <div><span className="text-gray-500">Статус:</span> {animeWithGenres.status}</div>
           </div>
+          <RatingForm animeId={anime.id} />
         </div>
       </div>
       <EpisodeList episodes={episodes} />
+      <CommentSection animeId={anime.id} />
     </div>
   )
 }
