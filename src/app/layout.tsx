@@ -8,9 +8,6 @@ const rubik = Rubik({ subsets: ['cyrillic', 'latin'], variable: '--font-rubik' }
 export const metadata: Metadata = {
   title: 'Карми — смотреть аниме онлайн',
   description: 'Карми — бесплатный сайт для просмотра аниме в стиле нео-брутализма',
-  icons: {
-    icon: '/favicon.svg',
-  },
 }
 
 export default function RootLayout({
