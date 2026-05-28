@@ -1,9 +1,30 @@
-export default function AnimePage() {
+import { notFound } from 'next/navigation'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+async function fetchSupabase(endpoint: string) {
+  const res = await fetch(`${supabaseUrl}/rest/v1/${endpoint}`, {
+    headers: {
+      'apikey': supabaseAnonKey,
+      'Content-Type': 'application/json',
+    },
+    cache: 'no-store',
+  })
+  if (!res.ok) throw new Error(`Supabase error ${res.status}: ${res.statusText}`)
+  return res.json()
+}
+
+export default async function AnimePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const animeArray = await fetchSupabase(`anime?id=eq.${id}`)
+  const anime = animeArray?.[0]
+  if (!anime) notFound()
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 text-white">
-      <h1 className="text-3xl font-bold mb-4">Диагностика переменных окружения</h1>
-      <p><strong>SUPABASE_URL:</strong> {process.env.NEXT_PUBLIC_SUPABASE_URL || 'НЕ НАЙДЕН'}</p>
-      <p><strong>SUPABASE_ANON_KEY:</strong> {process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.substring(0, 15) || 'НЕ НАЙДЕН'}...</p>
+      <h1 className="text-3xl font-bold">{anime.title_ru}</h1>
+      <p className="text-gray-400 mt-2">Запрос к Supabase успешен!</p>
     </div>
   )
 }
