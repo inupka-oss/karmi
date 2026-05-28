@@ -40,7 +40,7 @@ export default async function HomePage({
   return (
     <div className="min-h-screen px-4 py-8 max-w-7xl mx-auto">
       <h1 className="text-5xl md:text-7xl font-bold mb-2 text-glow-white">
-        Кар<span className="text-neo-pink text-glow-pink">ми</span>
+        Kar<span className="text-neo-pink text-glow-pink">mi</span>
       </h1>
       <div className="flex flex-wrap gap-4 items-center mb-6">
         <SearchBar />

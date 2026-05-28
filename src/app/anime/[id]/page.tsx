@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import EpisodeList from '@/components/EpisodeList'
+import StarRating from '@/components/StarRating'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -20,14 +21,13 @@ async function fetchSupabase(endpoint: string) {
 export default async function AnimePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
-  // 1. Аниме
   const animeArray = await fetchSupabase(`anime?id=eq.${id}`)
   const anime = animeArray?.[0]
   if (!anime) notFound()
 
-  // 2. Жанры
   const animeGenres = await fetchSupabase(`anime_genres?select=genre_id&anime_id=eq.${anime.id}`)
   const genreIds = animeGenres.map((ag: any) => ag.genre_id)
+
   let genres: any[] = []
   if (genreIds.length > 0) {
     try {
@@ -38,51 +38,38 @@ export default async function AnimePage({ params }: { params: Promise<{ id: stri
     }
   }
 
-  // 3. Эпизоды
   const episodes = await fetchSupabase(`episodes?anime_id=eq.${anime.id}&order=episode_number.asc`)
 
   const animeWithGenres = { ...anime, genres }
 
-  // 4. Возвращаем красивую страницу с постером
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       <div className="flex flex-col md:flex-row gap-8">
-        {/* Блок с постером */}
         <div className="w-full md:w-1/3 lg:w-1/4">
           <div className="aspect-[3/4] relative rounded-2xl overflow-hidden glass">
-            <Image
-              src={animeWithGenres.poster_url || '/placeholder.jpg'}
-              alt={animeWithGenres.title_ru}
-              fill
-              className="object-cover"
-            />
+            <Image src={animeWithGenres.poster_url || '/placeholder.jpg'} alt={animeWithGenres.title_ru} fill className="object-cover" />
           </div>
         </div>
-
-        {/* Блок с информацией */}
         <div className="flex-1">
           <h1 className="text-4xl font-bold text-white">{animeWithGenres.title_ru}</h1>
-          {animeWithGenres.title_en && (
-            <h2 className="text-xl text-gray-400 mt-1">{animeWithGenres.title_en}</h2>
-          )}
+          {animeWithGenres.title_en && <h2 className="text-xl text-gray-400 mt-1">{animeWithGenres.title_en}</h2>}
           <div className="flex flex-wrap gap-2 mt-3">
             {genres.map((g: any) => (
-              <span key={g.slug} className="bg-neo-pink/20 text-neo-pink px-3 py-1 rounded-full text-sm">
-                {g.name}
-              </span>
+              <span key={g.slug} className="bg-neo-pink/20 text-neo-pink px-3 py-1 rounded-full text-sm">{g.name}</span>
             ))}
           </div>
           <p className="mt-4 text-gray-300 leading-relaxed">{animeWithGenres.description}</p>
           <div className="grid grid-cols-2 gap-4 mt-6 text-sm text-white">
             <div><span className="text-gray-500">Тип:</span> {animeWithGenres.type}</div>
             <div><span className="text-gray-500">Год:</span> {animeWithGenres.year}</div>
-            <div><span className="text-gray-500">Рейтинг:</span> {animeWithGenres.rating}/10</div>
+            <div className="flex items-center gap-2">
+              <span className="text-gray-500">Рейтинг:</span>
+              <StarRating rating={animeWithGenres.rating || 0} />
+            </div>
             <div><span className="text-gray-500">Статус:</span> {animeWithGenres.status}</div>
           </div>
         </div>
       </div>
-
-      {/* Блок с эпизодами */}
       <EpisodeList episodes={episodes} />
     </div>
   )

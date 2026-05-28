@@ -1,24 +1,17 @@
 'use client'
 import Image from 'next/image'
 import Link from 'next/link'
-import { MotionDiv } from './LazyMotion'
+import FavoriteButton from './FavoriteButton'
 
 export default function AnimeGrid({ anime }: { anime: any[] }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 mt-8">
       {anime.map((item) => (
         <Link href={`/anime/${item.id}`} key={item.id} className="block">
-          <MotionDiv
-  whileHover={{ scale: 1.05, rotateY: 5, rotateX: -5 }}
-  className="glass rounded-2xl overflow-hidden transition-all cursor-pointer group h-full card-glow card-hover-glow"
->
-  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none">
-  <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/20 via-transparent to-transparent transform -skew-x-12 translate-x-[-150%] group-hover:translate-x-[150%] transition-transform duration-1000"></div>
-</div>
-<div className="absolute top-2 left-2 z-10 text-white/10 text-lg font-bold select-none pointer-events-none">
-  美
-</div>
-            {/* остальное без изменений */}
+          <div className="relative glass rounded-2xl overflow-hidden transition-all card-glow card-hover-glow group h-full">
+            <div className="absolute top-2 right-2 z-10">
+              <FavoriteButton animeId={item.id} />
+            </div>
             <div className="aspect-[3/4] relative">
               <Image
                 src={item.poster_url || '/placeholder.jpg'}
@@ -42,7 +35,7 @@ export default function AnimeGrid({ anime }: { anime: any[] }) {
                 ))}
               </div>
             </div>
-          </MotionDiv>
+          </div>
         </Link>
       ))}
     </div>
