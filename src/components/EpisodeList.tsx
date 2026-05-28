@@ -1,27 +1,20 @@
 'use client'
-import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useState } from 'react'
 import VideoPlayer from './VideoPlayer'
 
-export default function EpisodeList({ animeId }: { animeId: string }) {
-  const [episodes, setEpisodes] = useState<any[]>([])
-  const [activeEp, setActiveEp] = useState<any>(null)
+interface Episode {
+  id: string
+  episode_number: number
+  title?: string
+  video_url: string
+}
 
-  useEffect(() => {
-    const fetchEpisodes = async () => {
-      const supabase = createClient()
-      const { data } = await supabase
-        .from('episodes')
-        .select('*')
-        .eq('anime_id', animeId)
-        .order('episode_number')
-      if (data && data.length > 0) {
-        setEpisodes(data)
-        setActiveEp(data[0])
-      }
-    }
-    fetchEpisodes()
-  }, [animeId])
+export default function EpisodeList({ episodes }: { episodes: Episode[] }) {
+  const [activeEp, setActiveEp] = useState<Episode | null>(episodes?.[0] || null)
+
+  if (!episodes || episodes.length === 0) {
+    return <p className="text-gray-400 mt-10">Эпизоды пока не добавлены.</p>
+  }
 
   return (
     <div className="mt-10">

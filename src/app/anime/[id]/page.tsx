@@ -1,16 +1,28 @@
-import { createServerSupabase } from '@/lib/supabase/server'
 import Image from 'next/image'
+import { notFound } from 'next/navigation'
 import EpisodeList from '@/components/EpisodeList'
 
-export default async function AnimePage({ params }: { params: { id: string } }) {
-  const supabase = await createServerSupabase()
-  const { data: anime } = await supabase
-    .from('anime')
-    .select('*, genres(name, slug)')
-    .eq('id', params.id)
-    .single()
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-  if (!anime) return <div className="text-center mt-20">Аниме не найдено</div>
+async function fetchSupabase(endpoint: string) {
+  const res = await fetch(`${supabaseUrl}/rest/v1/${endpoint}`, {
+    headers: {
+      'apikey': supabaseAnonKey,
+      'Content-Type': 'application/json',
+    },
+    cache: 'no-store',
+  })
+  if (!res.ok) throw new Error('Fetch failed')
+  return res.json()
+}
+
+export default async function AnimePage({ params }: { params: { id: string } }) {
+  const animeArray = await fetchSupabase(`anime?id=eq.${params.id}&select=*,genres(name,slug)`)
+  const anime = animeArray?.[0]
+  if (!anime) notFound()
+
+  const episodes = await fetchSupabase(`episodes?anime_id=eq.${params.id}&order=episode_number.asc`)
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
@@ -27,9 +39,6 @@ export default async function AnimePage({ params }: { params: { id: string } }) 
             {anime.genres?.map((g: any) => (
               <span key={g.slug} className="bg-neo-pink/20 text-neo-pink px-3 py-1 rounded-full text-sm">{g.name}</span>
             ))}
-            <div className="border-l-4 border-neo-pink pl-4 mt-4">
-  <p className="text-gray-300 leading-relaxed">{anime.description}</p>
-</div>
           </div>
           <p className="mt-4 text-gray-300 leading-relaxed">{anime.description}</p>
           <div className="grid grid-cols-2 gap-4 mt-6 text-sm">
@@ -40,7 +49,7 @@ export default async function AnimePage({ params }: { params: { id: string } }) 
           </div>
         </div>
       </div>
-      <EpisodeList animeId={anime.id} />
+      <EpisodeList episodes={episodes} />
     </div>
   )
 }
