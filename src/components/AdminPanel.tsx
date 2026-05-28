@@ -36,13 +36,13 @@ export default function AdminPanel({ userEmail, genres, initialAnime }: {
 }) {
   const router = useRouter()
   const [animeList, setAnimeList] = useState<Anime[]>(initialAnime)
-  const [showModal, setShowModal] = useState(false)
-  const [selectedGenres, setSelectedGenres] = useState<number[]>([])
-  const [expandedAnimeId, setExpandedAnimeId] = useState<string | null>(null)
-  const [episodes, setEpisodes] = useState<Episode[]>([])
-  const [episodeForm, setEpisodeForm] = useState({ episode_number: 1, title: '', video_url: '' })
 
-  // Поля для нового аниме
+  // Состояния для модального окна (добавление/редактирование)
+  const [showModal, setShowModal] = useState(false)
+  const [editingAnime, setEditingAnime] = useState<Anime | null>(null) // если не null — режим редактирования
+  const [selectedGenres, setSelectedGenres] = useState<number[]>([])
+
+  // Поля формы
   const [titleRu, setTitleRu] = useState('')
   const [titleEn, setTitleEn] = useState('')
   const [description, setDescription] = useState('')
@@ -52,7 +52,13 @@ export default function AdminPanel({ userEmail, genres, initialAnime }: {
   const [status, setStatus] = useState('ongoing')
   const [posterUrl, setPosterUrl] = useState('')
 
-  const resetAnimeForm = () => {
+  // Для серий
+  const [expandedAnimeId, setExpandedAnimeId] = useState<string | null>(null)
+  const [episodes, setEpisodes] = useState<Episode[]>([])
+  const [episodeForm, setEpisodeForm] = useState({ episode_number: 1, title: '', video_url: '' })
+
+  // Вспомогательные функции
+  const resetForm = () => {
     setTitleRu('')
     setTitleEn('')
     setDescription('')
@@ -62,6 +68,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime }: {
     setStatus('ongoing')
     setPosterUrl('')
     setSelectedGenres([])
+    setEditingAnime(null)
   }
 
   const getAccessToken = () => {
@@ -81,48 +88,134 @@ export default function AdminPanel({ userEmail, genres, initialAnime }: {
     )
   }
 
+  // Открыть модальное окно для добавления
+  const openAddModal = () => {
+    resetForm()
+    setShowModal(true)
+  }
+
+  // Открыть модальное окно для редактирования (заполняем поля)
+  const openEditModal = (anime: Anime) => {
+    setEditingAnime(anime)
+    setTitleRu(anime.title_ru)
+    setTitleEn(anime.title_en || '')
+    setDescription(anime.description || '')
+    setYear(anime.year || new Date().getFullYear())
+    setRating(anime.rating || 7.5)
+    setType(anime.type || 'tv')
+    setStatus(anime.status || 'ongoing')
+    setPosterUrl(anime.poster_url || '')
+    // Установить выбранные жанры из текущего аниме
+    const currentGenreIds = anime.genres ? anime.genres.map(g => g.id) : []
+    setSelectedGenres(currentGenreIds)
+    setShowModal(true)
+  }
+
+  // Сохранение (добавление или обновление)
   const handleSaveAnime = async (e: React.FormEvent) => {
     e.preventDefault()
     const accessToken = getAccessToken()
-
-    const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/anime`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        'Authorization': `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
-        title_ru: titleRu,
-        title_en: titleEn || null,
-        description,
-        year,
-        rating,
-        poster_url: posterUrl || null,
-        type,
-        status,
-      }),
-    })
-    if (!res.ok) { alert('Ошибка создания аниме'); return }
-    const newAnime = await res.json()
-
-    if (selectedGenres.length > 0) {
-      await Promise.all(selectedGenres.map(genreId =>
-        fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/anime_genres`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-            'Authorization': `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({ anime_id: newAnime.id, genre_id: genreId }),
-        })
-      ))
+    const animeData = {
+      title_ru: titleRu,
+      title_en: titleEn || null,
+      description,
+      year,
+      rating,
+      poster_url: posterUrl || null,
+      type,
+      status,
     }
 
-    setAnimeList(prev => [{ ...newAnime, genres: genres.filter(g => selectedGenres.includes(g.id)) }, ...prev])
-    setShowModal(false)
-    resetAnimeForm()
+    if (editingAnime) {
+      // --- РЕЖИМ РЕДАКТИРОВАНИЯ ---
+      // 1. Обновляем само аниме (PUT)
+      const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/anime?id=eq.${editingAnime.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          'Authorization': `Bearer ${accessToken}`,
+          'Prefer': 'return=representation',
+        },
+        body: JSON.stringify(animeData),
+      })
+      if (!res.ok) {
+        alert('Ошибка обновления аниме')
+        return
+      }
+      const updatedAnime = (await res.json())[0]
+
+      // 2. Удаляем старые связи с жанрами
+      await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/anime_genres?anime_id=eq.${editingAnime.id}`, {
+        method: 'DELETE',
+        headers: {
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      })
+
+      // 3. Добавляем новые связи
+      if (selectedGenres.length > 0) {
+        await Promise.all(selectedGenres.map(genreId =>
+          fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/anime_genres`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+              'Authorization': `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({ anime_id: editingAnime.id, genre_id: genreId }),
+          })
+        ))
+      }
+
+      // 4. Обновляем список аниме на экране
+      const updatedWithGenres = {
+        ...updatedAnime,
+        genres: genres.filter(g => selectedGenres.includes(g.id)),
+      }
+      setAnimeList(prev => prev.map(a => a.id === editingAnime.id ? updatedWithGenres : a))
+      setShowModal(false)
+      resetForm()
+    } else {
+      // --- РЕЖИМ ДОБАВЛЕНИЯ (старый код) ---
+      const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/anime`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(animeData),
+      })
+      if (!res.ok) {
+        alert('Ошибка создания аниме')
+        return
+      }
+      const newAnime = await res.json()
+
+      if (selectedGenres.length > 0) {
+        await Promise.all(selectedGenres.map(genreId =>
+          fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/anime_genres`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+              'Authorization': `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({ anime_id: newAnime.id, genre_id: genreId }),
+          })
+        ))
+      }
+
+      const newAnimeWithGenres = {
+        ...newAnime,
+        genres: genres.filter(g => selectedGenres.includes(g.id)),
+      }
+      setAnimeList(prev => [newAnimeWithGenres, ...prev])
+      setShowModal(false)
+      resetForm()
+    }
   }
 
   const handleDelete = async (id: string) => {
@@ -146,7 +239,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime }: {
     } else alert('Ошибка удаления')
   }
 
-  // --- Управление эпизодами ---
+  // --- Управление эпизодами (без изменений) ---
   const loadEpisodes = async (animeId: string) => {
     const accessToken = getAccessToken()
     const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/episodes?anime_id=eq.${animeId}&order=episode_number.asc`, {
@@ -176,7 +269,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime }: {
       body: JSON.stringify(body),
     })
     if (!res.ok) { alert('Ошибка добавления серии'); return }
-    await loadEpisodes(animeId)  // обновить список
+    await loadEpisodes(animeId)
     setEpisodeForm({ episode_number: episodeForm.episode_number + 1, title: '', video_url: '' })
   }
 
@@ -199,6 +292,11 @@ export default function AdminPanel({ userEmail, genres, initialAnime }: {
     }
   }
 
+  // При обновлении пропсов
+  useEffect(() => {
+    setAnimeList(initialAnime)
+  }, [initialAnime])
+
   return (
     <div className="max-w-6xl mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
@@ -207,7 +305,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime }: {
           <p className="text-gray-400">Вы вошли как: {userEmail}</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setShowModal(true)} className="bg-neo-pink hover:bg-neo-pink/80 text-white px-4 py-2 rounded-xl transition">
+          <button onClick={openAddModal} className="bg-neo-pink hover:bg-neo-pink/80 text-white px-4 py-2 rounded-xl transition">
             Добавить аниме
           </button>
           <button onClick={handleLogout} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl transition">
@@ -233,7 +331,11 @@ export default function AdminPanel({ userEmail, genres, initialAnime }: {
                 <button onClick={() => toggleEpisodesPanel(anime.id)} className="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded-lg text-sm">
                   Серии
                 </button>
-                <button onClick={() => handleDelete(anime.id)} className="bg-red-500/20 hover:bg-red-500/40 text-red-400 px-3 py-1 rounded-lg text-sm">
+                {/* НОВАЯ КНОПКА РЕДАКТИРОВАТЬ */}
+                <button onClick={() => openEditModal(anime)} className="bg-blue-500/20 hover:bg-blue-500/40 text-blue-400 hover:text-blue-300 px-3 py-1 rounded-lg text-sm transition">
+                  Ред.
+                </button>
+                <button onClick={() => handleDelete(anime.id)} className="bg-red-500/20 hover:bg-red-500/40 text-red-400 hover:text-red-300 px-3 py-1 rounded-lg text-sm transition">
                   Удалить
                 </button>
               </div>
@@ -268,11 +370,13 @@ export default function AdminPanel({ userEmail, genres, initialAnime }: {
         ))}
       </div>
 
-      {/* Модальное окно для добавления аниме (как раньше) */}
+      {/* Модальное окно (добавление / редактирование) */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-neo-dark border border-white/10 rounded-2xl p-6 w-full max-w-md max-h-[80vh] overflow-y-auto">
-            <h2 className="text-xl font-bold text-white mb-4">Новое аниме</h2>
+            <h2 className="text-xl font-bold text-white mb-4">
+              {editingAnime ? 'Редактировать аниме' : 'Новое аниме'}
+            </h2>
             <form onSubmit={handleSaveAnime} className="flex flex-col gap-3">
               <input placeholder="Название (рус)" value={titleRu} onChange={e => setTitleRu(e.target.value)} className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white" required />
               <input placeholder="Название (англ)" value={titleEn} onChange={e => setTitleEn(e.target.value)} className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white" />
@@ -306,8 +410,10 @@ export default function AdminPanel({ userEmail, genres, initialAnime }: {
                 </div>
               </div>
               <div className="flex justify-end gap-2 mt-4">
-                <button type="button" onClick={() => { setShowModal(false); resetAnimeForm() }} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl">Отмена</button>
-                <button type="submit" className="bg-neo-pink hover:bg-neo-pink/80 text-white px-4 py-2 rounded-xl">Добавить</button>
+                <button type="button" onClick={() => { setShowModal(false); resetForm() }} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl">Отмена</button>
+                <button type="submit" className="bg-neo-pink hover:bg-neo-pink/80 text-white px-4 py-2 rounded-xl">
+                  {editingAnime ? 'Сохранить' : 'Добавить'}
+                </button>
               </div>
             </form>
           </div>
