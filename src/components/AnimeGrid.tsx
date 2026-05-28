@@ -9,9 +9,15 @@ export default function AnimeGrid({ anime }: { anime: any[] }) {
       {anime.map((item) => (
         <Link href={`/anime/${item.id}`} key={item.id} className="block">
           <MotionDiv
-            whileHover={{ scale: 1.05, rotateY: 5, rotateX: -5 }}
-            className="glass rounded-2xl overflow-hidden transition-all cursor-pointer group h-full"
-          >
+  whileHover={{ scale: 1.05, rotateY: 5, rotateX: -5 }}
+  className="glass rounded-2xl overflow-hidden transition-all cursor-pointer group h-full card-glow card-hover-glow"
+>
+  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none">
+  <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/20 via-transparent to-transparent transform -skew-x-12 translate-x-[-150%] group-hover:translate-x-[150%] transition-transform duration-1000"></div>
+</div>
+<div className="absolute top-2 left-2 z-10 text-white/10 text-lg font-bold select-none pointer-events-none">
+  美
+</div>
             {/* остальное без изменений */}
             <div className="aspect-[3/4] relative">
               <Image

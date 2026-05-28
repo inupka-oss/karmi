@@ -27,6 +27,9 @@ export default async function AnimePage({ params }: { params: { id: string } }) 
             {anime.genres?.map((g: any) => (
               <span key={g.slug} className="bg-neo-pink/20 text-neo-pink px-3 py-1 rounded-full text-sm">{g.name}</span>
             ))}
+            <div className="border-l-4 border-neo-pink pl-4 mt-4">
+  <p className="text-gray-300 leading-relaxed">{anime.description}</p>
+</div>
           </div>
           <p className="mt-4 text-gray-300 leading-relaxed">{anime.description}</p>
           <div className="grid grid-cols-2 gap-4 mt-6 text-sm">
