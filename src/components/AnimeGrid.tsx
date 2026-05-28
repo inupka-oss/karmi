@@ -1,17 +1,18 @@
 'use client'
 import Image from 'next/image'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
+import { MotionDiv } from './LazyMotion'
 
 export default function AnimeGrid({ anime }: { anime: any[] }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 mt-8">
       {anime.map((item) => (
         <Link href={`/anime/${item.id}`} key={item.id} className="block">
-          <motion.div
+          <MotionDiv
             whileHover={{ scale: 1.05, rotateY: 5, rotateX: -5 }}
             className="glass rounded-2xl overflow-hidden transition-all cursor-pointer group h-full"
           >
+            {/* остальное без изменений */}
             <div className="aspect-[3/4] relative">
               <Image
                 src={item.poster_url || '/placeholder.jpg'}
@@ -35,7 +36,7 @@ export default function AnimeGrid({ anime }: { anime: any[] }) {
                 ))}
               </div>
             </div>
-          </motion.div>
+          </MotionDiv>
         </Link>
       ))}
     </div>
