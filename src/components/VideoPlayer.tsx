@@ -11,5 +11,6 @@ export default function VideoPlayer({ src, title }: { src: string; title: string
         title={title}
       />
     </div>
+    
   )
 }
