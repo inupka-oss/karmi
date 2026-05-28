@@ -1,12 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
-  experimental: {
-    optimizeCss: true,
-  },
-  // Говорим Next.js: "все пути к файлам делай относительными"
-  assetPrefix: './',
+  // Никаких experimental кроме optimizeCss (если нужно)
+  // Убираем output: "standalone" и assetPrefix
 };
 
 export default nextConfig;
