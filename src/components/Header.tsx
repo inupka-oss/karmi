@@ -38,7 +38,6 @@ export default function Header() {
           <Link href="/ongoing" className={linkClass('/ongoing')}>Онгоинги</Link>
           <Link href="/favorites" className={linkClass('/favorites')}>Избранное</Link>
           <Link href="/profile" className={linkClass('/profile')}>Профиль</Link>
-          <Link href="/admin/login" className={linkClass('/admin/login')}>Админка</Link>
         </nav>
 
         <div className="flex items-center gap-2">
