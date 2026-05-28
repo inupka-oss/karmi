@@ -51,9 +51,12 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
   const [posterUrl, setPosterUrl] = useState('')
   const [uploading, setUploading] = useState(false)
 
+  // Для эпизодов и загрузки видео
   const [expandedAnimeId, setExpandedAnimeId] = useState<string | null>(null)
   const [episodes, setEpisodes] = useState<Episode[]>([])
   const [episodeForm, setEpisodeForm] = useState({ episode_number: 1, title: '', video_url: '' })
+  const [videoFile, setVideoFile] = useState<File | null>(null)
+  const [uploadingVideo, setUploadingVideo] = useState(false)
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -151,7 +154,6 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     }
 
     if (editingAnime) {
-      // Обновление аниме
       const res = await fetch(`${supabaseUrl}/rest/v1/anime?id=eq.${editingAnime.id}`, {
         method: 'PATCH',
         headers: {
@@ -165,12 +167,10 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
       if (!res.ok) { alert('Ошибка обновления'); setUploading(false); return }
       const updatedAnime = (await res.json())[0]
 
-      // Удаляем старые связи с жанрами
       await fetch(`${supabaseUrl}/rest/v1/anime_genres?anime_id=eq.${editingAnime.id}`, {
         method: 'DELETE',
         headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${accessToken}` },
       })
-      // Добавляем новые
       if (selectedGenres.length > 0) {
         await Promise.all(selectedGenres.map(genreId =>
           fetch(`${supabaseUrl}/rest/v1/anime_genres`, {
@@ -187,7 +187,6 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
 
       setAnimeList(prev => prev.map(a => a.id === editingAnime.id ? { ...updatedAnime, genres: genres.filter(g => selectedGenres.includes(g.id)) } : a))
     } else {
-      // Создание аниме
       const res = await fetch(`${supabaseUrl}/rest/v1/anime`, {
         method: 'POST',
         headers: {
@@ -244,7 +243,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     } else alert('Ошибка удаления')
   }
 
-  // Управление эпизодами
+  // Работа с эпизодами
   const loadEpisodes = async (animeId: string) => {
     const accessToken = getAccessToken()
     const res = await fetch(`${supabaseUrl}/rest/v1/episodes?anime_id=eq.${animeId}&order=episode_number.asc`, {
@@ -258,11 +257,39 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
 
   const handleAddEpisode = async (animeId: string) => {
     const accessToken = getAccessToken()
+    let finalVideoUrl = episodeForm.video_url
+
+    if (videoFile) {
+      setUploadingVideo(true)
+      try {
+        const formData = new FormData()
+        formData.append('file', videoFile)
+        const res = await fetch('/api/upload-video', {
+          method: 'POST',
+          body: formData,
+        })
+        if (!res.ok) throw new Error('Upload failed')
+        const data = await res.json()
+        finalVideoUrl = data.url
+      } catch (err) {
+        alert('Ошибка загрузки видео')
+        setUploadingVideo(false)
+        return
+      }
+      setUploadingVideo(false)
+      setVideoFile(null)
+    }
+
+    if (!finalVideoUrl) {
+      alert('Введите ссылку или выберите видеофайл')
+      return
+    }
+
     const body = {
       anime_id: animeId,
       episode_number: episodeForm.episode_number,
       title: episodeForm.title || null,
-      video_url: episodeForm.video_url,
+      video_url: finalVideoUrl,
     }
     const res = await fetch(`${supabaseUrl}/rest/v1/episodes`, {
       method: 'POST',
@@ -376,9 +403,34 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                     className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white w-20" min={1} />
                   <input type="text" placeholder="Название (необязательно)" value={episodeForm.title} onChange={e => setEpisodeForm({...episodeForm, title: e.target.value})}
                     className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white flex-1" />
-                  <input type="url" placeholder="Ссылка на видео (embed)" value={episodeForm.video_url} onChange={e => setEpisodeForm({...episodeForm, video_url: e.target.value})}
-                    className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white flex-1" required />
-                  <button onClick={() => handleAddEpisode(anime.id)} className="bg-neo-pink hover:bg-neo-pink/80 text-white px-4 py-2 rounded-xl">Добавить</button>
+                  
+                  {/* Выбор видеофайла */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-gray-400">Видеофайл (если своё)</label>
+                    <input
+                      type="file"
+                      accept="video/*"
+                      onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
+                      className="text-white text-sm file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-neo-pink/20 file:text-neo-pink hover:file:bg-neo-pink/40"
+                    />
+                  </div>
+
+                  {/* Или ссылка на embed */}
+                  <input
+                    type="url"
+                    placeholder="Или ссылка на видео (embed)"
+                    value={episodeForm.video_url}
+                    onChange={e => setEpisodeForm({...episodeForm, video_url: e.target.value})}
+                    className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white flex-1"
+                  />
+
+                  <button
+                    onClick={() => handleAddEpisode(anime.id)}
+                    disabled={uploadingVideo}
+                    className="bg-neo-pink hover:bg-neo-pink/80 text-white px-4 py-2 rounded-xl"
+                  >
+                    {uploadingVideo ? 'Загрузка...' : 'Добавить'}
+                  </button>
                 </div>
               </div>
             )}
@@ -386,7 +438,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
         ))}
       </div>
 
-      {/* Модальное окно добавления/редактирования */}
+      {/* Модальное окно добавления/редактирования аниме (без изменений, как раньше) */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-neo-dark border border-white/10 rounded-2xl p-6 w-full max-w-md max-h-[80vh] overflow-y-auto">
