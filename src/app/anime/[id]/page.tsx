@@ -59,7 +59,7 @@ export default async function AnimePage({ params }: { params: Promise<{ id: stri
             ))}
           </div>
           <p className="mt-4 text-gray-300 leading-relaxed">{animeWithGenres.description}</p>
-          <div className="grid grid-cols-2 gap-4 mt-6 text-sm text-white">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6 text-sm text-white">
             <div><span className="text-gray-500">Тип:</span> {animeWithGenres.type}</div>
             <div><span className="text-gray-500">Год:</span> {animeWithGenres.year}</div>
             <div className="flex items-center gap-2">
