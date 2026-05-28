@@ -1,11 +1,6 @@
 import { createServerSupabase } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import dynamic from 'next/dynamic'
-
-const DashboardClient = dynamic<Record<string, never>>(
-  () => import('@/components/DashboardClient').then(mod => mod.default),
-  { ssr: false, loading: () => <p className="text-white">Загрузка админки...</p> }
-)
+import DashboardClientWrapper from '@/components/DashboardClientWrapper'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,5 +12,5 @@ export default async function DashboardPage() {
   const { data: animeList } = await supabase.from('anime').select('*, genres(name, slug)')
   const { data: genres } = await supabase.from('genres').select('*')
 
-  return <DashboardClient animeList={animeList || []} genresList={genres || []} />
+  return <DashboardClientWrapper animeList={animeList || []} genresList={genres || []} />
 }
