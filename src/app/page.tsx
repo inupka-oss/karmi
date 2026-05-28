@@ -46,7 +46,6 @@ export default async function HomePage({
   const genres = await getGenres()
   const totalPages = Math.ceil((count || 0) / PAGE_SIZE)
 
-  // Функция для создания URL с параметрами
   const buildPageUrl = (page: number) => {
     const params = new URLSearchParams()
     if (sp?.q) params.set('q', sp.q)
@@ -58,6 +57,11 @@ export default async function HomePage({
 
   return (
     <div className="min-h-screen px-4 py-8 max-w-7xl mx-auto">
+      {/* Вот он — наш заголовок! */}
+      <h1 className="text-5xl md:text-7xl font-bold mb-2 text-glow-white">
+        Kar<span className="text-neo-pink text-glow-pink">mi</span>
+      </h1>
+
       <div className="flex flex-wrap gap-4 items-center mb-6">
         <SearchBar />
         <RandomAnimeButton />

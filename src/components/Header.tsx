@@ -30,7 +30,7 @@ export default function Header() {
     <header className="sticky top-0 z-50 glass backdrop-blur-md border-b border-white/10">
       <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-3">
         <Link href="/" className="text-2xl font-bold text-glow-white">
-          Кар<span className="text-neo-pink text-glow-pink">ми</span>
+          Kar<span className="text-neo-pink text-glow-pink">mi</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-2">
