@@ -1,12 +1,16 @@
 import type { Metadata } from 'next'
 import { Rubik } from 'next/font/google'
 import './globals.css'
+import AnimatedBackgroundWrapper from '@/components/AnimatedBackgroundWrapper'
 
 const rubik = Rubik({ subsets: ['cyrillic', 'latin'], variable: '--font-rubik' })
 
 export const metadata: Metadata = {
   title: 'Карми — смотреть аниме онлайн',
   description: 'Карми — бесплатный сайт для просмотра аниме в стиле нео-брутализма',
+  icons: {
+    icon: '/favicon.svg',
+  },
 }
 
 export default function RootLayout({
@@ -17,7 +21,10 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <body className={`${rubik.variable} font-sans bg-neo-dark text-white`}>
-        {children}
+        <AnimatedBackgroundWrapper />
+        <div className="relative z-10">
+          {children}
+        </div>
       </body>
     </html>
   )
