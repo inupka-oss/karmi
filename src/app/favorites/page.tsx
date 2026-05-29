@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import AnimeGrid from '@/components/AnimeGrid'
+import AnimeGridSkeleton from '@/components/AnimeGridSkeleton'
 
 function getAccessToken(): string | null {
   const match = document.cookie.match(/sb-access-token=([^;]+)/)
@@ -8,7 +9,7 @@ function getAccessToken(): string | null {
 }
 
 export default function FavoritesPage() {
-  const [anime, setAnime] = useState<any[]>([])
+  const [anime, setAnime] = useState<any[] | null>(null)
   const [loading, setLoading] = useState(true)
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -18,7 +19,6 @@ export default function FavoritesPage() {
     const loadFavorites = async () => {
       let ids: string[] = []
       if (token) {
-        // Авторизован – берём из облака
         try {
           const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
             headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${token}` },
@@ -36,15 +36,14 @@ export default function FavoritesPage() {
               ids = data[0].favorites
             }
           }
-        } catch {
-          // fallback к localStorage
-        }
+        } catch {}
       } else {
         const stored = localStorage.getItem('karmi-favorites')
         ids = stored ? JSON.parse(stored) : []
       }
 
       if (ids.length === 0) {
+        setAnime([])
         setLoading(false)
         return
       }
@@ -56,18 +55,28 @@ export default function FavoritesPage() {
       if (animeRes.ok) {
         const animeData = await animeRes.json()
         setAnime(animeData)
+      } else {
+        setAnime([])
       }
       setLoading(false)
     }
     loadFavorites()
   }, [supabaseUrl, supabaseAnonKey])
 
+  if (loading) {
+    return (
+      <div className="min-h-screen px-4 py-8 max-w-7xl mx-auto">
+        <h1 className="text-5xl md:text-7xl font-bold mb-4 text-glow-white">♥ Избранное</h1>
+        <AnimeGridSkeleton count={8} />
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen px-4 py-8 max-w-7xl mx-auto">
       <h1 className="text-5xl md:text-7xl font-bold mb-4 text-glow-white">♥ Избранное</h1>
-      {loading && <p className="text-white">Загрузка...</p>}
-      {!loading && anime.length === 0 && <p className="text-gray-400">Вы ничего не добавили в избранное.</p>}
-      {anime.length > 0 && <AnimeGrid anime={anime} />}
+      {anime && anime.length === 0 && <p className="text-gray-400">Вы ничего не добавили в избранное.</p>}
+      {anime && anime.length > 0 && <AnimeGrid anime={anime} />}
     </div>
   )
 }

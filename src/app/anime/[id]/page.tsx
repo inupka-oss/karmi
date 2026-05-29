@@ -1,18 +1,18 @@
-import Image from 'next/image'
+import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { Metadata } from 'next'
-import StarRating from '@/components/StarRating'
-import CommentSection from '@/components/CommentSection'
-import RatingForm from '@/components/RatingForm'
-import RelatedAnime from '@/components/RelatedAnime'
 import AnimeView from '@/components/AnimeView'
+import AnimePageSkeleton from '@/components/AnimePageSkeleton'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 async function fetchSupabase(endpoint: string) {
   const res = await fetch(`${supabaseUrl}/rest/v1/${endpoint}`, {
-    headers: { 'apikey': supabaseAnonKey, 'Content-Type': 'application/json' },
+    headers: {
+      'apikey': supabaseAnonKey,
+      'Content-Type': 'application/json',
+    },
     cache: 'no-store',
   })
   if (!res.ok) throw new Error(`Supabase error ${res.status}`)
@@ -30,8 +30,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   }
 }
 
-export default async function AnimePage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
+async function AnimeDataLoader({ id }: { id: string }) {
   const animeArray = await fetchSupabase(`anime?id=eq.${id}`)
   const anime = animeArray?.[0]
   if (!anime) notFound()
@@ -47,7 +46,6 @@ export default async function AnimePage({ params }: { params: Promise<{ id: stri
     body: JSON.stringify({ views: (anime.views || 0) + 1 }),
   })
 
-  // Остальные запросы (жанры, эпизоды) без изменений
   const animeGenres = await fetchSupabase(`anime_genres?select=genre_id&anime_id=eq.${anime.id}`)
   const genreIds = animeGenres.map((ag: any) => ag.genre_id)
 
@@ -65,6 +63,14 @@ export default async function AnimePage({ params }: { params: Promise<{ id: stri
 
   const animeWithGenres = { ...anime, genres, views: (anime.views || 0) + 1 }
 
-  // Передаём всё в AnimeView
   return <AnimeView anime={animeWithGenres} genres={genres} episodes={episodes} />
+}
+
+export default async function AnimePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return (
+    <Suspense fallback={<AnimePageSkeleton />}>
+      <AnimeDataLoader id={id} />
+    </Suspense>
+  )
 }
