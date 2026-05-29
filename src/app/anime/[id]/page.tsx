@@ -1,11 +1,11 @@
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import { Metadata } from 'next'
-import EpisodeList from '@/components/EpisodeList'
 import StarRating from '@/components/StarRating'
 import CommentSection from '@/components/CommentSection'
 import RatingForm from '@/components/RatingForm'
 import RelatedAnime from '@/components/RelatedAnime'
+import AnimePageClient from '@/components/AnimePageClient'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -84,7 +84,6 @@ export default async function AnimePage({ params }: { params: Promise<{ id: stri
           </div>
           <RatingForm animeId={anime.id} />
 
-          {/* Создатели */}
           {(animeWithGenres.studio || animeWithGenres.director || animeWithGenres.cast) && (
             <div className="mt-6 glass p-4 rounded-xl">
               <h2 className="text-lg font-semibold text-white mb-2">Создатели</h2>
@@ -98,7 +97,8 @@ export default async function AnimePage({ params }: { params: Promise<{ id: stri
         </div>
       </div>
 
-      <EpisodeList episodes={episodes} />
+      <AnimePageClient trailerUrl={animeWithGenres.trailer_url} episodes={episodes} />
+
       <RelatedAnime animeId={anime.id} />
       <CommentSection animeId={anime.id} />
     </div>

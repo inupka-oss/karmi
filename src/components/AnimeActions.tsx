@@ -1,5 +1,4 @@
 'use client'
-import { useState, useEffect } from 'react'
 
 interface Episode {
   id: string
@@ -13,24 +12,14 @@ export default function AnimeActions({
   episodes,
   onStartWatching,
   onContinueWatching,
+  progress,
 }: {
   trailerUrl?: string
   episodes: Episode[]
   onStartWatching: (ep: Episode) => void
   onContinueWatching: (ep: Episode) => void
+  progress?: { episodeId: string; time: number } | null
 }) {
-  const [progress, setProgress] = useState<{ episodeId: string; time: number } | null>(null)
-
-  useEffect(() => {
-    // Загружаем прогресс из localStorage
-    const stored = localStorage.getItem('karmi-progress')
-    if (stored) {
-      try {
-        setProgress(JSON.parse(stored))
-      } catch {}
-    }
-  }, [])
-
   const lastWatchedEpisode = progress
     ? episodes.find(ep => ep.id === progress.episodeId)
     : null
