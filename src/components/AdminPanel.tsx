@@ -100,7 +100,6 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null)
   const [uploadingScreenshot, setUploadingScreenshot] = useState(false)
 
-  // ✅ Переменные окружения (теперь из env, а не вшитые)
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
@@ -503,7 +502,10 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
           <p className="text-sm text-gray-400">Вы вошли как: {userEmail}</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={openAddModal} className="bg-neo-pink hover:bg-neo-pink/80 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base transition">
+          <button
+            onClick={openAddModal}
+            className="bg-neo-pink hover:bg-neo-pink/80 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base transition animate-pulse-subtle"
+          >
             Добавить аниме
           </button>
           <button onClick={handleLogout} className="bg-red-500 hover:bg-red-600 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base transition">

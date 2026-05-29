@@ -2,12 +2,13 @@ import type { Metadata } from 'next'
 import { Rubik } from 'next/font/google'
 import './globals.css'
 import Header from '@/components/Header'
+import ScrollToTopButton from '@/components/ScrollToTopButton'
 
 const rubik = Rubik({ subsets: ['cyrillic', 'latin'], variable: '--font-rubik' })
 
 export const metadata: Metadata = {
-  title: 'Карми — смотреть аниме онлайн',
-  
+  title: 'Karmi — смотреть аниме онлайн',
+  description: 'Karmi — бесплатный сайт для просмотра аниме в стиле нео-брутализма',
   icons: {
     icon: '/favicon.svg',
   },
@@ -22,9 +23,10 @@ export default function RootLayout({
     <html lang="ru" className="dark">
       <body className={`${rubik.variable} font-sans bg-neo-dark text-white`}>
         <Header />
-        <div className="relative z-10">
+        <main className="relative z-10 animate-fade-in">
           {children}
-        </div>
+        </main>
+        <ScrollToTopButton />
       </body>
     </html>
   )
