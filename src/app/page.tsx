@@ -2,6 +2,7 @@ import { createServerSupabase } from '@/lib/supabase/server'
 import AnimeGrid from '@/components/AnimeGrid'
 import SearchBar from '@/components/SearchBar'
 import RandomAnimeButton from '@/components/RandomAnimeButton'
+import RecentUpdatesSlider from '@/components/RecentUpdatesSlider'
 import Link from 'next/link'
 
 async function getGenres() {
@@ -27,16 +28,15 @@ export default async function HomePage({
   const currentPage = parseInt(sp?.page || '1') || 1
   const supabase = await createServerSupabase()
 
-  // Последние обновления
+  // Последние обновления (эпизоды с аниме)
   const { data: recentlyUpdated } = await supabase
     .from('episodes')
-    .select('anime_id, anime!inner(title_ru, poster_url, genres(name, slug))')
+    .select('id, episode_number, anime_id, created_at, anime!inner(title_ru, poster_url, genres(name, slug))')
     .order('created_at', { ascending: false })
-    .limit(10)
+    .limit(15)
 
-  const uniqueRecent = recentlyUpdated
-    ? Array.from(new Map(recentlyUpdated.map((item: any) => [item.anime_id, item.anime])).values())
-    : []
+  // Убираем дубликаты аниме, но оставляем несколько последних эпизодов (можно показывать все)
+  const uniqueRecent = recentlyUpdated || []
 
   // Популярное
   const { data: popular } = await supabase
@@ -53,7 +53,7 @@ export default async function HomePage({
     .order('created_at', { ascending: false })
     .limit(10)
 
-  // Поиск и фильтрация (показывается только если заданы параметры)
+  // Поиск и фильтрация
   let searchQuery = supabase.from('anime').select(`*, genres(name, slug)`, { count: 'exact' })
   if (sp?.q) {
     searchQuery = searchQuery.or(`title_ru.ilike.%${sp.q}%,title_en.ilike.%${sp.q}%`)
@@ -84,7 +84,7 @@ export default async function HomePage({
   return (
     <div className="min-h-screen px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-7xl mx-auto">
       <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-4 sm:mb-6 text-glow-white">
-        Kar<span className="text-neo-pink text-glow-pink">mi</span>
+        Karmi
       </h1>
 
       <div className="flex flex-wrap items-center gap-3 mb-4 sm:mb-6">
@@ -108,11 +108,11 @@ export default async function HomePage({
         <button type="submit" className="bg-neo-pink hover:bg-neo-pink/80 text-white px-5 py-2 rounded-xl text-sm sm:text-base">Фильтровать</button>
       </form>
 
-      {/* Последние обновления */}
+      {/* Слайдер последних обновлений */}
       {uniqueRecent.length > 0 && (
         <section className="mb-10">
           <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">🔥 Последние обновления</h2>
-          <AnimeGrid anime={uniqueRecent.slice(0, 6)} />
+          <RecentUpdatesSlider items={uniqueRecent} />
         </section>
       )}
 

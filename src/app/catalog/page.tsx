@@ -1,101 +1,103 @@
-import { Suspense } from 'react'
-import { createServerSupabase } from '@/lib/supabase/server'
+'use client'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import AnimeGrid from '@/components/AnimeGrid'
 import AnimeGridSkeleton from '@/components/AnimeGridSkeleton'
 import SearchBar from '@/components/SearchBar'
-import Link from 'next/link'
-
-async function getGenres() {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/genres?select=*`, {
-    headers: {
-      'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      'Content-Type': 'application/json',
-    },
-    cache: 'no-store',
-  })
-  if (!res.ok) return []
-  return res.json()
-}
 
 const PAGE_SIZE = 20
 
-async function CatalogContent({
-  sp,
-}: {
-  sp: { q?: string; genre?: string; year?: string; status?: string; page?: string }
-}) {
-  const currentPage = parseInt(sp.page || '1') || 1
-  const supabase = await createServerSupabase()
+export default function CatalogPage() {
+  const [anime, setAnime] = useState<any[]>([])
+  const [page, setPage] = useState(1)
+  const [loading, setLoading] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [genres, setGenres] = useState<any[]>([])
+  const [filters, setFilters] = useState({ q: '', genre: '', year: '', status: 'all' })
+  const observerRef = useRef<IntersectionObserver | null>(null)
+  const loadMoreRef = useRef<HTMLDivElement | null>(null)
 
-  let query = supabase.from('anime').select(`*, genres(name, slug)`, { count: 'exact' })
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-  if (sp.q) {
-    query = query.or(`title_ru.ilike.%${sp.q}%,title_en.ilike.%${sp.q}%`)
-  }
-  if (sp.genre) {
-    query = query.filter('genres.slug', 'eq', sp.genre)
-  }
-  if (sp.year) {
-    query = query.eq('year', parseInt(sp.year))
-  }
-  if (sp.status && sp.status !== 'all') {
-    query = query.eq('status', sp.status)
-  }
+  // Загрузка жанров
+  useEffect(() => {
+    fetch(`${supabaseUrl}/rest/v1/genres?select=*`, {
+      headers: { 'apikey': supabaseAnonKey, 'Content-Type': 'application/json' },
+    })
+      .then(res => res.json())
+      .then(setGenres)
+  }, [supabaseUrl, supabaseAnonKey])
 
-  const from = (currentPage - 1) * PAGE_SIZE
-  const to = from + PAGE_SIZE - 1
-  query = query.range(from, to).order('created_at', { ascending: false })
+  // Сброс при изменении фильтров
+  useEffect(() => {
+    setAnime([])
+    setPage(1)
+    setHasMore(true)
+  }, [filters])
 
-  const { data: anime, count } = await query
-  const totalPages = Math.ceil((count || 0) / PAGE_SIZE)
+  // Загрузка данных
+  useEffect(() => {
+    if (!hasMore || loading) return
+    setLoading(true)
 
-  const buildPageUrl = (page: number) => {
-    const params = new URLSearchParams()
-    if (sp.q) params.set('q', sp.q)
-    if (sp.genre) params.set('genre', sp.genre)
-    if (sp.year) params.set('year', sp.year)
-    if (sp.status && sp.status !== 'all') params.set('status', sp.status)
-    params.set('page', page.toString())
-    return `/catalog?${params.toString()}`
-  }
+    let query = `${supabaseUrl}/rest/v1/anime?select=*,genres(name,slug)&limit=${PAGE_SIZE}&offset=${(page - 1) * PAGE_SIZE}&order=created_at.desc`
 
-  return (
-    <>
-      <AnimeGrid anime={anime || []} />
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-4 mt-8">
-          {currentPage > 1 && (
-            <Link
-              href={buildPageUrl(currentPage - 1)}
-              className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-sm sm:text-base transition"
-            >
-              ← Назад
-            </Link>
-          )}
-          <span className="text-white text-sm sm:text-base">
-            Страница {currentPage} из {totalPages}
-          </span>
-          {currentPage < totalPages && (
-            <Link
-              href={buildPageUrl(currentPage + 1)}
-              className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-sm sm:text-base transition"
-            >
-              Вперед →
-            </Link>
-          )}
-        </div>
-      )}
-    </>
+    if (filters.q) {
+      query += `&or=(title_ru.ilike.*${filters.q}*,title_en.ilike.*${filters.q}*)`
+    }
+    if (filters.genre) {
+      query += `&genres.slug=eq.${filters.genre}`
+    }
+    if (filters.year) {
+      query += `&year=eq.${filters.year}`
+    }
+    if (filters.status && filters.status !== 'all') {
+      query += `&status=eq.${filters.status}`
+    }
+
+    fetch(query, {
+      headers: { 'apikey': supabaseAnonKey, 'Content-Type': 'application/json' },
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.length < PAGE_SIZE) setHasMore(false)
+        setAnime(prev => [...prev, ...data])
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [page, filters, hasMore, supabaseUrl, supabaseAnonKey])
+
+  // Наблюдатель для бесконечной прокрутки
+  const handleObserver = useCallback(
+    (entries: IntersectionObserverEntry[]) => {
+      const target = entries[0]
+      if (target.isIntersecting && hasMore && !loading) {
+        setPage(prev => prev + 1)
+      }
+    },
+    [hasMore, loading]
   )
-}
 
-export default async function CatalogPage({
-  searchParams,
-}: {
-  searchParams?: Promise<{ q?: string; genre?: string; year?: string; status?: string; page?: string }>
-}) {
-  const sp = await searchParams
-  const genres = await getGenres()
+  useEffect(() => {
+    if (observerRef.current) observerRef.current.disconnect()
+    observerRef.current = new IntersectionObserver(handleObserver, { threshold: 0.1 })
+    if (loadMoreRef.current) observerRef.current.observe(loadMoreRef.current)
+    return () => {
+      if (observerRef.current) observerRef.current.disconnect()
+    }
+  }, [handleObserver])
+
+  const handleFilterSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    const form = e.currentTarget as HTMLFormElement
+    const formData = new FormData(form)
+    setFilters({
+      q: formData.get('q') as string || '',
+      genre: formData.get('genre') as string || '',
+      year: formData.get('year') as string || '',
+      status: formData.get('status') as string || 'all',
+    })
+  }
 
   return (
     <div className="min-h-screen px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-7xl mx-auto">
@@ -107,47 +109,32 @@ export default async function CatalogPage({
         <SearchBar />
       </div>
 
-      <form className="flex flex-wrap items-center gap-3 mb-6">
-        <select
-          name="genre"
-          defaultValue={sp?.genre || ''}
-          className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white text-sm sm:text-base w-full sm:w-auto"
-        >
+      <form onSubmit={handleFilterSubmit} className="flex flex-wrap items-center gap-3 mb-6">
+        <select name="genre" defaultValue={filters.genre} className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white text-sm sm:text-base w-full sm:w-auto">
           <option value="">Все жанры</option>
           {genres.map((g: any) => (
-            <option key={g.slug} value={g.slug}>
-              {g.name}
-            </option>
+            <option key={g.slug} value={g.slug}>{g.name}</option>
           ))}
         </select>
-        <input
-          type="number"
-          name="year"
-          placeholder="Год"
-          defaultValue={sp?.year || ''}
-          className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white text-sm sm:text-base w-full sm:w-24"
-        />
-        <select
-          name="status"
-          defaultValue={sp?.status || 'all'}
-          className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white text-sm sm:text-base w-full sm:w-auto"
-        >
+        <input type="number" name="year" placeholder="Год" defaultValue={filters.year} className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white text-sm sm:text-base w-full sm:w-24" />
+        <select name="status" defaultValue={filters.status} className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white text-sm sm:text-base w-full sm:w-auto">
           <option value="all">Все статусы</option>
           <option value="ongoing">Выходит</option>
           <option value="completed">Завершён</option>
           <option value="announced">Анонсирован</option>
         </select>
-        <button
-          type="submit"
-          className="bg-neo-pink hover:bg-neo-pink/80 text-white px-5 py-2 rounded-xl text-sm sm:text-base"
-        >
-          Фильтровать
-        </button>
+        <button type="submit" className="bg-neo-pink hover:bg-neo-pink/80 text-white px-5 py-2 rounded-xl text-sm sm:text-base">Фильтровать</button>
       </form>
 
-      <Suspense fallback={<AnimeGridSkeleton count={20} />}>
-        <CatalogContent sp={sp || {}} />
-      </Suspense>
+      <AnimeGrid anime={anime} />
+
+      {/* Индикатор загрузки и триггер для бесконечной прокрутки */}
+      <div ref={loadMoreRef} className="flex justify-center py-8">
+        {loading && <AnimeGridSkeleton count={4} />}
+        {!hasMore && anime.length > 0 && (
+          <p className="text-gray-400">Все аниме загружены</p>
+        )}
+      </div>
     </div>
   )
 }
