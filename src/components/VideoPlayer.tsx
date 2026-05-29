@@ -35,8 +35,12 @@ export default function VideoPlayer({ src, title, onEnded }: { src: string; titl
       video.src = src
     }
 
+    // Устанавливаем заголовок через data-атрибут
+    if (title) {
+      video.setAttribute('data-plyr-title', title)
+    }
+
     const player = new Plyr(video, {
-      title: title || '',
       controls: [
         'play-large', 'play', 'progress', 'current-time', 'mute', 'volume',
         'captions', 'settings', 'pip', 'airplay', 'fullscreen'
