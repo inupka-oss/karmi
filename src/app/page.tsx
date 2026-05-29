@@ -53,21 +53,21 @@ export default async function HomePage({
     .order('created_at', { ascending: false })
     .limit(10)
 
-  // Поиск и фильтрация (основной список)
-  let query = supabase.from('anime').select(`*, genres(name, slug)`, { count: 'exact' })
+  // Каталог (все аниме с пагинацией)
+  let catalogQuery = supabase.from('anime').select(`*, genres(name, slug)`, { count: 'exact' })
   if (sp?.q) {
-    query = query.or(`title_ru.ilike.%${sp.q}%,title_en.ilike.%${sp.q}%`)
+    catalogQuery = catalogQuery.or(`title_ru.ilike.%${sp.q}%,title_en.ilike.%${sp.q}%`)
   }
   if (sp?.genre) {
-    query = query.filter('genres.slug', 'eq', sp.genre)
+    catalogQuery = catalogQuery.filter('genres.slug', 'eq', sp.genre)
   }
   if (sp?.year) {
-    query = query.eq('year', parseInt(sp.year))
+    catalogQuery = catalogQuery.eq('year', parseInt(sp.year))
   }
   const from = (currentPage - 1) * PAGE_SIZE
   const to = from + PAGE_SIZE - 1
-  query = query.range(from, to).order('created_at', { ascending: false })
-  const { data: anime, count } = await query
+  catalogQuery = catalogQuery.range(from, to).order('created_at', { ascending: false })
+  const { data: catalog, count } = await catalogQuery
 
   const genres = await getGenres()
   const totalPages = Math.ceil((count || 0) / PAGE_SIZE)
@@ -132,28 +132,26 @@ export default async function HomePage({
         </section>
       )}
 
-      {/* Результаты поиска (если есть фильтры или поиск) */}
-      {anime && anime.length > 0 && (sp?.q || sp?.genre || sp?.year) && (
-        <section className="mb-10">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">🔍 Результаты поиска</h2>
-          <AnimeGrid anime={anime} />
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-4 mt-8">
-              {currentPage > 1 && (
-                <Link href={buildPageUrl(currentPage - 1)} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-sm sm:text-base transition">
-                  ← Назад
-                </Link>
-              )}
-              <span className="text-white text-sm sm:text-base">Страница {currentPage} из {totalPages}</span>
-              {currentPage < totalPages && (
-                <Link href={buildPageUrl(currentPage + 1)} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-sm sm:text-base transition">
-                  Вперед →
-                </Link>
-              )}
-            </div>
-          )}
-        </section>
-      )}
+      {/* Каталог (все аниме) */}
+      <section>
+        <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">📚 Каталог</h2>
+        <AnimeGrid anime={catalog || []} />
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-4 mt-8">
+            {currentPage > 1 && (
+              <Link href={buildPageUrl(currentPage - 1)} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-sm sm:text-base transition">
+                ← Назад
+              </Link>
+            )}
+            <span className="text-white text-sm sm:text-base">Страница {currentPage} из {totalPages}</span>
+            {currentPage < totalPages && (
+              <Link href={buildPageUrl(currentPage + 1)} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-sm sm:text-base transition">
+                Вперед →
+              </Link>
+            )}
+          </div>
+        )}
+      </section>
     </div>
   )
 }
