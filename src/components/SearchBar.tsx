@@ -12,15 +12,15 @@ export default function SearchBar() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2 mb-6">
+    <form onSubmit={handleSubmit} className="flex gap-2 flex-1 sm:flex-none">
       <input
         type="text"
         placeholder="Поиск аниме..."
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-neo-pink w-full max-w-xs"
+        className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-neo-pink w-full sm:w-auto min-w-[200px]"
       />
-      <button type="submit" className="bg-neo-pink hover:bg-neo-pink/80 text-white px-4 py-2 rounded-xl">
+      <button type="submit" className="bg-neo-pink hover:bg-neo-pink/80 text-white px-4 py-2 rounded-xl text-sm sm:text-base whitespace-nowrap">
         Искать
       </button>
     </form>

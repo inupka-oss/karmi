@@ -61,23 +61,31 @@ export default async function HomePage({
         Karmi
       </h1>
 
-      {/* Ряд с кнопками и поиском */}
+      {/* Единый ряд: поиск + кнопки иконок */}
       <div className="flex flex-wrap items-center gap-3 mb-4 sm:mb-6">
-        <div className="flex items-center gap-2 order-1 w-full sm:w-auto">
-          <SearchBar />
-        </div>
-        <div className="flex items-center gap-2 order-2 sm:order-3">
-          <RandomAnimeButton />
-          <Link href="/favorites" className="bg-white/10 hover:bg-white/20 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base transition" title="Избранное">
-            ♥
-          </Link>
-          <Link href="/ongoing" className="bg-white/10 hover:bg-white/20 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base transition" title="Онгоинги">
-            📅
-          </Link>
-          <Link href="/profile" className="bg-white/10 hover:bg-white/20 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base transition" title="Профиль">
-            👤
-          </Link>
-        </div>
+        <SearchBar />
+        <RandomAnimeButton />
+        <Link
+          href="/favorites"
+          className="bg-white/10 hover:bg-white/20 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base transition"
+          title="Избранное"
+        >
+          ♥
+        </Link>
+        <Link
+          href="/ongoing"
+          className="bg-white/10 hover:bg-white/20 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base transition"
+          title="Онгоинги"
+        >
+          📅
+        </Link>
+        <Link
+          href="/profile"
+          className="bg-white/10 hover:bg-white/20 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base transition"
+          title="Профиль"
+        >
+          👤
+        </Link>
       </div>
 
       {/* Фильтры */}
@@ -106,23 +114,29 @@ export default async function HomePage({
 
       <AnimeGrid anime={anime || []} />
 
-      {/* Пагинация */}
       {totalPages > 1 && (
         <div className="flex justify-center items-center gap-4 mt-8">
           {currentPage > 1 && (
-            <Link href={buildPageUrl(currentPage - 1)} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-sm sm:text-base transition">
+            <Link
+              href={buildPageUrl(currentPage - 1)}
+              className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-sm sm:text-base transition"
+            >
               ← Назад
             </Link>
           )}
-          <span className="text-white text-sm sm:text-base">Страница {currentPage} из {totalPages}</span>
+          <span className="text-white text-sm sm:text-base">
+            Страница {currentPage} из {totalPages}
+          </span>
           {currentPage < totalPages && (
-            <Link href={buildPageUrl(currentPage + 1)} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-sm sm:text-base transition">
+            <Link
+              href={buildPageUrl(currentPage + 1)}
+              className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-sm sm:text-base transition"
+            >
               Вперед →
             </Link>
           )}
         </div>
       )}
-    </div> 
+    </div>
   )
-  
 }
