@@ -56,30 +56,36 @@ export default async function HomePage({
   }
 
   return (
-    <div className="min-h-screen px-2 sm:px-4 py-4 sm:py-8 max-w-7xl mx-auto">
-      <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-2 text-glow-white">
+    <div className="min-h-screen px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-7xl mx-auto">
+      <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-4 sm:mb-6 text-glow-white">
         Karmi
       </h1>
 
-      <div className="flex flex-wrap gap-2 sm:gap-4 items-center mb-4 sm:mb-6">
-        <SearchBar />
-        <RandomAnimeButton />
-        <Link href="/favorites" className="bg-white/10 hover:bg-white/20 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base transition">
-          ♥
-        </Link>
-        <Link href="/ongoing" className="bg-white/10 hover:bg-white/20 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base transition">
-          📅
-        </Link>
-        <Link href="/profile" className="bg-white/10 hover:bg-white/20 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base transition">
-          👤
-        </Link>
+      {/* Ряд с кнопками и поиском */}
+      <div className="flex flex-wrap items-center gap-3 mb-4 sm:mb-6">
+        <div className="flex items-center gap-2 order-1 w-full sm:w-auto">
+          <SearchBar />
+        </div>
+        <div className="flex items-center gap-2 order-2 sm:order-3">
+          <RandomAnimeButton />
+          <Link href="/favorites" className="bg-white/10 hover:bg-white/20 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base transition" title="Избранное">
+            ♥
+          </Link>
+          <Link href="/ongoing" className="bg-white/10 hover:bg-white/20 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base transition" title="Онгоинги">
+            📅
+          </Link>
+          <Link href="/profile" className="bg-white/10 hover:bg-white/20 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base transition" title="Профиль">
+            👤
+          </Link>
+        </div>
       </div>
 
-      <form className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-4 mb-4 sm:mb-6">
+      {/* Фильтры */}
+      <form className="flex flex-wrap items-center gap-3 mb-6">
         <select
           name="genre"
           defaultValue={sp?.genre || ''}
-          className="bg-white/10 border border-white/20 rounded-xl px-3 sm:px-4 py-2 text-white text-sm sm:text-base w-full sm:w-auto"
+          className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white text-sm sm:text-base w-full sm:w-auto"
         >
           <option value="">Все жанры</option>
           {genres.map((g: any) => (
@@ -91,25 +97,26 @@ export default async function HomePage({
           name="year"
           placeholder="Год"
           defaultValue={sp?.year || ''}
-          className="bg-white/10 border border-white/20 rounded-xl px-3 sm:px-4 py-2 text-white text-sm sm:text-base w-full sm:w-24"
+          className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white text-sm sm:text-base w-full sm:w-24"
         />
-        <button type="submit" className="bg-neo-pink hover:bg-neo-pink/80 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base">
+        <button type="submit" className="bg-neo-pink hover:bg-neo-pink/80 text-white px-5 py-2 rounded-xl text-sm sm:text-base">
           Фильтровать
         </button>
       </form>
 
       <AnimeGrid anime={anime || []} />
 
+      {/* Пагинация */}
       {totalPages > 1 && (
-        <div className="flex justify-center gap-2 sm:gap-4 mt-6 sm:mt-8">
+        <div className="flex justify-center items-center gap-4 mt-8">
           {currentPage > 1 && (
-            <Link href={buildPageUrl(currentPage - 1)} className="bg-white/10 hover:bg-white/20 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base">
+            <Link href={buildPageUrl(currentPage - 1)} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-sm sm:text-base transition">
               ← Назад
             </Link>
           )}
-          <span className="text-white py-2 text-sm sm:text-base">Страница {currentPage} из {totalPages}</span>
+          <span className="text-white text-sm sm:text-base">Страница {currentPage} из {totalPages}</span>
           {currentPage < totalPages && (
-            <Link href={buildPageUrl(currentPage + 1)} className="bg-white/10 hover:bg-white/20 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base">
+            <Link href={buildPageUrl(currentPage + 1)} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-sm sm:text-base transition">
               Вперед →
             </Link>
           )}
