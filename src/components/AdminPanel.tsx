@@ -36,6 +36,7 @@ interface Anime {
   studio?: string
   director?: string
   cast?: string
+  trailer_url?: string
 }
 
 export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
@@ -62,6 +63,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
   const [studio, setStudio] = useState('')
   const [director, setDirector] = useState('')
   const [cast, setCast] = useState('')
+  const [trailerUrl, setTrailerUrl] = useState('')  // новое поле
 
   // Связанные аниме
   const [relatedEntries, setRelatedEntries] = useState<RelatedAnime[]>([])
@@ -120,6 +122,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     setStudio('')
     setDirector('')
     setCast('')
+    setTrailerUrl('')
   }
 
   const openAddModal = () => {
@@ -140,6 +143,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     setStudio(anime.studio || '')
     setDirector(anime.director || '')
     setCast(anime.cast || '')
+    setTrailerUrl(anime.trailer_url || '')
     const currentGenreIds = anime.genres ? anime.genres.map(g => g.id) : []
     setSelectedGenres(currentGenreIds)
     setShowModal(true)
@@ -178,6 +182,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
       studio: studio || null,
       director: director || null,
       cast: cast || null,
+      trailer_url: trailerUrl || null,  // новое поле
     }
 
     if (editingAnime) {
@@ -563,6 +568,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
               <input placeholder="Студия" value={studio} onChange={e => setStudio(e.target.value)} className="bg-white/10 border border-white/20 rounded-xl px-3 sm:px-4 py-2 text-white text-sm sm:text-base" />
               <input placeholder="Режиссёр" value={director} onChange={e => setDirector(e.target.value)} className="bg-white/10 border border-white/20 rounded-xl px-3 sm:px-4 py-2 text-white text-sm sm:text-base" />
               <textarea placeholder="Актёры / сэйю (через запятую)" value={cast} onChange={e => setCast(e.target.value)} rows={2} className="bg-white/10 border border-white/20 rounded-xl px-3 sm:px-4 py-2 text-white text-sm sm:text-base" />
+              <input placeholder="URL трейлера (YouTube)" value={trailerUrl} onChange={e => setTrailerUrl(e.target.value)} className="bg-white/10 border border-white/20 rounded-xl px-3 sm:px-4 py-2 text-white text-sm sm:text-base" />
               <div>
                 <label className="text-xs sm:text-sm text-gray-400">Постер (файл)</label>
                 <input type="file" accept="image/*" onChange={e => setPosterFile(e.target.files?.[0] || null)} className="text-white text-xs sm:text-sm mt-1" />
