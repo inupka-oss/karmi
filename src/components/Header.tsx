@@ -6,10 +6,14 @@ import { useEffect, useState } from 'react'
 export default function Header() {
   const pathname = usePathname()
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
+  const [loggedIn, setLoggedIn] = useState(false)
 
   useEffect(() => {
     const saved = localStorage.getItem('karmi-theme')
     if (saved === 'light') setTheme('light')
+    // Проверяем, есть ли кука доступа
+    const hasToken = document.cookie.includes('sb-access-token=')
+    setLoggedIn(hasToken)
   }, [])
 
   useEffect(() => {
@@ -37,7 +41,11 @@ export default function Header() {
           <Link href="/" className={linkClass('/')}>Главная</Link>
           <Link href="/ongoing" className={linkClass('/ongoing')}>Онгоинги</Link>
           <Link href="/favorites" className={linkClass('/favorites')}>Избранное</Link>
-          <Link href="/login" className={linkClass('/login')}>Войти</Link>
+          {loggedIn ? (
+            <Link href="/profile" className={linkClass('/profile')}>Профиль</Link>
+          ) : (
+            <Link href="/login" className={linkClass('/login')}>Войти</Link>
+          )}
         </nav>
 
         <div className="flex items-center gap-2">
@@ -48,11 +56,6 @@ export default function Header() {
           >
             {theme === 'dark' ? '☀️' : '🌙'}
           </button>
-
-          {/* Мобильное меню (простая версия) */}
-          <div className="md:hidden">
-            {/* Можно добавить выпадающее меню позже */}
-          </div>
         </div>
       </div>
     </header>

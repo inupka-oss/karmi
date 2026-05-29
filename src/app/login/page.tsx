@@ -29,8 +29,8 @@ export default function LoginPage() {
       return
     }
     const data = await res.json()
-    document.cookie = `sb-access-token=${data.access_token}; path=/; max-age=3600; SameSite=Lax`
-    document.cookie = `sb-refresh-token=${data.refresh_token}; path=/; max-age=3600; SameSite=Lax`
+    document.cookie = `sb-access-token=${data.access_token}; path=/; max-age=604800; SameSite=Lax`
+    document.cookie = `sb-refresh-token=${data.refresh_token}; path=/; max-age=604800; SameSite=Lax`
     router.push('/profile')
   }
 
