@@ -48,8 +48,9 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 glass backdrop-blur-md border-b border-white/10">
       <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-3">
+        {/* Логотип: Kar белое, mi розовое */}
         <Link href="/" className="text-2xl font-bold text-glow-white" onClick={handleNavClick}>
-          Karmi
+          Kar<span className="text-neo-pink">mi</span>
         </Link>
 
         {/* Десктопная навигация */}
@@ -73,7 +74,6 @@ export default function Header() {
 
         {/* Правая часть: уведомления, тема, бургер */}
         <div className="flex items-center gap-2">
-          {/* Колокольчик уведомлений */}
           <Link href="/notifications" className="relative p-2 rounded-xl bg-white/10 hover:bg-white/20 transition" onClick={() => clearNotifications()}>
             🔔
             {newEpisodes.length > 0 && (

@@ -28,14 +28,13 @@ export default async function HomePage({
   const currentPage = parseInt(sp?.page || '1') || 1
   const supabase = await createServerSupabase()
 
-  // Последние обновления (эпизоды с аниме)
+  // Последние обновления
   const { data: recentlyUpdated } = await supabase
     .from('episodes')
     .select('id, episode_number, anime_id, created_at, anime!inner(title_ru, poster_url, genres(name, slug))')
     .order('created_at', { ascending: false })
     .limit(15)
 
-  // Убираем дубликаты аниме, но оставляем несколько последних эпизодов (можно показывать все)
   const uniqueRecent = recentlyUpdated || []
 
   // Популярное
@@ -83,8 +82,9 @@ export default async function HomePage({
 
   return (
     <div className="min-h-screen px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-7xl mx-auto">
+      {/* Заголовок: Kar белое, mi розовое */}
       <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-4 sm:mb-6 text-glow-white">
-        Karmi
+        Kar<span className="text-neo-pink text-glow-pink">mi</span>
       </h1>
 
       <div className="flex flex-wrap items-center gap-3 mb-4 sm:mb-6">
@@ -108,7 +108,6 @@ export default async function HomePage({
         <button type="submit" className="bg-neo-pink hover:bg-neo-pink/80 text-white px-5 py-2 rounded-xl text-sm sm:text-base">Фильтровать</button>
       </form>
 
-      {/* Слайдер последних обновлений */}
       {uniqueRecent.length > 0 && (
         <section className="mb-10">
           <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">🔥 Последние обновления</h2>
@@ -116,7 +115,6 @@ export default async function HomePage({
         </section>
       )}
 
-      {/* Популярное */}
       {popular && popular.length > 0 && (
         <section className="mb-10">
           <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">⭐ Популярное</h2>
@@ -124,7 +122,6 @@ export default async function HomePage({
         </section>
       )}
 
-      {/* Онгоинги */}
       {ongoing && ongoing.length > 0 && (
         <section className="mb-10">
           <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">📺 Сейчас выходит</h2>
@@ -132,7 +129,6 @@ export default async function HomePage({
         </section>
       )}
 
-      {/* Результаты поиска */}
       {searchResults && searchResults.length > 0 && (sp?.q || sp?.genre || sp?.year) && (
         <section className="mb-10">
           <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">🔍 Результаты поиска</h2>
