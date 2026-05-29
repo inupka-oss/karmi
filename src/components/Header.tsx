@@ -11,7 +11,6 @@ export default function Header() {
   useEffect(() => {
     const saved = localStorage.getItem('karmi-theme')
     if (saved === 'light') setTheme('light')
-    // Проверяем, есть ли кука доступа
     const hasToken = document.cookie.includes('sb-access-token=')
     setLoggedIn(hasToken)
   }, [])
@@ -39,6 +38,7 @@ export default function Header() {
 
         <nav className="hidden md:flex items-center gap-2">
           <Link href="/" className={linkClass('/')}>Главная</Link>
+          <Link href="/catalog" className={linkClass('/catalog')}>Каталог</Link>
           <Link href="/ongoing" className={linkClass('/ongoing')}>Онгоинги</Link>
           <Link href="/favorites" className={linkClass('/favorites')}>Избранное</Link>
           {loggedIn ? (
