@@ -82,19 +82,14 @@ export default async function HomePage({
 
   return (
     <div className="min-h-screen px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-7xl mx-auto">
-      {/* Заголовок: Kar белое, mi розовое */}
       <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-4 sm:mb-6 text-glow-white">
         Kar<span className="text-neo-pink text-glow-pink">mi</span>
       </h1>
 
+      {/* Строка поиска и кнопка случайного аниме */}
       <div className="flex flex-wrap items-center gap-3 mb-4 sm:mb-6">
         <SearchBar />
         <RandomAnimeButton />
-        <Link href="/favorites" className="bg-white/10 hover:bg-white/20 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base transition" title="Избранное">
-          <span className="text-neo-pink">♥</span>
-        </Link>
-        <Link href="/ongoing" className="bg-white/10 hover:bg-white/20 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base transition" title="Онгоинги">📅</Link>
-        <Link href="/profile" className="bg-white/10 hover:bg-white/20 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base transition" title="Профиль">👤</Link>
       </div>
 
       <form className="flex flex-wrap items-center gap-3 mb-6">
