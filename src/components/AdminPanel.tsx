@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import toast, { Toaster } from 'react-hot-toast'
 
 interface Genre {
   id: number
@@ -75,12 +76,10 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
   const [cast, setCast] = useState('')
   const [trailerUrl, setTrailerUrl] = useState('')
 
-  // Связанные аниме
   const [relatedEntries, setRelatedEntries] = useState<RelatedAnime[]>([])
   const [relatedType, setRelatedType] = useState('sequel')
   const [relatedTargetId, setRelatedTargetId] = useState('')
 
-  // Эпизоды
   const [expandedAnimeId, setExpandedAnimeId] = useState<string | null>(null)
   const [episodes, setEpisodes] = useState<Episode[]>([])
   const [episodeForm, setEpisodeForm] = useState({
@@ -95,7 +94,6 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
   const [videoFile, setVideoFile] = useState<File | null>(null)
   const [uploadingVideo, setUploadingVideo] = useState(false)
 
-  // Скриншоты
   const [screenshots, setScreenshots] = useState<Screenshot[]>([])
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null)
   const [uploadingScreenshot, setUploadingScreenshot] = useState(false)
@@ -185,7 +183,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
       try {
         finalPosterUrl = await uploadPoster(posterFile)
       } catch (err) {
-        alert('Ошибка загрузки постера')
+        toast.error('Ошибка загрузки постера')
         setUploading(false)
         return
       }
@@ -218,8 +216,9 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
         },
         body: JSON.stringify(animeData),
       })
-      if (!res.ok) { alert('Ошибка обновления'); setUploading(false); return }
+      if (!res.ok) { toast.error('Ошибка обновления'); setUploading(false); return }
       const updatedAnime = (await res.json())[0]
+      toast.success('Аниме обновлено!')
 
       await fetch(`${supabaseUrl}/rest/v1/anime_genres?anime_id=eq.${editingAnime.id}`, {
         method: 'DELETE',
@@ -250,8 +249,9 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
         },
         body: JSON.stringify(animeData),
       })
-      if (!res.ok) { alert('Ошибка создания'); setUploading(false); return }
+      if (!res.ok) { toast.error('Ошибка создания'); setUploading(false); return }
       const newAnime = await res.json()
+      toast.success('Аниме добавлено!')
 
       if (selectedGenres.length > 0) {
         await Promise.all(selectedGenres.map(genreId =>
@@ -292,9 +292,10 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
       headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${accessToken}` },
     })
     if (res.ok) {
+      toast.success('Аниме удалено')
       setAnimeList(prev => prev.filter(a => a.id !== id))
       if (expandedAnimeId === id) setExpandedAnimeId(null)
-    } else alert('Ошибка удаления')
+    } else toast.error('Ошибка удаления')
   }
 
   // Связанные аниме
@@ -325,7 +326,8 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
         relation_type: relatedType,
       }),
     })
-    if (!res.ok) { alert('Ошибка добавления связи'); return }
+    if (!res.ok) { toast.error('Ошибка добавления связи'); return }
+    toast.success('Связь добавлена')
     await loadRelated(animeId)
     setRelatedTargetId('')
   }
@@ -336,6 +338,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
       method: 'DELETE',
       headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${accessToken}` },
     })
+    toast.success('Связь удалена')
     await loadRelated(animeId)
   }
 
@@ -368,7 +371,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
         const data = await res.json()
         finalVideoUrl = data.hls_url || data.url
       } catch (err) {
-        alert('Ошибка загрузки видео')
+        toast.error('Ошибка загрузки видео')
         setUploadingVideo(false)
         return
       }
@@ -377,7 +380,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     }
 
     if (!finalVideoUrl) {
-      alert('Введите ссылку или выберите видеофайл')
+      toast.error('Введите ссылку или выберите видеофайл')
       return
     }
 
@@ -400,7 +403,8 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
       },
       body: JSON.stringify(body),
     })
-    if (!res.ok) { alert('Ошибка добавления серии'); return }
+    if (!res.ok) { toast.error('Ошибка добавления серии'); return }
+    toast.success('Серия добавлена!')
     await loadEpisodes(animeId)
     setEpisodeForm({
       episode_number: episodeForm.episode_number + 1,
@@ -419,6 +423,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
       method: 'DELETE',
       headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${accessToken}` },
     })
+    toast.success('Серия удалена')
     await loadEpisodes(animeId)
   }
 
@@ -472,9 +477,10 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
         },
         body: JSON.stringify({ anime_id: animeId, url: publicUrl, order_index: screenshots.length }),
       })
+      toast.success('Скриншот загружен')
       await loadScreenshots(animeId)
     } catch (err) {
-      alert('Ошибка загрузки скриншота')
+      toast.error('Ошибка загрузки скриншота')
     } finally {
       setUploadingScreenshot(false)
       setScreenshotFile(null)
@@ -487,7 +493,44 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
       method: 'DELETE',
       headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${accessToken}` },
     })
+    toast.success('Скриншот удалён')
     await loadScreenshots(animeId)
+  }
+
+  const moveScreenshot = async (screenshotId: string, direction: 'up' | 'down') => {
+    const currentIndex = screenshots.findIndex(sc => sc.id === screenshotId)
+    if (currentIndex === -1) return
+    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
+    if (newIndex < 0 || newIndex >= screenshots.length) return
+
+    const updatedScreenshots = [...screenshots]
+    const temp = updatedScreenshots[currentIndex]
+    updatedScreenshots[currentIndex] = updatedScreenshots[newIndex]
+    updatedScreenshots[newIndex] = temp
+
+    const accessToken = getAccessToken()
+    await Promise.all([
+      fetch(`${supabaseUrl}/rest/v1/screenshots?id=eq.${updatedScreenshots[currentIndex].id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ order_index: currentIndex }),
+      }),
+      fetch(`${supabaseUrl}/rest/v1/screenshots?id=eq.${updatedScreenshots[newIndex].id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ order_index: newIndex }),
+      }),
+    ])
+
+    setScreenshots(updatedScreenshots)
   }
 
   useEffect(() => {
@@ -496,6 +539,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
 
   return (
     <div className="max-w-6xl mx-auto p-2 sm:p-4">
+      <Toaster />
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-2">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-white">Админ-панель Karmi</h1>
@@ -514,7 +558,6 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
         </div>
       </div>
 
-      {/* Статистика */}
       <div className="grid grid-cols-2 gap-2 sm:gap-4 mb-4 sm:mb-6">
         <div className="glass p-3 sm:p-4 rounded-xl text-center">
           <div className="text-xl sm:text-2xl font-bold text-white">{stats.totalAnime}</div>
@@ -526,7 +569,6 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
         </div>
       </div>
 
-      {/* Список аниме */}
       <div className="grid gap-2 sm:gap-4">
         {animeList.map(anime => (
           <div key={anime.id}>
@@ -555,10 +597,8 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
               </div>
             </div>
 
-            {/* Панель управления сериями, связями и скриншотами */}
             {expandedAnimeId === anime.id && (
               <div className="mt-2 p-3 sm:p-4 glass rounded-xl space-y-4 sm:space-y-6">
-                {/* Серии */}
                 <div>
                   <h4 className="text-base sm:text-lg font-semibold mb-2">Серии</h4>
                   {episodes.length === 0 && <p className="text-gray-400 text-xs sm:text-sm">Нет добавленных серий.</p>}
@@ -595,7 +635,6 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                       className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm flex-1 w-full sm:w-auto"
                     />
 
-                    {/* Метки опенинга/эндинга */}
                     <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">
                       <input type="number" placeholder="Опенинг начало (сек)" value={episodeForm.opening_start ?? ''} onChange={e => setEpisodeForm({...episodeForm, opening_start: e.target.value ? Number(e.target.value) : undefined})}
                         className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm" />
@@ -617,7 +656,6 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                   </div>
                 </div>
 
-                {/* Связанные аниме */}
                 <div>
                   <h4 className="text-base sm:text-lg font-semibold mb-2">Связанное</h4>
                   <ul className="space-y-2 mb-4 text-sm">
@@ -651,13 +689,28 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                   </div>
                 </div>
 
-                {/* Кадры из аниме */}
                 <div>
                   <h4 className="text-base sm:text-lg font-semibold mb-2">Кадры</h4>
                   <div className="flex gap-2 overflow-x-auto pb-2">
-                    {screenshots.map(sc => (
-                      <div key={sc.id} className="relative flex-shrink-0 w-20 h-14 rounded overflow-hidden">
+                    {screenshots.sort((a, b) => a.order_index - b.order_index).map((sc, idx) => (
+                      <div key={sc.id} className="relative flex-shrink-0 w-20 h-14 rounded overflow-hidden group">
                         <img src={sc.url} className="object-cover w-full h-full" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-1">
+                          <button
+                            onClick={() => moveScreenshot(sc.id, 'up')}
+                            disabled={idx === 0}
+                            className="text-white text-xs bg-black/50 rounded p-0.5 disabled:opacity-30"
+                          >
+                            ▲
+                          </button>
+                          <button
+                            onClick={() => moveScreenshot(sc.id, 'down')}
+                            disabled={idx === screenshots.length - 1}
+                            className="text-white text-xs bg-black/50 rounded p-0.5 disabled:opacity-30"
+                          >
+                            ▼
+                          </button>
+                        </div>
                         <button onClick={() => handleDeleteScreenshot(sc.id, anime.id)} className="absolute top-0 right-0 bg-red-500/50 text-white text-xs p-0.5">×</button>
                       </div>
                     ))}
@@ -675,7 +728,6 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
         ))}
       </div>
 
-      {/* Модальное окно добавления/редактирования аниме */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-neo-dark border border-white/10 rounded-2xl p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">

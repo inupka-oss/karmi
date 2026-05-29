@@ -3,6 +3,7 @@ import { Rubik } from 'next/font/google'
 import './globals.css'
 import Header from '@/components/Header'
 import ScrollToTopButton from '@/components/ScrollToTopButton'
+import ProgressBar from './ProgressBar'
 
 const rubik = Rubik({ subsets: ['cyrillic', 'latin'], variable: '--font-rubik' })
 
@@ -22,6 +23,7 @@ export default function RootLayout({
   return (
     <html lang="ru" className="dark">
       <body className={`${rubik.variable} font-sans bg-neo-dark text-white`}>
+        <ProgressBar />
         <Header />
         <main className="relative z-10 animate-fade-in">
           {children}

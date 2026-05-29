@@ -31,6 +31,7 @@ interface Anime {
   director?: string
   cast?: string
   trailer_url?: string
+  views?: number
 }
 
 function getAccessToken(): string | null {
@@ -51,6 +52,11 @@ export default function AnimeView({
   const [progress, setProgress] = useState<{ episodeId: string; time: number } | null>(null)
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const [shareUrl, setShareUrl] = useState('')
+
+  useEffect(() => {
+    setShareUrl(window.location.href)
+  }, [])
 
   useEffect(() => {
     const token = getAccessToken()
@@ -108,6 +114,27 @@ export default function AnimeView({
             onContinueWatching={handleContinueWatching}
             progress={progress}
           />
+          {/* Кнопки "Поделиться" */}
+          {shareUrl && (
+            <div className="flex gap-2 mt-4">
+              <a
+                href={`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(anime.title_ru)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-[#2AABEE] hover:bg-[#2291c7] text-white px-3 py-2 rounded-xl text-xs font-semibold transition flex-1 text-center"
+              >
+                Telegram
+              </a>
+              <a
+                href={`https://vk.com/share.php?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(anime.title_ru)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-[#0077FF] hover:bg-[#0066dd] text-white px-3 py-2 rounded-xl text-xs font-semibold transition flex-1 text-center"
+              >
+                VK
+              </a>
+            </div>
+          )}
         </div>
         <div className="flex-1">
           <h1 className="text-4xl font-bold text-white">{anime.title_ru}</h1>
@@ -128,6 +155,9 @@ export default function AnimeView({
               <StarRating rating={anime.rating || 0} />
             </div>
             <div><span className="text-gray-500">Статус:</span> {anime.status}</div>
+          </div>
+          <div className="flex items-center gap-2 mt-4 text-sm text-gray-400">
+            <span>👁 {anime.views || 0} просмотров</span>
           </div>
           <RatingForm animeId={anime.id} />
 
