@@ -53,7 +53,7 @@ export default async function HomePage({
     .order('created_at', { ascending: false })
     .limit(10)
 
-  // Поиск и фильтрация (показывается только если заданы параметры)
+  // Поиск и фильтрация
   let searchQuery = supabase.from('anime').select(`*, genres(name, slug)`, { count: 'exact' })
   if (sp?.q) {
     searchQuery = searchQuery.or(`title_ru.ilike.%${sp.q}%,title_en.ilike.%${sp.q}%`)
@@ -84,7 +84,7 @@ export default async function HomePage({
   return (
     <div className="min-h-screen px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-7xl mx-auto">
       <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-4 sm:mb-6 text-glow-white">
-        Karmi
+        K<span className="text-neo-pink text-glow-pink">armi</span>
       </h1>
 
       <div className="flex flex-wrap items-center gap-3 mb-4 sm:mb-6">
@@ -106,7 +106,6 @@ export default async function HomePage({
         <button type="submit" className="bg-neo-pink hover:bg-neo-pink/80 text-white px-5 py-2 rounded-xl text-sm sm:text-base">Фильтровать</button>
       </form>
 
-      {/* Последние обновления */}
       {uniqueRecent.length > 0 && (
         <section className="mb-10">
           <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">🔥 Последние обновления</h2>
@@ -114,7 +113,6 @@ export default async function HomePage({
         </section>
       )}
 
-      {/* Популярное */}
       {popular && popular.length > 0 && (
         <section className="mb-10">
           <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">⭐ Популярное</h2>
@@ -122,7 +120,6 @@ export default async function HomePage({
         </section>
       )}
 
-      {/* Онгоинги */}
       {ongoing && ongoing.length > 0 && (
         <section className="mb-10">
           <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">📺 Сейчас выходит</h2>
@@ -130,7 +127,6 @@ export default async function HomePage({
         </section>
       )}
 
-      {/* Результаты поиска (если заданы параметры) */}
       {searchResults && searchResults.length > 0 && (sp?.q || sp?.genre || sp?.year) && (
         <section className="mb-10">
           <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">🔍 Результаты поиска</h2>
