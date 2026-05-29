@@ -75,8 +75,9 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
   const [videoFile, setVideoFile] = useState<File | null>(null)
   const [uploadingVideo, setUploadingVideo] = useState(false)
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  // 🔑 Временно жёстко заданный ключ (потом вернём переменную окружения)
+  const supabaseUrl = "https://vwmtcdegjkgudhdxnpjr.supabase.co"
+  const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3bXRjZGVnamtndWRoZHhucGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NDI3ODMsImV4cCI6MjA5NTUxODc4M30.3r_lriy5OKfcyFop2OL3j1YJ6wp1BTpkWKHC9QSuNos"
 
   const getAccessToken = () => {
     const match = document.cookie.match(/sb-access-token=([^;]+)/)
@@ -311,7 +312,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     await loadRelated(animeId)
   }
 
-  // Эпизоды (без изменений)
+  // Эпизоды
   const loadEpisodes = async (animeId: string) => {
     const accessToken = getAccessToken()
     const res = await fetch(`${supabaseUrl}/rest/v1/episodes?anime_id=eq.${animeId}&order=episode_number.asc`, {
