@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Rubik } from 'next/font/google'
+import { Suspense } from 'react'
 import './globals.css'
 import Header from '@/components/Header'
 import ScrollToTopButton from '@/components/ScrollToTopButton'
@@ -23,7 +24,9 @@ export default function RootLayout({
   return (
     <html lang="ru" className="dark">
       <body className={`${rubik.variable} font-sans bg-neo-dark text-white`}>
-        <ProgressBar />
+        <Suspense fallback={null}>
+          <ProgressBar />
+        </Suspense>
         <Header />
         <main className="relative z-10 animate-fade-in">
           {children}
