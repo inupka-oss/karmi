@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import toast, { Toaster } from 'react-hot-toast'
 
@@ -388,16 +388,23 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     if (videoFile) {
       setUploadingVideo(true)
       try {
-        const formData = new FormData()
-        formData.append('file', videoFile)
-        const res = await fetch('/api/upload-video', {
+        const fileName = `${Date.now()}_${videoFile.name.replace(/\s/g, '_')}`
+        const res = await fetch(`${supabaseUrl}/storage/v1/object/videos/${fileName}`, {
           method: 'POST',
-          body: formData,
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'apikey': supabaseAnonKey,
+            'Content-Type': videoFile.type,
+          },
+          body: videoFile,
         })
-        if (!res.ok) throw new Error('Upload failed')
-        const data = await res.json()
-        finalVideoUrl = data.hls_url || data.url
-      } catch (err) {
+        if (!res.ok) {
+          const err = await res.json()
+          throw new Error(err.message || 'Upload failed')
+        }
+        finalVideoUrl = `${supabaseUrl}/storage/v1/object/public/videos/${fileName}`
+        toast.success('Видео загружено в Supabase Storage')
+      } catch (err: any) {
         toast.error('Ошибка загрузки видео')
         setUploadingVideo(false)
         return
@@ -752,7 +759,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                       className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm flex-1 w-full sm:w-auto" />
                     
                     <div className="flex flex-col gap-1 w-full sm:w-auto">
-                      <label className="text-xs text-gray-400">Видеофайл (если своё)</label>
+                      <label className="text-xs text-gray-400">Видеофайл (до 500 МБ)</label>
                       <input
                         type="file"
                         accept="video/*"
