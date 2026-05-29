@@ -52,9 +52,11 @@ export default function Header() {
           <Link href="/catalog" className={linkClass('/catalog')}>Каталог</Link>
           <Link href="/ongoing" className={linkClass('/ongoing')}>Онгоинги</Link>
           <Link href="/top" className={linkClass('/top')}>Топ-100</Link>
-          <Link href="/random" className={linkClass('/random')}>🎲</Link>
           <Link href="/favorites" className={linkClass('/favorites')}>
-            ♥ {favorites.length > 0 && <span className="ml-1 text-xs bg-neo-pink text-white px-1.5 py-0.5 rounded-full">{favorites.length}</span>}
+            <span className="text-neo-pink">♥</span> Избранное
+            {favorites.length > 0 && (
+              <span className="ml-1 text-xs bg-neo-pink text-white px-1.5 py-0.5 rounded-full">{favorites.length}</span>
+            )}
           </Link>
           {loggedIn ? (
             <Link href="/profile" className={linkClass('/profile')}>Профиль</Link>
