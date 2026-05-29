@@ -5,6 +5,7 @@ import './globals.css'
 import Header from '@/components/Header'
 import ScrollToTopButton from '@/components/ScrollToTopButton'
 import ProgressBar from './ProgressBar'
+import Footer from '@/components/Footer'
 
 const rubik = Rubik({ subsets: ['cyrillic', 'latin'], variable: '--font-rubik' })
 
@@ -28,9 +29,10 @@ export default function RootLayout({
           <ProgressBar />
         </Suspense>
         <Header />
-        <main className="relative z-10 animate-fade-in">
+        <main className="relative z-10 animate-fade-in min-h-screen">
           {children}
         </main>
+        <Footer />
         <ScrollToTopButton />
       </body>
     </html>

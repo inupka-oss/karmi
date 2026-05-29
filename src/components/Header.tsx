@@ -51,6 +51,16 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
+          {/* Ссылка на Telegram */}
+          <a
+            href="https://t.me/KarmiStudio"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-lg px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 transition flex items-center justify-center"
+            title="Наш Telegram-канал"
+          >
+            ✈️
+          </a>
           <button
             onClick={toggleTheme}
             className="text-lg px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 transition"
