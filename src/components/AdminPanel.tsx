@@ -75,7 +75,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
   const [videoFile, setVideoFile] = useState<File | null>(null)
   const [uploadingVideo, setUploadingVideo] = useState(false)
 
-  // 🔑 Временно жёстко заданный ключ (потом вернём переменную окружения)
+  // Временно жёстко заданный ключ (потом вернём переменную окружения)
   const supabaseUrl = "https://vwmtcdegjkgudhdxnpjr.supabase.co"
   const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3bXRjZGVnamtndWRoZHhucGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NDI3ODMsImV4cCI6MjA5NTUxODc4M30.3r_lriy5OKfcyFop2OL3j1YJ6wp1BTpkWKHC9QSuNos"
 
@@ -399,90 +399,92 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
   }, [initialAnime])
 
   return (
-    <div className="max-w-6xl mx-auto p-4">
-      <div className="flex justify-between items-center mb-6">
+    <div className="max-w-6xl mx-auto p-2 sm:p-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-2">
         <div>
-          <h1 className="text-3xl font-bold text-white">Админ-панель Karmi</h1>
-          <p className="text-gray-400">Вы вошли как: {userEmail}</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white">Админ-панель Karmi</h1>
+          <p className="text-sm text-gray-400">Вы вошли как: {userEmail}</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={openAddModal} className="bg-neo-pink hover:bg-neo-pink/80 text-white px-4 py-2 rounded-xl transition">
+          <button onClick={openAddModal} className="bg-neo-pink hover:bg-neo-pink/80 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base transition">
             Добавить аниме
           </button>
-          <button onClick={handleLogout} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl transition">
+          <button onClick={handleLogout} className="bg-red-500 hover:bg-red-600 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base transition">
             Выйти
           </button>
         </div>
       </div>
 
       {/* Статистика */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="glass p-4 rounded-xl text-center">
-          <div className="text-2xl font-bold text-white">{stats.totalAnime}</div>
-          <div className="text-gray-400">Аниме</div>
+      <div className="grid grid-cols-2 gap-2 sm:gap-4 mb-4 sm:mb-6">
+        <div className="glass p-3 sm:p-4 rounded-xl text-center">
+          <div className="text-xl sm:text-2xl font-bold text-white">{stats.totalAnime}</div>
+          <div className="text-xs sm:text-sm text-gray-400">Аниме</div>
         </div>
-        <div className="glass p-4 rounded-xl text-center">
-          <div className="text-2xl font-bold text-white">{stats.totalEpisodes}</div>
-          <div className="text-gray-400">Эпизодов</div>
+        <div className="glass p-3 sm:p-4 rounded-xl text-center">
+          <div className="text-xl sm:text-2xl font-bold text-white">{stats.totalEpisodes}</div>
+          <div className="text-xs sm:text-sm text-gray-400">Эпизодов</div>
         </div>
       </div>
 
       {/* Список аниме */}
-      <div className="grid gap-4">
+      <div className="grid gap-2 sm:gap-4">
         {animeList.map(anime => (
           <div key={anime.id}>
-            <div className="glass p-4 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center">
+            <div className="glass p-3 sm:p-4 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center">
               <div className="flex-1">
-                <h3 className="font-bold text-lg text-white">{anime.title_ru}</h3>
-                <div className="flex gap-2 flex-wrap mt-1">
+                <h3 className="font-bold text-base sm:text-lg text-white">{anime.title_ru}</h3>
+                <div className="flex gap-1 sm:gap-2 flex-wrap mt-1">
                   {anime.genres?.map(g => (
                     <span key={g.slug} className="text-xs bg-neo-pink/20 text-neo-pink px-2 py-0.5 rounded-full">{g.name}</span>
                   ))}
                 </div>
               </div>
-              <div className="flex items-center gap-4 mt-2 sm:mt-0">
-                <span className="text-sm text-gray-400">{anime.type} / {anime.year}</span>
-                <button onClick={() => toggleEpisodesPanel(anime.id)} className="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded-lg text-sm">
-                  Серии
-                </button>
-                <button onClick={() => openEditModal(anime)} className="bg-blue-500/20 hover:bg-blue-500/40 text-blue-400 hover:text-blue-300 px-3 py-1 rounded-lg text-sm transition">
-                  Ред.
-                </button>
-                <button onClick={() => handleDelete(anime.id)} className="bg-red-500/20 hover:bg-red-500/40 text-red-400 hover:text-red-300 px-3 py-1 rounded-lg text-sm transition">
-                  Удалить
-                </button>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 mt-2 sm:mt-0">
+                <span className="text-xs sm:text-sm text-gray-400">{anime.type} / {anime.year}</span>
+                <div className="flex gap-1 sm:gap-2">
+                  <button onClick={() => toggleEpisodesPanel(anime.id)} className="bg-white/10 hover:bg-white/20 text-white px-2 sm:px-3 py-1 rounded-lg text-xs sm:text-sm">
+                    Серии
+                  </button>
+                  <button onClick={() => openEditModal(anime)} className="bg-blue-500/20 hover:bg-blue-500/40 text-blue-400 px-2 sm:px-3 py-1 rounded-lg text-xs sm:text-sm">
+                    Ред.
+                  </button>
+                  <button onClick={() => handleDelete(anime.id)} className="bg-red-500/20 hover:bg-red-500/40 text-red-400 px-2 sm:px-3 py-1 rounded-lg text-xs sm:text-sm">
+                    Удалить
+                  </button>
+                </div>
               </div>
             </div>
 
             {/* Панель управления сериями и связями */}
             {expandedAnimeId === anime.id && (
-              <div className="mt-2 p-4 glass rounded-xl space-y-6">
+              <div className="mt-2 p-3 sm:p-4 glass rounded-xl space-y-4 sm:space-y-6">
                 {/* Серии */}
                 <div>
-                  <h4 className="text-lg font-semibold mb-2">Серии</h4>
-                  {episodes.length === 0 && <p className="text-gray-400 text-sm">Нет добавленных серий.</p>}
+                  <h4 className="text-base sm:text-lg font-semibold mb-2">Серии</h4>
+                  {episodes.length === 0 && <p className="text-gray-400 text-xs sm:text-sm">Нет добавленных серий.</p>}
                   <ul className="space-y-2 mb-4">
                     {episodes.map(ep => (
-                      <li key={ep.id} className="flex justify-between items-center bg-white/5 p-2 rounded-lg">
+                      <li key={ep.id} className="flex justify-between items-center bg-white/5 p-2 rounded-lg text-sm">
                         <span className="text-white">{ep.episode_number}. {ep.title || 'Без названия'}</span>
-                        <button onClick={() => handleDeleteEpisode(ep.id, anime.id)} className="text-red-400 hover:text-red-300 text-sm ml-4">Удалить</button>
+                        <button onClick={() => handleDeleteEpisode(ep.id, anime.id)} className="text-red-400 hover:text-red-300 text-xs sm:text-sm ml-2">Удалить</button>
                       </li>
                     ))}
                   </ul>
 
-                  <div className="flex gap-2 items-end flex-wrap">
+                  <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-end flex-wrap">
                     <input type="number" placeholder="№" value={episodeForm.episode_number} onChange={e => setEpisodeForm({...episodeForm, episode_number: Number(e.target.value)})}
-                      className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white w-20" min={1} />
+                      className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm w-full sm:w-20" min={1} />
                     <input type="text" placeholder="Название (необязательно)" value={episodeForm.title} onChange={e => setEpisodeForm({...episodeForm, title: e.target.value})}
-                      className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white flex-1" />
+                      className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm flex-1 w-full sm:w-auto" />
                     
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-1 w-full sm:w-auto">
                       <label className="text-xs text-gray-400">Видеофайл (если своё)</label>
                       <input
                         type="file"
                         accept="video/*"
                         onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
-                        className="text-white text-sm file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-neo-pink/20 file:text-neo-pink hover:file:bg-neo-pink/40"
+                        className="text-white text-xs file:mr-2 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-neo-pink/20 file:text-neo-pink hover:file:bg-neo-pink/40"
                       />
                     </div>
 
@@ -491,13 +493,13 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                       placeholder="Или ссылка на видео (embed)"
                       value={episodeForm.video_url}
                       onChange={e => setEpisodeForm({...episodeForm, video_url: e.target.value})}
-                      className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white flex-1"
+                      className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm flex-1 w-full sm:w-auto"
                     />
 
                     <button
                       onClick={() => handleAddEpisode(anime.id)}
                       disabled={uploadingVideo}
-                      className="bg-neo-pink hover:bg-neo-pink/80 text-white px-4 py-2 rounded-xl"
+                      className="bg-neo-pink hover:bg-neo-pink/80 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base"
                     >
                       {uploadingVideo ? 'Загрузка...' : 'Добавить'}
                     </button>
@@ -506,20 +508,20 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
 
                 {/* Связанные аниме */}
                 <div>
-                  <h4 className="text-lg font-semibold mb-2">Связанное</h4>
-                  <ul className="space-y-2 mb-4">
+                  <h4 className="text-base sm:text-lg font-semibold mb-2">Связанное</h4>
+                  <ul className="space-y-2 mb-4 text-sm">
                     {relatedEntries.map(rel => {
                       const relatedAnime = animeList.find(a => a.id === rel.related_id)
                       return (
                         <li key={rel.id} className="flex justify-between items-center bg-white/5 p-2 rounded-lg">
                           <span className="text-white">{rel.relation_type}: {relatedAnime?.title_ru || 'Неизвестно'}</span>
-                          <button onClick={() => handleDeleteRelated(rel.id, anime.id)} className="text-red-400 hover:text-red-300 text-sm">Удалить</button>
+                          <button onClick={() => handleDeleteRelated(rel.id, anime.id)} className="text-red-400 hover:text-red-300 text-xs sm:text-sm">Удалить</button>
                         </li>
                       )
                     })}
                   </ul>
-                  <div className="flex gap-2 items-end">
-                    <select value={relatedType} onChange={e => setRelatedType(e.target.value)} className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white">
+                  <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-end">
+                    <select value={relatedType} onChange={e => setRelatedType(e.target.value)} className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm w-full sm:w-auto">
                       <option value="sequel">Сиквел</option>
                       <option value="prequel">Приквел</option>
                       <option value="spin-off">Спин-офф</option>
@@ -528,13 +530,13 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                       <option value="special">Спешл</option>
                       <option value="alternative">Альтернатива</option>
                     </select>
-                    <select value={relatedTargetId} onChange={e => setRelatedTargetId(e.target.value)} className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white flex-1">
+                    <select value={relatedTargetId} onChange={e => setRelatedTargetId(e.target.value)} className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm w-full sm:w-auto flex-1">
                       <option value="">Выберите аниме</option>
                       {animeList.filter(a => a.id !== anime.id).map(a => (
                         <option key={a.id} value={a.id}>{a.title_ru}</option>
                       ))}
                     </select>
-                    <button onClick={() => handleAddRelated(anime.id)} className="bg-neo-pink hover:bg-neo-pink/80 text-white px-4 py-2 rounded-xl">Добавить связь</button>
+                    <button onClick={() => handleAddRelated(anime.id)} className="bg-neo-pink hover:bg-neo-pink/80 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base">Добавить связь</button>
                   </div>
                 </div>
               </div>
@@ -545,42 +547,42 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
 
       {/* Модальное окно добавления/редактирования аниме */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-neo-dark border border-white/10 rounded-2xl p-6 w-full max-w-md max-h-[80vh] overflow-y-auto">
-            <h2 className="text-xl font-bold text-white mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-neo-dark border border-white/10 rounded-2xl p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <h2 className="text-lg sm:text-xl font-bold text-white mb-4">
               {editingAnime ? 'Редактировать аниме' : 'Новое аниме'}
             </h2>
             <form onSubmit={handleSaveAnime} className="flex flex-col gap-3">
-              <input placeholder="Название (рус)" value={titleRu} onChange={e => setTitleRu(e.target.value)} className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white" required />
-              <input placeholder="Название (англ)" value={titleEn} onChange={e => setTitleEn(e.target.value)} className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white" />
-              <textarea placeholder="Описание" value={description} onChange={e => setDescription(e.target.value)} rows={3} className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white" />
-              <div className="flex gap-2">
-                <input type="number" placeholder="Год" value={year} onChange={e => setYear(Number(e.target.value))} className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white w-1/2" />
-                <input type="number" step="0.1" min="0" max="10" placeholder="Рейтинг" value={rating} onChange={e => setRating(Number(e.target.value))} className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white w-1/2" />
+              <input placeholder="Название (рус)" value={titleRu} onChange={e => setTitleRu(e.target.value)} className="bg-white/10 border border-white/20 rounded-xl px-3 sm:px-4 py-2 text-white text-sm sm:text-base" required />
+              <input placeholder="Название (англ)" value={titleEn} onChange={e => setTitleEn(e.target.value)} className="bg-white/10 border border-white/20 rounded-xl px-3 sm:px-4 py-2 text-white text-sm sm:text-base" />
+              <textarea placeholder="Описание" value={description} onChange={e => setDescription(e.target.value)} rows={3} className="bg-white/10 border border-white/20 rounded-xl px-3 sm:px-4 py-2 text-white text-sm sm:text-base" />
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input type="number" placeholder="Год" value={year} onChange={e => setYear(Number(e.target.value))} className="bg-white/10 border border-white/20 rounded-xl px-3 sm:px-4 py-2 text-white text-sm sm:text-base w-full sm:w-1/2" />
+                <input type="number" step="0.1" min="0" max="10" placeholder="Рейтинг" value={rating} onChange={e => setRating(Number(e.target.value))} className="bg-white/10 border border-white/20 rounded-xl px-3 sm:px-4 py-2 text-white text-sm sm:text-base w-full sm:w-1/2" />
               </div>
-              <input placeholder="Студия" value={studio} onChange={e => setStudio(e.target.value)} className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white" />
-              <input placeholder="Режиссёр" value={director} onChange={e => setDirector(e.target.value)} className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white" />
-              <textarea placeholder="Актёры / сэйю (через запятую)" value={cast} onChange={e => setCast(e.target.value)} rows={2} className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white" />
+              <input placeholder="Студия" value={studio} onChange={e => setStudio(e.target.value)} className="bg-white/10 border border-white/20 rounded-xl px-3 sm:px-4 py-2 text-white text-sm sm:text-base" />
+              <input placeholder="Режиссёр" value={director} onChange={e => setDirector(e.target.value)} className="bg-white/10 border border-white/20 rounded-xl px-3 sm:px-4 py-2 text-white text-sm sm:text-base" />
+              <textarea placeholder="Актёры / сэйю (через запятую)" value={cast} onChange={e => setCast(e.target.value)} rows={2} className="bg-white/10 border border-white/20 rounded-xl px-3 sm:px-4 py-2 text-white text-sm sm:text-base" />
               <div>
-                <label className="text-sm text-gray-400">Постер (файл)</label>
-                <input type="file" accept="image/*" onChange={e => setPosterFile(e.target.files?.[0] || null)} className="text-white text-sm mt-1" />
+                <label className="text-xs sm:text-sm text-gray-400">Постер (файл)</label>
+                <input type="file" accept="image/*" onChange={e => setPosterFile(e.target.files?.[0] || null)} className="text-white text-xs sm:text-sm mt-1" />
               </div>
-              <input placeholder="Или URL постера" value={posterUrl} onChange={e => setPosterUrl(e.target.value)} className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white" />
-              <select value={type} onChange={e => setType(e.target.value)} className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white">
+              <input placeholder="Или URL постера" value={posterUrl} onChange={e => setPosterUrl(e.target.value)} className="bg-white/10 border border-white/20 rounded-xl px-3 sm:px-4 py-2 text-white text-sm sm:text-base" />
+              <select value={type} onChange={e => setType(e.target.value)} className="bg-white/10 border border-white/20 rounded-xl px-3 sm:px-4 py-2 text-white text-sm sm:text-base">
                 <option value="tv">TV Сериал</option>
                 <option value="movie">Фильм</option>
                 <option value="ova">OVA</option>
                 <option value="ona">ONA</option>
                 <option value="special">Спешл</option>
               </select>
-              <select value={status} onChange={e => setStatus(e.target.value)} className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white">
+              <select value={status} onChange={e => setStatus(e.target.value)} className="bg-white/10 border border-white/20 rounded-xl px-3 sm:px-4 py-2 text-white text-sm sm:text-base">
                 <option value="ongoing">Выходит</option>
                 <option value="completed">Завершён</option>
                 <option value="announced">Анонсирован</option>
               </select>
               <div>
-                <p className="text-sm text-white mb-1">Жанры:</p>
-                <div className="flex flex-wrap gap-2">
+                <p className="text-xs sm:text-sm text-white mb-1">Жанры:</p>
+                <div className="flex flex-wrap gap-1 sm:gap-2">
                   {genres.map(genre => (
                     <button type="button" key={genre.id} onClick={() => toggleGenre(genre.id)}
                       className={`px-2 py-1 rounded-full text-xs ${selectedGenres.includes(genre.id) ? 'bg-neo-pink text-white' : 'bg-white/10 text-white/70'}`}>
@@ -590,8 +592,8 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                 </div>
               </div>
               <div className="flex justify-end gap-2 mt-4">
-                <button type="button" onClick={() => { setShowModal(false); resetForm() }} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl">Отмена</button>
-                <button type="submit" disabled={uploading} className="bg-neo-pink hover:bg-neo-pink/80 text-white px-4 py-2 rounded-xl">
+                <button type="button" onClick={() => { setShowModal(false); resetForm() }} className="bg-white/10 hover:bg-white/20 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base">Отмена</button>
+                <button type="submit" disabled={uploading} className="bg-neo-pink hover:bg-neo-pink/80 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base">
                   {uploading ? 'Загрузка...' : editingAnime ? 'Сохранить' : 'Добавить'}
                 </button>
               </div>

@@ -15,7 +15,6 @@ export default function RelatedAnime({ animeId }: { animeId: string }) {
 
   useEffect(() => {
     const load = async () => {
-      // Получаем связи
       const relRes = await fetch(`${supabaseUrl}/rest/v1/related_anime?anime_id=eq.${animeId}`, {
         headers: { 'apikey': supabaseAnonKey, 'Content-Type': 'application/json' },
       })
@@ -23,13 +22,11 @@ export default function RelatedAnime({ animeId }: { animeId: string }) {
       const relData: Related[] = await relRes.json()
       if (relData.length === 0) return
 
-      // Получаем данные связанных аниме
       const ids = relData.map(r => r.related_id).join(',')
       const animeRes = await fetch(`${supabaseUrl}/rest/v1/anime?id=in.(${ids})&select=*`, {
         headers: { 'apikey': supabaseAnonKey, 'Content-Type': 'application/json' },
       })
       const animeData = await animeRes.json()
-      // Объединяем с типом связи
       const merged = relData.map(rel => {
         const anime = animeData.find((a: any) => a.id === rel.related_id)
         return { ...anime, relation_type: rel.relation_type }
