@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import toast, { Toaster } from 'react-hot-toast'
 
@@ -389,7 +389,10 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
       setUploadingVideo(true)
       try {
         const fileName = `${Date.now()}_${videoFile.name.replace(/\s/g, '_')}`
-        const res = await fetch(`${supabaseUrl}/storage/v1/object/videos/${fileName}`, {
+        const uploadUrl = `${supabaseUrl}/storage/v1/object/videos/${fileName}`
+        console.log('Загрузка в:', uploadUrl)
+        
+        const res = await fetch(uploadUrl, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${accessToken}`,
@@ -398,14 +401,16 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
           },
           body: videoFile,
         })
+
         if (!res.ok) {
-          const err = await res.json()
-          throw new Error(err.message || 'Upload failed')
+          const error = await res.json()
+          console.error('Ошибка загрузки:', error)
+          throw new Error(error.message || 'Upload failed')
         }
         finalVideoUrl = `${supabaseUrl}/storage/v1/object/public/videos/${fileName}`
         toast.success('Видео загружено в Supabase Storage')
       } catch (err: any) {
-        toast.error('Ошибка загрузки видео')
+        toast.error(`Ошибка загрузки: ${err.message}`)
         setUploadingVideo(false)
         return
       }
