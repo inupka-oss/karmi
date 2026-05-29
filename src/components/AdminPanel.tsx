@@ -100,8 +100,9 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null)
   const [uploadingScreenshot, setUploadingScreenshot] = useState(false)
 
-  const supabaseUrl = "https://vwmtcdegjkgudhdxnpjr.supabase.co"
-  const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3bXRjZGVnamtndWRoZHhucGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NDI3ODMsImV4cCI6MjA5NTUxODc4M30.3r_lriy5OKfcyFop2OL3j1YJ6wp1BTpkWKHC9QSuNos"
+  // ✅ Переменные окружения (теперь из env, а не вшитые)
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
   const getAccessToken = () => {
     const match = document.cookie.match(/sb-access-token=([^;]+)/)
