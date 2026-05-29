@@ -9,7 +9,6 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
   useEffect(() => {
-    // Загружаем сохранённый никнейм
     const loadProfile = async () => {
       const res = await fetch(`${supabaseUrl}/rest/v1/user_profiles?user_identifier=eq.${email}`, {
         headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${accessToken}` },
@@ -27,6 +26,7 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
   const handleLogout = () => {
     document.cookie = 'sb-access-token=; path=/; max-age=0'
     document.cookie = 'sb-refresh-token=; path=/; max-age=0'
+    localStorage.removeItem('karmi-favorites') // очищаем локальное избранное гостя
     router.push('/login')
   }
 
