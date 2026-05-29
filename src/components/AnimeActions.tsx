@@ -25,31 +25,31 @@ export default function AnimeActions({
     : null
 
   return (
-    <div className="flex flex-wrap gap-3 mt-4">
+    <div className="flex flex-col gap-2 mt-3">
       {trailerUrl && (
         <a
           href={trailerUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="bg-neo-pink/20 hover:bg-neo-pink/40 text-neo-pink px-5 py-2 rounded-xl border border-neo-pink/50 font-semibold transition"
+          className="bg-neo-pink/20 hover:bg-neo-pink/40 text-neo-pink px-4 py-2 rounded-xl border border-neo-pink/50 font-semibold text-center text-sm transition"
         >
-          ▶ Смотреть трейлер
+          Смотреть трейлер
         </a>
       )}
       {episodes.length > 0 && (
         <>
           <button
             onClick={() => onStartWatching(episodes[0])}
-            className="bg-neo-pink hover:bg-neo-pink/80 text-white px-5 py-2 rounded-xl font-semibold transition"
+            className="bg-neo-pink hover:bg-neo-pink/80 text-white px-4 py-2 rounded-xl font-semibold text-center text-sm transition"
           >
-            ▶ Начать с 1 серии
+            Начать с 1 серии
           </button>
           {lastWatchedEpisode && (
             <button
               onClick={() => onContinueWatching(lastWatchedEpisode)}
-              className="bg-white/10 hover:bg-white/20 text-white px-5 py-2 rounded-xl font-semibold transition"
+              className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl font-semibold text-center text-sm transition"
             >
-              ⏯ Продолжить (серия {lastWatchedEpisode.episode_number})
+              Продолжить (серия {lastWatchedEpisode.episode_number})
             </button>
           )}
         </>

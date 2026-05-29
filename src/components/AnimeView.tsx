@@ -1,0 +1,130 @@
+'use client'
+import { useState, useEffect } from 'react'
+import Image from 'next/image'
+import StarRating from './StarRating'
+import RatingForm from './RatingForm'
+import CommentSection from './CommentSection'
+import RelatedAnime from './RelatedAnime'
+import EpisodeList from './EpisodeList'
+import AnimeActions from './AnimeActions'
+
+interface Episode {
+  id: string
+  episode_number: number
+  title?: string
+  video_url: string
+}
+
+interface Anime {
+  id: string
+  title_ru: string
+  title_en?: string
+  description?: string
+  year?: number
+  rating?: number
+  poster_url?: string
+  type?: string
+  status?: string
+  genres: any[]
+  studio?: string
+  director?: string
+  cast?: string
+  trailer_url?: string
+}
+
+export default function AnimeView({
+  anime,
+  genres,
+  episodes,
+}: {
+  anime: Anime
+  genres: any[]
+  episodes: Episode[]
+}) {
+  const [activeEpisode, setActiveEpisode] = useState<Episode | null>(null)
+  const [progress, setProgress] = useState<{ episodeId: string; time: number } | null>(null)
+
+  useEffect(() => {
+    const stored = localStorage.getItem('karmi-progress')
+    if (stored) {
+      try {
+        setProgress(JSON.parse(stored))
+      } catch {}
+    }
+  }, [])
+
+  const handleStartWatching = (ep: Episode) => setActiveEpisode(ep)
+  const handleContinueWatching = (ep: Episode) => setActiveEpisode(ep)
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="flex flex-col md:flex-row gap-8">
+        {/* Левая колонка: постер + кнопки */}
+        <div className="w-full md:w-1/3 lg:w-1/4">
+          <div className="aspect-[3/4] relative rounded-2xl overflow-hidden glass">
+            <Image
+              src={anime.poster_url || '/placeholder.jpg'}
+              alt={anime.title_ru}
+              fill
+              className="object-cover"
+            />
+          </div>
+
+          {/* Кнопки сразу под постером */}
+          <AnimeActions
+            trailerUrl={anime.trailer_url}
+            episodes={episodes}
+            onStartWatching={handleStartWatching}
+            onContinueWatching={handleContinueWatching}
+            progress={progress}
+          />
+        </div>
+
+        {/* Правая колонка: описание и всё остальное */}
+        <div className="flex-1">
+          <h1 className="text-4xl font-bold text-white">{anime.title_ru}</h1>
+          {anime.title_en && <h2 className="text-xl text-gray-400 mt-1">{anime.title_en}</h2>}
+          <div className="flex flex-wrap gap-2 mt-3">
+            {genres.map((g: any) => (
+              <span key={g.slug} className="bg-neo-pink/20 text-neo-pink px-3 py-1 rounded-full text-sm">
+                {g.name}
+              </span>
+            ))}
+          </div>
+          <p className="mt-4 text-gray-300 leading-relaxed">{anime.description}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6 text-sm text-white">
+            <div><span className="text-gray-500">Тип:</span> {anime.type}</div>
+            <div><span className="text-gray-500">Год:</span> {anime.year}</div>
+            <div className="flex items-center gap-2">
+              <span className="text-gray-500">Рейтинг:</span>
+              <StarRating rating={anime.rating || 0} />
+            </div>
+            <div><span className="text-gray-500">Статус:</span> {anime.status}</div>
+          </div>
+          <RatingForm animeId={anime.id} />
+
+          {(anime.studio || anime.director || anime.cast) && (
+            <div className="mt-6 glass p-4 rounded-xl">
+              <h2 className="text-lg font-semibold text-white mb-2">Создатели</h2>
+              <div className="space-y-1 text-sm text-gray-300">
+                {anime.studio && <div><span className="text-gray-500">Студия:</span> {anime.studio}</div>}
+                {anime.director && <div><span className="text-gray-500">Режиссёр:</span> {anime.director}</div>}
+                {anime.cast && <div><span className="text-gray-500">Актёры/сэйю:</span> {anime.cast}</div>}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Плеер и список серий (на всю ширину) */}
+      <EpisodeList
+        episodes={episodes}
+        activeEpisode={activeEpisode || episodes[0] || null}
+        onSelectEpisode={setActiveEpisode}
+      />
+
+      <RelatedAnime animeId={anime.id} />
+      <CommentSection animeId={anime.id} />
+    </div>
+  )
+}
