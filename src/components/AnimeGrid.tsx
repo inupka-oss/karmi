@@ -2,8 +2,12 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import FavoriteButton from './FavoriteButton'
+import StarRatingInline from './StarRatingInline'
+import { useRatings } from '@/hooks/useRatings'
 
 export default function AnimeGrid({ anime }: { anime: any[] }) {
+  const { ratings, setRating } = useRatings()
+
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6 mt-8">
       {anime.map((item) => (
@@ -24,7 +28,6 @@ export default function AnimeGrid({ anime }: { anime: any[] }) {
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
                 <span className="text-white text-sm font-medium">{item.type}/{item.year}</span>
               </div>
-              {/* Блик */}
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none">
                 <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/20 via-transparent to-transparent transform -skew-x-12 translate-x-[-150%] group-hover:translate-x-[150%] transition-transform duration-1000"></div>
               </div>
@@ -38,6 +41,12 @@ export default function AnimeGrid({ anime }: { anime: any[] }) {
                   </span>
                 ))}
               </div>
+              {/* Быстрая оценка */}
+              <StarRatingInline
+                animeId={item.id}
+                currentRating={ratings[item.id]}
+                onRate={setRating}
+              />
             </div>
           </div>
         </Link>
