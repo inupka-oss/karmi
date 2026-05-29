@@ -2,81 +2,192 @@
 
 @theme {
   --font-sans: 'Rubik', sans-serif;
-  --color-accent: #ff2e63;
-  --color-bg: #0a0a0a;
-  --color-surface: rgba(255, 255, 255, 0.03);
-  --color-border: rgba(255, 255, 255, 0.08);
+  --color-neo-pink: #ff2e63;
+  --color-neo-dark: #0d0d0d;
+  --color-neo-light-bg: #f2f2f2;
+  --color-neo-light-text: #111;
+  --color-neo-light-card: #ffffff;
+  --color-neo-light-border: #111;
 }
 
+/* === ТЁМНАЯ ТЕМА (нео-брутализм) === */
 body {
-  background-color: var(--color-bg);
-  color: #e0e0e0;
+  background-color: var(--color-neo-dark);
+  color: white;
   margin: 0;
   padding: 0;
   font-family: var(--font-sans);
 }
 
 .glass {
-  background: var(--color-surface);
+  background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid var(--color-border);
-  box-shadow: none;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.3);
 }
 
 .glass:hover {
-  border-color: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+  border-color: var(--color-neo-pink);
+  box-shadow: 6px 6px 0 rgba(0,0,0,0.4);
 }
 
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: #0a0a0a; }
-::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #0d0d0d; }
+::-webkit-scrollbar-thumb { background: var(--color-neo-pink); border-radius: 3px; }
 
-/* Убираем все свечения */
+/* Свечения для тёмной темы */
 @layer utilities {
-  .text-glow-pink, .text-glow-white, .card-glow, .card-hover-glow {
-    text-shadow: none;
-    box-shadow: none;
+  .text-glow-pink {
+    text-shadow: 0 0 10px #ff2e63, 0 0 20px #ff2e63, 0 0 40px #ff2e63;
+  }
+  .text-glow-white {
+    text-shadow: 0 0 10px rgba(255,255,255,0.8), 0 0 20px rgba(255,255,255,0.5);
+  }
+  .card-glow {
+    box-shadow: 0 0 20px rgba(255, 46, 99, 0.3), 0 0 40px rgba(255, 46, 99, 0.1);
+  }
+  .card-hover-glow:hover {
+    box-shadow: 0 0 30px rgba(255, 46, 99, 0.6), 0 0 60px rgba(255, 46, 99, 0.3);
   }
 }
 
-/* Никаких псевдоэлементов-фонов */
-body::before, body::after { display: none; }
+/* Анимированный фон (тёмная тема) */
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(135deg, #0d0d0d 0%, #1a0a1e 30%, #0d0d0d 70%, #1a0a1e 100%);
+  background-size: 300% 300%;
+  animation: gradientShift 15s ease infinite;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: radial-gradient(3px 3px at 20px 30px, #ff2e63, transparent),
+                    radial-gradient(3px 3px at 40px 70px, #fff, transparent),
+                    radial-gradient(2px 2px at 90px 40px, #ff2e63, transparent),
+                    radial-gradient(2px 2px at 160px 120px, #fff, transparent),
+                    radial-gradient(3px 3px at 230px 80px, #ff2e63, transparent),
+                    radial-gradient(2px 2px at 300px 200px, #fff, transparent);
+  background-repeat: no-repeat;
+  background-size: 400px 400px;
+  animation: twinkle 8s infinite alternate;
+}
+
+@keyframes twinkle {
+  0% { opacity: 0.4; }
+  100% { opacity: 0.8; }
+}
+
+/* ====== СВЕТЛАЯ ТЕМА (нео-брутализм) ====== */
+.light body {
+  background-color: var(--color-neo-light-bg);
+  color: var(--color-neo-light-text);
+}
+
+/* Карточки */
+.light .glass {
+  background: var(--color-neo-light-card);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 2px solid var(--color-neo-light-border);
+  box-shadow: 6px 6px 0 rgba(0,0,0,0.1);
+}
+
+.light .glass:hover {
+  border-color: var(--color-neo-pink);
+  box-shadow: 8px 8px 0 rgba(0,0,0,0.15);
+}
+
+/* Текст */
+.light .text-white { color: #111; }
+.light .text-gray-300,
+.light .text-gray-400,
+.light .text-gray-500 { color: #222; }
+.light .text-neo-pink { color: var(--color-neo-pink) !important; }
+
+/* Фон и частицы в светлой теме */
+.light body::before {
+  background: var(--color-neo-light-bg);
+  animation: none;
+}
+.light body::after {
+  background-image: none;
+  opacity: 0.3;
+  /* можно оставить лёгкие точки другого цвета */
+  background-image: radial-gradient(3px 3px at 20px 30px, var(--color-neo-pink), transparent),
+                    radial-gradient(2px 2px at 80px 10px, #111, transparent),
+                    radial-gradient(3px 3px at 150px 60px, var(--color-neo-pink), transparent),
+                    radial-gradient(2px 2px at 220px 90px, #111, transparent);
+}
 
 /* Поля ввода */
-input, textarea, select {
-  background-color: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #e0e0e0;
+.light input,
+.light textarea,
+.light select {
+  background-color: #fff;
+  border: 2px solid #111;
+  color: #111;
+  font-weight: 500;
 }
-input:focus, textarea:focus, select:focus {
-  border-color: var(--color-accent);
+.light input:focus,
+.light textarea:focus,
+.light select:focus {
+  border-color: var(--color-neo-pink);
   outline: none;
-  box-shadow: 0 0 0 1px var(--color-accent);
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.1);
 }
 
 /* Кнопки */
-.bg-neo-pink, button.bg-neo-pink {
-  background-color: var(--color-accent);
+.light .bg-neo-pink {
+  background-color: var(--color-neo-pink);
   color: white;
+  border: 2px solid #111;
+  box-shadow: 4px 4px 0 #111;
 }
-.bg-neo-pink:hover, button.bg-neo-pink:hover {
+.light .bg-neo-pink:hover {
   background-color: #e02557;
+  box-shadow: 6px 6px 0 #111;
 }
 
-.bg-white\/10 {
-  background-color: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+.light .bg-white\/10,
+.light .bg-white\/5 {
+  background-color: #fff;
+  border: 2px solid #111;
+  color: #111;
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.1);
 }
-.bg-white\/10:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+.light .bg-white\/10:hover {
+  background-color: #f0f0f0;
 }
 
-/* Заголовки */
-h1, h2, h3 { color: #ffffff; }
+/* Убираем свечения в светлой теме */
+.light .text-glow-pink,
+.light .text-glow-white {
+  text-shadow: none;
+}
+.light .card-glow {
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.15);
+}
+.light .card-hover-glow:hover {
+  box-shadow: 6px 6px 0 rgba(0,0,0,0.25);
+}
 
-/* Текст */
-.text-white { color: #e0e0e0; }
-.text-gray-300, .text-gray-400, .text-gray-500 { color: #888; }
-.text-neo-pink { color: var(--color-accent) !important; }
+/* Скроллбар */
+.light ::-webkit-scrollbar-track { background: #e0e0e0; }
+.light ::-webkit-scrollbar-thumb { background: #111; }
+
+/* Ссылки */
+.light a { color: #111; }
+.light a:hover { color: var(--color-neo-pink); }
