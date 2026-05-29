@@ -33,14 +33,16 @@ export default function Header() {
     <header className="sticky top-0 z-50 glass backdrop-blur-md border-b border-white/10">
       <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-3">
         <Link href="/" className="text-2xl font-bold text-glow-white">
-          Karmi
+          Kar<span className="text-neo-pink">mi</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-2">
           <Link href="/" className={linkClass('/')}>Главная</Link>
           <Link href="/catalog" className={linkClass('/catalog')}>Каталог</Link>
           <Link href="/ongoing" className={linkClass('/ongoing')}>Онгоинги</Link>
-          <Link href="/favorites" className={linkClass('/favorites')}>Избранное</Link>
+          <Link href="/favorites" className={linkClass('/favorites')}>
+            <span className="text-neo-pink">♥</span> Избранное
+          </Link>
           {loggedIn ? (
             <Link href="/profile" className={linkClass('/profile')}>Профиль</Link>
           ) : (
