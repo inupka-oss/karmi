@@ -6,39 +6,25 @@
   --color-neo-red: #ff0035;
   --color-neo-dark: #0d0d0d;
   --color-neo-card: rgba(255, 255, 255, 0.05);
-  /* Переменные для светлой темы */
-  --color-bg-primary: #0d0d0d;
-  --color-text-primary: #ffffff;
-  --color-bg-secondary: rgba(255, 255, 255, 0.05);
 }
 
-:root {
-  --color-bg-primary: #0d0d0d;
-  --color-text-primary: #ffffff;
-  --color-bg-secondary: rgba(255, 255, 255, 0.05);
-}
-
-.light {
-  --color-bg-primary: #f5f5f5;
-  --color-text-primary: #111111;
-  --color-bg-secondary: rgba(0, 0, 0, 0.05);
-  background-color: #f5f5f5;
-  color: #111111;
-}
-
+/* Тёмная тема по умолчанию */
 body {
-  background-color: var(--color-bg-primary);
-  color: var(--color-text-primary);
+  background-color: var(--color-neo-dark);
+  color: white;
   margin: 0;
   padding: 0;
   font-family: var(--font-sans);
 }
 
-.light body {
+/* Светлая тема */
+.light body,
+body.light {
   background-color: #f5f5f5;
   color: #111111;
 }
 
+/* Стеклянные карточки */
 .glass {
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
@@ -51,10 +37,13 @@ body {
   border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
+/* Скроллбар */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: #0d0d0d; }
 ::-webkit-scrollbar-thumb { background: #ff2e63; border-radius: 3px; }
+.light ::-webkit-scrollbar-track { background: #e0e0e0; }
 
+/* Тени и свечения */
 @layer utilities {
   .text-glow-pink {
     text-shadow: 0 0 10px #ff2e63, 0 0 20px #ff2e63, 0 0 40px #ff2e63;
@@ -70,6 +59,7 @@ body {
   }
 }
 
+/* Анимированный фон */
 @keyframes gradientShift {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
@@ -87,7 +77,7 @@ body::before {
 }
 
 .light body::before {
-  background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 30%, #f0f0f0 70%, #e0e0e0 100%);
+  background: linear-gradient(135deg, #f0f0f0 0%, #e8e0f0 30%, #f0f0f0 70%, #e8e0f0 100%);
 }
 
 body::after {
@@ -106,7 +96,57 @@ body::after {
   animation: twinkle 10s infinite alternate;
 }
 
+.light body::after {
+  background-image: radial-gradient(2px 2px at 20px 30px, #ff2e63, transparent),
+                    radial-gradient(2px 2px at 40px 70px, #333, transparent),
+                    radial-gradient(1px 1px at 90px 40px, #ff2e63, transparent),
+                    radial-gradient(1px 1px at 160px 120px, #333, transparent),
+                    radial-gradient(2px 2px at 230px 80px, #ff2e63, transparent),
+                    radial-gradient(1px 1px at 300px 200px, #333, transparent);
+}
+
 @keyframes twinkle {
   0% { opacity: 0.3; }
   100% { opacity: 0.7; }
+}
+
+/* Исправления для светлой темы */
+.light input,
+.light textarea,
+.light select {
+  background-color: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.2);
+  color: #111;
+}
+
+.light .bg-white\/10,
+.light .bg-white\/5 {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.light .text-white {
+  color: #111;
+}
+
+.light .text-gray-300,
+.light .text-gray-400,
+.light .text-gray-500 {
+  color: #333;
+}
+
+.light .text-neo-pink {
+  color: #ff2e63 !important; /* неоновый розовый оставляем */
+}
+
+.light .bg-neo-pink\/20 {
+  background-color: rgba(255, 46, 99, 0.2);
+}
+
+.light .border-white\/20 {
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+.light .hover\:bg-white\/10:hover,
+.light .hover\:bg-white\/20:hover {
+  background-color: rgba(0, 0, 0, 0.1);
 }
