@@ -56,6 +56,7 @@ interface Anime {
   director?: string
   cast?: string
   trailer_url?: string
+  day_of_week?: number
 }
 
 export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
@@ -83,6 +84,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
   const [director, setDirector] = useState('')
   const [cast, setCast] = useState('')
   const [trailerUrl, setTrailerUrl] = useState('')
+  const [dayOfWeek, setDayOfWeek] = useState<number | undefined>(undefined)
 
   // Связанные аниме
   const [relatedEntries, setRelatedEntries] = useState<RelatedAnime[]>([])
@@ -160,6 +162,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     setDirector('')
     setCast('')
     setTrailerUrl('')
+    setDayOfWeek(undefined)
   }
 
   const openAddModal = () => {
@@ -181,6 +184,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     setDirector(anime.director || '')
     setCast(anime.cast || '')
     setTrailerUrl(anime.trailer_url || '')
+    setDayOfWeek(anime.day_of_week)
     const currentGenreIds = anime.genres ? anime.genres.map(g => g.id) : []
     setSelectedGenres(currentGenreIds)
     setShowModal(true)
@@ -220,6 +224,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
       director: director || null,
       cast: cast || null,
       trailer_url: trailerUrl || null,
+      day_of_week: dayOfWeek ?? null,
     }
 
     if (editingAnime) {
@@ -883,6 +888,23 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                 <option value="completed">Завершён</option>
                 <option value="announced">Анонсирован</option>
               </select>
+              <div>
+                <label className="text-sm text-white mb-1">День выхода (для онгоингов)</label>
+                <select
+                  value={dayOfWeek ?? ''}
+                  onChange={e => setDayOfWeek(e.target.value ? Number(e.target.value) : undefined)}
+                  className="bg-white/10 border border-white/20 rounded-xl px-3 sm:px-4 py-2 text-white text-sm sm:text-base w-full"
+                >
+                  <option value="">Не указан</option>
+                  <option value={1}>Понедельник</option>
+                  <option value={2}>Вторник</option>
+                  <option value={3}>Среда</option>
+                  <option value={4}>Четверг</option>
+                  <option value={5}>Пятница</option>
+                  <option value={6}>Суббота</option>
+                  <option value={0}>Воскресенье</option>
+                </select>
+              </div>
               <div>
                 <p className="text-xs sm:text-sm text-white mb-1">Жанры:</p>
                 <div className="flex flex-wrap gap-1 sm:gap-2">

@@ -48,15 +48,14 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 glass backdrop-blur-md border-b border-white/10">
       <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-3">
-        {/* Логотип: Kar белое, mi розовое */}
         <Link href="/" className="text-2xl font-bold text-glow-white" onClick={handleNavClick}>
           Kar<span className="text-neo-pink">mi</span>
         </Link>
 
-        {/* Десктопная навигация */}
         <nav className="hidden md:flex items-center gap-2">
           <Link href="/" className={linkClass('/')}>Главная</Link>
           <Link href="/catalog" className={linkClass('/catalog')}>Каталог</Link>
+          <Link href="/schedule" className={linkClass('/schedule')}>Расписание</Link>
           <Link href="/ongoing" className={linkClass('/ongoing')}>Онгоинги</Link>
           <Link href="/top" className={linkClass('/top')}>Топ-100</Link>
           <Link href="/favorites" className={linkClass('/favorites')}>
@@ -72,7 +71,6 @@ export default function Header() {
           )}
         </nav>
 
-        {/* Правая часть: уведомления, тема, бургер */}
         <div className="flex items-center gap-2">
           <Link href="/notifications" className="relative p-2 rounded-xl bg-white/10 hover:bg-white/20 transition" onClick={() => clearNotifications()}>
             🔔
@@ -91,7 +89,6 @@ export default function Header() {
             {themeIcon}
           </button>
 
-          {/* Бургер-кнопка (мобильные) */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             className="md:hidden text-white p-2 rounded-xl bg-white/10 hover:bg-white/20 transition"
@@ -102,11 +99,11 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Мобильное меню */}
       {menuOpen && (
         <div className="md:hidden glass border-t border-white/10 px-4 py-4 space-y-2 animate-fade-in">
           <Link href="/" onClick={handleNavClick} className={linkClass('/')}>Главная</Link>
           <Link href="/catalog" onClick={handleNavClick} className={linkClass('/catalog')}>Каталог</Link>
+          <Link href="/schedule" onClick={handleNavClick} className={linkClass('/schedule')}>Расписание</Link>
           <Link href="/ongoing" onClick={handleNavClick} className={linkClass('/ongoing')}>Онгоинги</Link>
           <Link href="/top" onClick={handleNavClick} className={linkClass('/top')}>Топ-100</Link>
           <Link href="/favorites" onClick={handleNavClick} className={linkClass('/favorites')}>
