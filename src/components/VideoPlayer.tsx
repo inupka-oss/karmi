@@ -17,7 +17,6 @@ async function saveProgressToCloud(episodeId: string, time: number) {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
   try {
-    // Получаем user_id
     const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
       headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${token}` },
     })
@@ -25,7 +24,6 @@ async function saveProgressToCloud(episodeId: string, time: number) {
     const user = await userRes.json()
     const userId = user.id
 
-    // Обновляем прогресс в профиле
     await fetch(`${supabaseUrl}/rest/v1/user_profiles`, {
       method: 'PATCH',
       headers: {
@@ -46,15 +44,31 @@ export default function VideoPlayer({
   title,
   onEnded,
   activeEpisodeId,
+  openingStart,
+  openingEnd,
+  endingStart,
+  endingEnd,
 }: {
   src: string
   title: string
   onEnded?: () => void
   activeEpisodeId?: string
+  openingStart?: number
+  openingEnd?: number
+  endingStart?: number
+  endingEnd?: number
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const playerRef = useRef<Plyr | null>(null)
   const hlsRef = useRef<Hls | null>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
+
+  const skipTo = useCallback((time: number) => {
+    const video = videoRef.current
+    if (video) {
+      video.currentTime = time
+    }
+  }, [])
 
   const initPlayer = useCallback(() => {
     const video = videoRef.current
@@ -100,18 +114,15 @@ export default function VideoPlayer({
 
     playerRef.current = player
 
-    // Событие окончания
     player.on('ended', () => {
       if (onEnded) onEnded()
     })
 
-    // Сохранение прогресса каждые 10 секунд и при паузе
     let saveInterval: NodeJS.Timeout | null = null
     player.on('play', () => {
       saveInterval = setInterval(() => {
         if (activeEpisodeId && video) {
           saveProgressToCloud(activeEpisodeId, video.currentTime)
-          // Также сохраняем в localStorage для гостей
           localStorage.setItem('karmi-progress', JSON.stringify({
             episodeId: activeEpisodeId,
             time: video.currentTime,
@@ -131,7 +142,6 @@ export default function VideoPlayer({
       }
     })
 
-    // Восстановление времени, если есть сохранённый прогресс для этого эпизода
     const stored = localStorage.getItem('karmi-progress')
     if (stored) {
       try {
@@ -142,7 +152,6 @@ export default function VideoPlayer({
         }
       } catch {}
     } else if (getAccessToken() && activeEpisodeId) {
-      // Загружаем прогресс из облака при первом воспроизведении
       const loadCloudProgress = async () => {
         const token = getAccessToken()
         if (!token) return
@@ -176,7 +185,7 @@ export default function VideoPlayer({
     return () => {
       if (saveInterval) clearInterval(saveInterval)
     }
-  }, [src, title, onEnded, activeEpisodeId])
+  }, [src, title, onEnded, activeEpisodeId, openingStart, openingEnd, endingStart, endingEnd])
 
   useEffect(() => {
     const cleanup = initPlayer()
@@ -188,8 +197,29 @@ export default function VideoPlayer({
   }, [initPlayer])
 
   return (
-    <div className="aspect-video rounded-xl overflow-hidden glass mb-6">
-      <video ref={videoRef} className="w-full h-full" playsInline crossOrigin="anonymous" />
+    <div className="relative" ref={containerRef}>
+      <div className="aspect-video rounded-xl overflow-hidden glass mb-6">
+        <video ref={videoRef} className="w-full h-full" playsInline crossOrigin="anonymous" />
+      </div>
+      {/* Кнопки пропуска опенинга / эндинга */}
+      <div className="absolute bottom-8 left-4 flex gap-2 z-10">
+        {openingEnd && (
+          <button
+            onClick={() => skipTo(openingEnd)}
+            className="bg-neo-pink/80 hover:bg-neo-pink text-white px-3 py-1 rounded-lg text-xs font-semibold backdrop-blur-sm"
+          >
+            Пропустить опенинг
+          </button>
+        )}
+        {endingStart && (
+          <button
+            onClick={() => skipTo(endingStart)}
+            className="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded-lg text-xs font-semibold backdrop-blur-sm"
+          >
+            К эндингу
+          </button>
+        )}
+      </div>
     </div>
   )
 }

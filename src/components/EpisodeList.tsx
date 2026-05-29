@@ -7,6 +7,10 @@ interface Episode {
   episode_number: number
   title?: string
   video_url: string
+  opening_start?: number
+  opening_end?: number
+  ending_start?: number
+  ending_end?: number
 }
 
 export default function EpisodeList({
@@ -50,6 +54,10 @@ export default function EpisodeList({
         title={activeEp?.title || `Эпизод ${activeEp?.episode_number}`}
         onEnded={handleEnded}
         activeEpisodeId={activeEp?.id || activeEpisodeId}
+        openingStart={activeEp?.opening_start}
+        openingEnd={activeEp?.opening_end}
+        endingStart={activeEp?.ending_start}
+        endingEnd={activeEp?.ending_end}
       />
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 mt-4">
         {episodes.map(ep => (

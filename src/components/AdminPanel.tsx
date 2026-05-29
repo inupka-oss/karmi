@@ -14,6 +14,10 @@ interface Episode {
   episode_number: number
   title?: string
   video_url: string
+  opening_start?: number
+  opening_end?: number
+  ending_start?: number
+  ending_end?: number
 }
 
 interface RelatedAnime {
@@ -63,7 +67,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
   const [studio, setStudio] = useState('')
   const [director, setDirector] = useState('')
   const [cast, setCast] = useState('')
-  const [trailerUrl, setTrailerUrl] = useState('')  // новое поле
+  const [trailerUrl, setTrailerUrl] = useState('')
 
   // Связанные аниме
   const [relatedEntries, setRelatedEntries] = useState<RelatedAnime[]>([])
@@ -73,11 +77,18 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
   // Эпизоды
   const [expandedAnimeId, setExpandedAnimeId] = useState<string | null>(null)
   const [episodes, setEpisodes] = useState<Episode[]>([])
-  const [episodeForm, setEpisodeForm] = useState({ episode_number: 1, title: '', video_url: '' })
+  const [episodeForm, setEpisodeForm] = useState({
+    episode_number: 1,
+    title: '',
+    video_url: '',
+    opening_start: undefined as number | undefined,
+    opening_end: undefined as number | undefined,
+    ending_start: undefined as number | undefined,
+    ending_end: undefined as number | undefined,
+  })
   const [videoFile, setVideoFile] = useState<File | null>(null)
   const [uploadingVideo, setUploadingVideo] = useState(false)
 
-  // Временно жёстко заданный ключ (потом вернём переменную окружения)
   const supabaseUrl = "https://vwmtcdegjkgudhdxnpjr.supabase.co"
   const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3bXRjZGVnamtndWRoZHhucGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NDI3ODMsImV4cCI6MjA5NTUxODc4M30.3r_lriy5OKfcyFop2OL3j1YJ6wp1BTpkWKHC9QSuNos"
 
@@ -182,7 +193,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
       studio: studio || null,
       director: director || null,
       cast: cast || null,
-      trailer_url: trailerUrl || null,  // новое поле
+      trailer_url: trailerUrl || null,
     }
 
     if (editingAnime) {
@@ -344,7 +355,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
         })
         if (!res.ok) throw new Error('Upload failed')
         const data = await res.json()
-        finalVideoUrl = data.url
+        finalVideoUrl = data.hls_url || data.url
       } catch (err) {
         alert('Ошибка загрузки видео')
         setUploadingVideo(false)
@@ -364,6 +375,10 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
       episode_number: episodeForm.episode_number,
       title: episodeForm.title || null,
       video_url: finalVideoUrl,
+      opening_start: episodeForm.opening_start || null,
+      opening_end: episodeForm.opening_end || null,
+      ending_start: episodeForm.ending_start || null,
+      ending_end: episodeForm.ending_end || null,
     }
     const res = await fetch(`${supabaseUrl}/rest/v1/episodes`, {
       method: 'POST',
@@ -376,7 +391,15 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     })
     if (!res.ok) { alert('Ошибка добавления серии'); return }
     await loadEpisodes(animeId)
-    setEpisodeForm({ episode_number: episodeForm.episode_number + 1, title: '', video_url: '' })
+    setEpisodeForm({
+      episode_number: episodeForm.episode_number + 1,
+      title: '',
+      video_url: '',
+      opening_start: undefined,
+      opening_end: undefined,
+      ending_start: undefined,
+      ending_end: undefined,
+    })
   }
 
   const handleDeleteEpisode = async (episodeId: string, animeId: string) => {
@@ -500,6 +523,18 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                       onChange={e => setEpisodeForm({...episodeForm, video_url: e.target.value})}
                       className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm flex-1 w-full sm:w-auto"
                     />
+
+                    {/* Метки опенинга/эндинга */}
+                    <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">
+                      <input type="number" placeholder="Опенинг начало (сек)" value={episodeForm.opening_start ?? ''} onChange={e => setEpisodeForm({...episodeForm, opening_start: e.target.value ? Number(e.target.value) : undefined})}
+                        className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm" />
+                      <input type="number" placeholder="Опенинг конец (сек)" value={episodeForm.opening_end ?? ''} onChange={e => setEpisodeForm({...episodeForm, opening_end: e.target.value ? Number(e.target.value) : undefined})}
+                        className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm" />
+                      <input type="number" placeholder="Эндинг начало (сек)" value={episodeForm.ending_start ?? ''} onChange={e => setEpisodeForm({...episodeForm, ending_start: e.target.value ? Number(e.target.value) : undefined})}
+                        className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm" />
+                      <input type="number" placeholder="Эндинг конец (сек)" value={episodeForm.ending_end ?? ''} onChange={e => setEpisodeForm({...episodeForm, ending_end: e.target.value ? Number(e.target.value) : undefined})}
+                        className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm" />
+                    </div>
 
                     <button
                       onClick={() => handleAddEpisode(anime.id)}
