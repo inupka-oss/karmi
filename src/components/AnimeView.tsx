@@ -32,6 +32,11 @@ interface Anime {
   trailer_url?: string
 }
 
+function getAccessToken(): string | null {
+  const match = document.cookie.match(/sb-access-token=([^;]+)/)
+  return match ? match[1] : null
+}
+
 export default function AnimeView({
   anime,
   genres,
@@ -43,15 +48,43 @@ export default function AnimeView({
 }) {
   const [activeEpisode, setActiveEpisode] = useState<Episode | null>(null)
   const [progress, setProgress] = useState<{ episodeId: string; time: number } | null>(null)
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
   useEffect(() => {
-    const stored = localStorage.getItem('karmi-progress')
-    if (stored) {
-      try {
-        setProgress(JSON.parse(stored))
-      } catch {}
+    const token = getAccessToken()
+    if (token) {
+      // Загружаем прогресс из облака
+      const loadCloudProgress = async () => {
+        try {
+          const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
+            headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${token}` },
+          })
+          if (!userRes.ok) return
+          const user = await userRes.json()
+          const userId = user.id
+
+          const res = await fetch(`${supabaseUrl}/rest/v1/user_profiles?user_identifier=eq.${userId}`, {
+            headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${token}` },
+          })
+          if (res.ok) {
+            const data = await res.json()
+            if (data.length > 0 && data[0].progress) {
+              setProgress(data[0].progress)
+            }
+          }
+        } catch {}
+      }
+      loadCloudProgress()
+    } else {
+      const stored = localStorage.getItem('karmi-progress')
+      if (stored) {
+        try {
+          setProgress(JSON.parse(stored))
+        } catch {}
+      }
     }
-  }, [])
+  }, [supabaseUrl, supabaseAnonKey])
 
   const handleStartWatching = (ep: Episode) => setActiveEpisode(ep)
   const handleContinueWatching = (ep: Episode) => setActiveEpisode(ep)
@@ -59,7 +92,6 @@ export default function AnimeView({
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       <div className="flex flex-col md:flex-row gap-8">
-        {/* Левая колонка: постер + кнопки */}
         <div className="w-full md:w-1/3 lg:w-1/4">
           <div className="aspect-[3/4] relative rounded-2xl overflow-hidden glass">
             <Image
@@ -69,8 +101,6 @@ export default function AnimeView({
               className="object-cover"
             />
           </div>
-
-          {/* Кнопки сразу под постером */}
           <AnimeActions
             trailerUrl={anime.trailer_url}
             episodes={episodes}
@@ -79,8 +109,6 @@ export default function AnimeView({
             progress={progress}
           />
         </div>
-
-        {/* Правая колонка: описание и всё остальное */}
         <div className="flex-1">
           <h1 className="text-4xl font-bold text-white">{anime.title_ru}</h1>
           {anime.title_en && <h2 className="text-xl text-gray-400 mt-1">{anime.title_en}</h2>}
@@ -116,11 +144,11 @@ export default function AnimeView({
         </div>
       </div>
 
-      {/* Плеер и список серий (на всю ширину) */}
       <EpisodeList
         episodes={episodes}
         activeEpisode={activeEpisode || episodes[0] || null}
         onSelectEpisode={setActiveEpisode}
+        activeEpisodeId={activeEpisode?.id || episodes[0]?.id}
       />
 
       <RelatedAnime animeId={anime.id} />

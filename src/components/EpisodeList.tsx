@@ -13,14 +13,15 @@ export default function EpisodeList({
   episodes,
   activeEpisode,
   onSelectEpisode,
+  activeEpisodeId,
 }: {
   episodes: Episode[]
   activeEpisode?: Episode
   onSelectEpisode?: (ep: Episode) => void
+  activeEpisodeId?: string
 }) {
   const [activeEp, setActiveEp] = useState<Episode | null>(activeEpisode || episodes?.[0] || null)
 
-  // Синхронизируемся с внешним activeEpisode
   useEffect(() => {
     if (activeEpisode) setActiveEp(activeEpisode)
   }, [activeEpisode])
@@ -30,7 +31,6 @@ export default function EpisodeList({
     onSelectEpisode?.(ep)
   }
 
-  // Автопереключение на следующую серию
   const handleEnded = () => {
     const currentIndex = episodes.findIndex(ep => ep.id === activeEp?.id)
     if (currentIndex < episodes.length - 1) {
@@ -49,6 +49,7 @@ export default function EpisodeList({
         src={activeEp?.video_url || ''}
         title={activeEp?.title || `Эпизод ${activeEp?.episode_number}`}
         onEnded={handleEnded}
+        activeEpisodeId={activeEp?.id || activeEpisodeId}
       />
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 mt-4">
         {episodes.map(ep => (
