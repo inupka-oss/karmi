@@ -5,6 +5,7 @@ import EpisodeList from '@/components/EpisodeList'
 import StarRating from '@/components/StarRating'
 import CommentSection from '@/components/CommentSection'
 import RatingForm from '@/components/RatingForm'
+import RelatedAnime from '@/components/RelatedAnime'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -28,7 +29,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   if (!anime) return { title: 'Аниме не найдено' }
   return {
     title: `${anime.title_ru} — смотреть онлайн бесплатно`,
-    description: anime.description?.slice(0, 160) || 'Смотрите аниме на Карми',
+    description: anime.description?.slice(0, 160) || 'Смотрите аниме на Karmi',
   }
 }
 
@@ -52,6 +53,7 @@ export default async function AnimePage({ params }: { params: Promise<{ id: stri
   }
 
   const episodes = await fetchSupabase(`episodes?anime_id=eq.${anime.id}&order=episode_number.asc`)
+
   const animeWithGenres = { ...anime, genres }
 
   return (
@@ -81,9 +83,23 @@ export default async function AnimePage({ params }: { params: Promise<{ id: stri
             <div><span className="text-gray-500">Статус:</span> {animeWithGenres.status}</div>
           </div>
           <RatingForm animeId={anime.id} />
+
+          {/* Создатели */}
+          {(animeWithGenres.studio || animeWithGenres.director || animeWithGenres.cast) && (
+            <div className="mt-6 glass p-4 rounded-xl">
+              <h2 className="text-lg font-semibold text-white mb-2">Создатели</h2>
+              <div className="space-y-1 text-sm text-gray-300">
+                {animeWithGenres.studio && <div><span className="text-gray-500">Студия:</span> {animeWithGenres.studio}</div>}
+                {animeWithGenres.director && <div><span className="text-gray-500">Режиссёр:</span> {animeWithGenres.director}</div>}
+                {animeWithGenres.cast && <div><span className="text-gray-500">Актёры/сэйю:</span> {animeWithGenres.cast}</div>}
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
       <EpisodeList episodes={episodes} />
+      <RelatedAnime animeId={anime.id} />
       <CommentSection animeId={anime.id} />
     </div>
   )

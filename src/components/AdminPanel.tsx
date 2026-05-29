@@ -16,6 +16,12 @@ interface Episode {
   video_url: string
 }
 
+interface RelatedAnime {
+  id: string
+  related_id: string
+  relation_type: string
+}
+
 interface Anime {
   id: string
   title_ru: string
@@ -27,6 +33,9 @@ interface Anime {
   type?: string
   status?: string
   genres?: Genre[]
+  studio?: string
+  director?: string
+  cast?: string
 }
 
 export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
@@ -50,8 +59,16 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
   const [posterFile, setPosterFile] = useState<File | null>(null)
   const [posterUrl, setPosterUrl] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [studio, setStudio] = useState('')
+  const [director, setDirector] = useState('')
+  const [cast, setCast] = useState('')
 
-  // Для эпизодов и загрузки видео
+  // Связанные аниме
+  const [relatedEntries, setRelatedEntries] = useState<RelatedAnime[]>([])
+  const [relatedType, setRelatedType] = useState('sequel')
+  const [relatedTargetId, setRelatedTargetId] = useState('')
+
+  // Эпизоды
   const [expandedAnimeId, setExpandedAnimeId] = useState<string | null>(null)
   const [episodes, setEpisodes] = useState<Episode[]>([])
   const [episodeForm, setEpisodeForm] = useState({ episode_number: 1, title: '', video_url: '' })
@@ -99,6 +116,9 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     setPosterUrl('')
     setSelectedGenres([])
     setEditingAnime(null)
+    setStudio('')
+    setDirector('')
+    setCast('')
   }
 
   const openAddModal = () => {
@@ -116,6 +136,9 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     setType(anime.type || 'tv')
     setStatus(anime.status || 'ongoing')
     setPosterUrl(anime.poster_url || '')
+    setStudio(anime.studio || '')
+    setDirector(anime.director || '')
+    setCast(anime.cast || '')
     const currentGenreIds = anime.genres ? anime.genres.map(g => g.id) : []
     setSelectedGenres(currentGenreIds)
     setShowModal(true)
@@ -151,6 +174,9 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
       poster_url: finalPosterUrl || null,
       type,
       status,
+      studio: studio || null,
+      director: director || null,
+      cast: cast || null,
     }
 
     if (editingAnime) {
@@ -243,7 +269,49 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     } else alert('Ошибка удаления')
   }
 
-  // Работа с эпизодами
+  // Загрузка связанных аниме
+  const loadRelated = async (animeId: string) => {
+    const accessToken = getAccessToken()
+    const res = await fetch(`${supabaseUrl}/rest/v1/related_anime?anime_id=eq.${animeId}`, {
+      headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${accessToken}` },
+    })
+    if (res.ok) {
+      const data = await res.json()
+      setRelatedEntries(data)
+    }
+  }
+
+  const handleAddRelated = async (animeId: string) => {
+    if (!relatedTargetId) return
+    const accessToken = getAccessToken()
+    const res = await fetch(`${supabaseUrl}/rest/v1/related_anime`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': supabaseAnonKey,
+        'Authorization': `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        anime_id: animeId,
+        related_id: relatedTargetId,
+        relation_type: relatedType,
+      }),
+    })
+    if (!res.ok) { alert('Ошибка добавления связи'); return }
+    await loadRelated(animeId)
+    setRelatedTargetId('')
+  }
+
+  const handleDeleteRelated = async (relatedId: string, animeId: string) => {
+    const accessToken = getAccessToken()
+    await fetch(`${supabaseUrl}/rest/v1/related_anime?id=eq.${relatedId}`, {
+      method: 'DELETE',
+      headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${accessToken}` },
+    })
+    await loadRelated(animeId)
+  }
+
+  // Эпизоды (без изменений)
   const loadEpisodes = async (animeId: string) => {
     const accessToken = getAccessToken()
     const res = await fetch(`${supabaseUrl}/rest/v1/episodes?anime_id=eq.${animeId}&order=episode_number.asc`, {
@@ -321,6 +389,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     } else {
       setExpandedAnimeId(animeId)
       loadEpisodes(animeId)
+      loadRelated(animeId)
     }
   }
 
@@ -332,7 +401,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     <div className="max-w-6xl mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-white">Админ-панель Карми</h1>
+          <h1 className="text-3xl font-bold text-white">Админ-панель Karmi</h1>
           <p className="text-gray-400">Вы вошли как: {userEmail}</p>
         </div>
         <div className="flex gap-2">
@@ -384,53 +453,88 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
               </div>
             </div>
 
-            {/* Панель управления сериями */}
+            {/* Панель управления сериями и связями */}
             {expandedAnimeId === anime.id && (
-              <div className="mt-2 p-4 glass rounded-xl">
-                <h4 className="text-lg font-semibold mb-2">Серии</h4>
-                {episodes.length === 0 && <p className="text-gray-400 text-sm">Нет добавленных серий.</p>}
-                <ul className="space-y-2 mb-4">
-                  {episodes.map(ep => (
-                    <li key={ep.id} className="flex justify-between items-center bg-white/5 p-2 rounded-lg">
-                      <span className="text-white">{ep.episode_number}. {ep.title || 'Без названия'}</span>
-                      <button onClick={() => handleDeleteEpisode(ep.id, anime.id)} className="text-red-400 hover:text-red-300 text-sm ml-4">Удалить</button>
-                    </li>
-                  ))}
-                </ul>
+              <div className="mt-2 p-4 glass rounded-xl space-y-6">
+                {/* Серии */}
+                <div>
+                  <h4 className="text-lg font-semibold mb-2">Серии</h4>
+                  {episodes.length === 0 && <p className="text-gray-400 text-sm">Нет добавленных серий.</p>}
+                  <ul className="space-y-2 mb-4">
+                    {episodes.map(ep => (
+                      <li key={ep.id} className="flex justify-between items-center bg-white/5 p-2 rounded-lg">
+                        <span className="text-white">{ep.episode_number}. {ep.title || 'Без названия'}</span>
+                        <button onClick={() => handleDeleteEpisode(ep.id, anime.id)} className="text-red-400 hover:text-red-300 text-sm ml-4">Удалить</button>
+                      </li>
+                    ))}
+                  </ul>
 
-                <div className="flex gap-2 items-end flex-wrap">
-                  <input type="number" placeholder="№" value={episodeForm.episode_number} onChange={e => setEpisodeForm({...episodeForm, episode_number: Number(e.target.value)})}
-                    className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white w-20" min={1} />
-                  <input type="text" placeholder="Название (необязательно)" value={episodeForm.title} onChange={e => setEpisodeForm({...episodeForm, title: e.target.value})}
-                    className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white flex-1" />
-                  
-                  {/* Выбор видеофайла */}
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs text-gray-400">Видеофайл (если своё)</label>
+                  <div className="flex gap-2 items-end flex-wrap">
+                    <input type="number" placeholder="№" value={episodeForm.episode_number} onChange={e => setEpisodeForm({...episodeForm, episode_number: Number(e.target.value)})}
+                      className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white w-20" min={1} />
+                    <input type="text" placeholder="Название (необязательно)" value={episodeForm.title} onChange={e => setEpisodeForm({...episodeForm, title: e.target.value})}
+                      className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white flex-1" />
+                    
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs text-gray-400">Видеофайл (если своё)</label>
+                      <input
+                        type="file"
+                        accept="video/*"
+                        onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
+                        className="text-white text-sm file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-neo-pink/20 file:text-neo-pink hover:file:bg-neo-pink/40"
+                      />
+                    </div>
+
                     <input
-                      type="file"
-                      accept="video/*"
-                      onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
-                      className="text-white text-sm file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-neo-pink/20 file:text-neo-pink hover:file:bg-neo-pink/40"
+                      type="url"
+                      placeholder="Или ссылка на видео (embed)"
+                      value={episodeForm.video_url}
+                      onChange={e => setEpisodeForm({...episodeForm, video_url: e.target.value})}
+                      className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white flex-1"
                     />
+
+                    <button
+                      onClick={() => handleAddEpisode(anime.id)}
+                      disabled={uploadingVideo}
+                      className="bg-neo-pink hover:bg-neo-pink/80 text-white px-4 py-2 rounded-xl"
+                    >
+                      {uploadingVideo ? 'Загрузка...' : 'Добавить'}
+                    </button>
                   </div>
+                </div>
 
-                  {/* Или ссылка на embed */}
-                  <input
-                    type="url"
-                    placeholder="Или ссылка на видео (embed)"
-                    value={episodeForm.video_url}
-                    onChange={e => setEpisodeForm({...episodeForm, video_url: e.target.value})}
-                    className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white flex-1"
-                  />
-
-                  <button
-                    onClick={() => handleAddEpisode(anime.id)}
-                    disabled={uploadingVideo}
-                    className="bg-neo-pink hover:bg-neo-pink/80 text-white px-4 py-2 rounded-xl"
-                  >
-                    {uploadingVideo ? 'Загрузка...' : 'Добавить'}
-                  </button>
+                {/* Связанные аниме */}
+                <div>
+                  <h4 className="text-lg font-semibold mb-2">Связанное</h4>
+                  <ul className="space-y-2 mb-4">
+                    {relatedEntries.map(rel => {
+                      const relatedAnime = animeList.find(a => a.id === rel.related_id)
+                      return (
+                        <li key={rel.id} className="flex justify-between items-center bg-white/5 p-2 rounded-lg">
+                          <span className="text-white">{rel.relation_type}: {relatedAnime?.title_ru || 'Неизвестно'}</span>
+                          <button onClick={() => handleDeleteRelated(rel.id, anime.id)} className="text-red-400 hover:text-red-300 text-sm">Удалить</button>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                  <div className="flex gap-2 items-end">
+                    <select value={relatedType} onChange={e => setRelatedType(e.target.value)} className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white">
+                      <option value="sequel">Сиквел</option>
+                      <option value="prequel">Приквел</option>
+                      <option value="spin-off">Спин-офф</option>
+                      <option value="movie">Фильм</option>
+                      <option value="ova">OVA</option>
+                      <option value="special">Спешл</option>
+                      <option value="alternative">Альтернатива</option>
+                    </select>
+                    <select value={relatedTargetId} onChange={e => setRelatedTargetId(e.target.value)} className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white flex-1">
+                      <option value="">Выберите аниме</option>
+                      {animeList.filter(a => a.id !== anime.id).map(a => (
+                        <option key={a.id} value={a.id}>{a.title_ru}</option>
+                      ))}
+                    </select>
+                    <button onClick={() => handleAddRelated(anime.id)} className="bg-neo-pink hover:bg-neo-pink/80 text-white px-4 py-2 rounded-xl">Добавить связь</button>
+                  </div>
                 </div>
               </div>
             )}
@@ -438,7 +542,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
         ))}
       </div>
 
-      {/* Модальное окно добавления/редактирования аниме (без изменений, как раньше) */}
+      {/* Модальное окно добавления/редактирования аниме */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-neo-dark border border-white/10 rounded-2xl p-6 w-full max-w-md max-h-[80vh] overflow-y-auto">
@@ -453,6 +557,9 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                 <input type="number" placeholder="Год" value={year} onChange={e => setYear(Number(e.target.value))} className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white w-1/2" />
                 <input type="number" step="0.1" min="0" max="10" placeholder="Рейтинг" value={rating} onChange={e => setRating(Number(e.target.value))} className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white w-1/2" />
               </div>
+              <input placeholder="Студия" value={studio} onChange={e => setStudio(e.target.value)} className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white" />
+              <input placeholder="Режиссёр" value={director} onChange={e => setDirector(e.target.value)} className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white" />
+              <textarea placeholder="Актёры / сэйю (через запятую)" value={cast} onChange={e => setCast(e.target.value)} rows={2} className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white" />
               <div>
                 <label className="text-sm text-gray-400">Постер (файл)</label>
                 <input type="file" accept="image/*" onChange={e => setPosterFile(e.target.files?.[0] || null)} className="text-white text-sm mt-1" />
