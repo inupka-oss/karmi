@@ -30,14 +30,14 @@ export default function Header() {
     <header className="sticky top-0 z-50 glass backdrop-blur-md border-b border-white/10">
       <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-3">
         <Link href="/" className="text-2xl font-bold text-glow-white">
-          Kar<span className="text-neo-pink text-glow-pink">mi</span>
+          Karmi
         </Link>
 
         <nav className="hidden md:flex items-center gap-2">
           <Link href="/" className={linkClass('/')}>Главная</Link>
           <Link href="/ongoing" className={linkClass('/ongoing')}>Онгоинги</Link>
           <Link href="/favorites" className={linkClass('/favorites')}>Избранное</Link>
-          <Link href="/profile" className={linkClass('/profile')}>Профиль</Link>
+          <Link href="/login" className={linkClass('/login')}>Войти</Link>
         </nav>
 
         <div className="flex items-center gap-2">
@@ -51,7 +51,7 @@ export default function Header() {
 
           {/* Мобильное меню (простая версия) */}
           <div className="md:hidden">
-            {/* Можно добавить выпадающее меню, но пока оставим как есть */}
+            {/* Можно добавить выпадающее меню позже */}
           </div>
         </div>
       </div>
