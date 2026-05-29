@@ -382,7 +382,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     }
   }
 
-  // Загрузка видео через TUS
+  // Загрузка видео через TUS с безопасным именем файла
   const handleAddEpisode = async (animeId: string) => {
     const accessToken = getAccessToken()
     let finalVideoUrl = episodeForm.video_url
@@ -390,7 +390,12 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     if (videoFile) {
       setUploadingVideo(true)
       try {
-        const fileName = `${Date.now()}_${videoFile.name.replace(/\s/g, '_')}`
+        // Очищаем имя от кириллицы и спецсимволов
+        const safeName = videoFile.name
+          .replace(/\s+/g, '_')
+          .replace(/[^a-zA-Z0-9._-]/g, '')
+        const fileName = `${Date.now()}_${safeName}`
+        
         const upload = new tus.Upload(videoFile, {
           endpoint: `${supabaseUrl}/storage/v1/upload/resumable`,
           retryDelays: [0, 3000, 5000, 10000, 20000],
