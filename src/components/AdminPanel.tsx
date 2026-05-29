@@ -117,6 +117,11 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
   const [editCommentText, setEditCommentText] = useState('')
 
+  // Массовое добавление серий
+  const [batchModalOpen, setBatchModalOpen] = useState(false)
+  const [batchJson, setBatchJson] = useState('')
+  const [batchAnimeId, setBatchAnimeId] = useState<string | null>(null)
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
@@ -449,6 +454,45 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     await loadEpisodes(animeId)
   }
 
+  // Массовое добавление серий
+  const handleBatchAdd = async () => {
+    if (!batchAnimeId || !batchJson.trim()) return
+    let episodes: any[]
+    try {
+      episodes = JSON.parse(batchJson)
+      if (!Array.isArray(episodes)) throw new Error('Not array')
+    } catch {
+      toast.error('Невалидный JSON массив')
+      return
+    }
+
+    const accessToken = getAccessToken()
+    let added = 0
+    for (const ep of episodes) {
+      if (!ep.episode_number || !ep.video_url) continue
+      const res = await fetch(`${supabaseUrl}/rest/v1/episodes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          anime_id: batchAnimeId,
+          episode_number: ep.episode_number,
+          title: ep.title || null,
+          video_url: ep.video_url,
+        }),
+      })
+      if (res.ok) added++
+      else toast.error(`Ошибка на серии ${ep.episode_number}`)
+    }
+    toast.success(`Добавлено ${added} серий`)
+    setBatchModalOpen(false)
+    setBatchJson('')
+    if (expandedAnimeId === batchAnimeId) loadEpisodes(batchAnimeId)
+  }
+
   // Скриншоты
   const loadScreenshots = async (animeId: string) => {
     const accessToken = getAccessToken()
@@ -676,6 +720,12 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                   <button onClick={() => handleDelete(anime.id)} className="bg-red-500/20 hover:bg-red-500/40 text-red-400 px-2 sm:px-3 py-1 rounded-lg text-xs sm:text-sm">
                     Удалить
                   </button>
+                  <button onClick={() => {
+                    setBatchAnimeId(anime.id)
+                    setBatchModalOpen(true)
+                  }} className="bg-purple-500/20 hover:bg-purple-500/40 text-purple-400 px-2 sm:px-3 py-1 rounded-lg text-xs sm:text-sm">
+                    Массово
+                  </button>
                 </div>
               </div>
             </div>
@@ -853,6 +903,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
         ))}
       </div>
 
+      {/* Модальное окно добавления/редактирования аниме */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-neo-dark border border-white/10 rounded-2xl p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
@@ -923,6 +974,29 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно массового добавления серий */}
+      {batchModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-neo-dark border border-white/10 rounded-2xl p-4 sm:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <h2 className="text-lg sm:text-xl font-bold text-white mb-4">Массовое добавление серий</h2>
+            <p className="text-gray-400 text-sm mb-2">
+              Вставьте JSON-массив объектов вида: {`[{ "episode_number": 1, "title": "Название", "video_url": "https://..." }]`}
+            </p>
+            <textarea
+              value={batchJson}
+              onChange={e => setBatchJson(e.target.value)}
+              rows={10}
+              className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm mb-4"
+              placeholder={`[{"episode_number": 1, "title": "", "video_url": ""}]`}
+            />
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setBatchModalOpen(false)} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl">Отмена</button>
+              <button onClick={handleBatchAdd} className="bg-neo-pink hover:bg-neo-pink/80 text-white px-4 py-2 rounded-xl">Добавить все</button>
+            </div>
           </div>
         </div>
       )}

@@ -9,6 +9,7 @@ import EpisodeList from './EpisodeList'
 import AnimeActions from './AnimeActions'
 import ScreenshotGallery from './ScreenshotGallery'
 import { useNotifications } from '@/hooks/useNotifications'
+import { useActiveViewers } from '@/hooks/useActiveViewers'
 
 interface Episode {
   id: string
@@ -55,8 +56,8 @@ export default function AnimeView({
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   const [shareUrl, setShareUrl] = useState('')
 
-  // Уведомления
   const { subscriptions, toggleSubscription } = useNotifications()
+  const activeViewers = useActiveViewers(anime.id)
 
   useEffect(() => {
     setShareUrl(window.location.href)
@@ -118,7 +119,6 @@ export default function AnimeView({
             onContinueWatching={handleContinueWatching}
             progress={progress}
           />
-          {/* Кнопки "Поделиться" */}
           {shareUrl && (
             <div className="flex gap-2 mt-4">
               <a
@@ -139,7 +139,6 @@ export default function AnimeView({
               </a>
             </div>
           )}
-          {/* Кнопка подписки */}
           <button
             onClick={() => toggleSubscription(anime.id)}
             className={`mt-3 w-full px-4 py-2 rounded-xl text-sm font-semibold transition ${
@@ -171,8 +170,17 @@ export default function AnimeView({
             </div>
             <div><span className="text-gray-500">Статус:</span> {anime.status}</div>
           </div>
-          <div className="flex items-center gap-2 mt-4 text-sm text-gray-400">
+          <div className="flex items-center gap-4 mt-2 text-sm text-gray-400">
             <span>👁 {anime.views || 0} просмотров</span>
+            {activeViewers > 0 && (
+              <span className="flex items-center gap-1">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                </span>
+                {activeViewers} смотрят сейчас
+              </span>
+            )}
           </div>
           <RatingForm animeId={anime.id} />
 
