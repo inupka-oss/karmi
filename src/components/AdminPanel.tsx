@@ -33,6 +33,14 @@ interface Screenshot {
   order_index: number
 }
 
+interface Comment {
+  id: string
+  anime_id: string
+  user_name: string
+  content: string
+  created_at: string
+}
+
 interface Anime {
   id: string
   title_ru: string
@@ -76,10 +84,12 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
   const [cast, setCast] = useState('')
   const [trailerUrl, setTrailerUrl] = useState('')
 
+  // Связанные аниме
   const [relatedEntries, setRelatedEntries] = useState<RelatedAnime[]>([])
   const [relatedType, setRelatedType] = useState('sequel')
   const [relatedTargetId, setRelatedTargetId] = useState('')
 
+  // Эпизоды
   const [expandedAnimeId, setExpandedAnimeId] = useState<string | null>(null)
   const [episodes, setEpisodes] = useState<Episode[]>([])
   const [episodeForm, setEpisodeForm] = useState({
@@ -94,9 +104,14 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
   const [videoFile, setVideoFile] = useState<File | null>(null)
   const [uploadingVideo, setUploadingVideo] = useState(false)
 
+  // Скриншоты
   const [screenshots, setScreenshots] = useState<Screenshot[]>([])
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null)
   const [uploadingScreenshot, setUploadingScreenshot] = useState(false)
+
+  // Комментарии
+  const [comments, setComments] = useState<Comment[]>([])
+  const [loadingComments, setLoadingComments] = useState(false)
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -427,18 +442,6 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     await loadEpisodes(animeId)
   }
 
-  const toggleEpisodesPanel = (animeId: string) => {
-    if (expandedAnimeId === animeId) {
-      setExpandedAnimeId(null)
-      setEpisodes([])
-    } else {
-      setExpandedAnimeId(animeId)
-      loadEpisodes(animeId)
-      loadRelated(animeId)
-      loadScreenshots(animeId)
-    }
-  }
-
   // Скриншоты
   const loadScreenshots = async (animeId: string) => {
     const accessToken = getAccessToken()
@@ -533,6 +536,44 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     setScreenshots(updatedScreenshots)
   }
 
+  // Комментарии
+  const loadComments = async (animeId: string) => {
+    setLoadingComments(true)
+    const accessToken = getAccessToken()
+    const res = await fetch(`${supabaseUrl}/rest/v1/comments?anime_id=eq.${animeId}&order=created_at.desc`, {
+      headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${accessToken}` },
+    })
+    if (res.ok) {
+      const data = await res.json()
+      setComments(data)
+    }
+    setLoadingComments(false)
+  }
+
+  const handleDeleteComment = async (commentId: string, animeId: string) => {
+    if (!confirm('Удалить комментарий?')) return
+    const accessToken = getAccessToken()
+    await fetch(`${supabaseUrl}/rest/v1/comments?id=eq.${commentId}`, {
+      method: 'DELETE',
+      headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${accessToken}` },
+    })
+    toast.success('Комментарий удалён')
+    loadComments(animeId)
+  }
+
+  const toggleEpisodesPanel = (animeId: string) => {
+    if (expandedAnimeId === animeId) {
+      setExpandedAnimeId(null)
+      setEpisodes([])
+    } else {
+      setExpandedAnimeId(animeId)
+      loadEpisodes(animeId)
+      loadRelated(animeId)
+      loadScreenshots(animeId)
+      loadComments(animeId) // Загрузка комментариев
+    }
+  }
+
   useEffect(() => {
     setAnimeList(initialAnime)
   }, [initialAnime])
@@ -599,6 +640,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
 
             {expandedAnimeId === anime.id && (
               <div className="mt-2 p-3 sm:p-4 glass rounded-xl space-y-4 sm:space-y-6">
+                {/* Серии */}
                 <div>
                   <h4 className="text-base sm:text-lg font-semibold mb-2">Серии</h4>
                   {episodes.length === 0 && <p className="text-gray-400 text-xs sm:text-sm">Нет добавленных серий.</p>}
@@ -656,6 +698,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                   </div>
                 </div>
 
+                {/* Связанные аниме */}
                 <div>
                   <h4 className="text-base sm:text-lg font-semibold mb-2">Связанное</h4>
                   <ul className="space-y-2 mb-4 text-sm">
@@ -689,6 +732,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                   </div>
                 </div>
 
+                {/* Кадры */}
                 <div>
                   <h4 className="text-base sm:text-lg font-semibold mb-2">Кадры</h4>
                   <div className="flex gap-2 overflow-x-auto pb-2">
@@ -721,6 +765,25 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                       {uploadingScreenshot ? '...' : 'Загрузить'}
                     </button>
                   </div>
+                </div>
+
+                {/* Комментарии */}
+                <div>
+                  <h4 className="text-base sm:text-lg font-semibold mb-2">Комментарии</h4>
+                  {loadingComments && <p className="text-gray-400 text-sm">Загрузка...</p>}
+                  {!loadingComments && comments.length === 0 && <p className="text-gray-400 text-sm">Нет комментариев.</p>}
+                  <ul className="space-y-2 mb-4">
+                    {comments.map(c => (
+                      <li key={c.id} className="flex justify-between items-start bg-white/5 p-2 rounded-lg text-sm">
+                        <div>
+                          <span className="text-white font-medium">{c.user_name}</span>
+                          <p className="text-gray-400 text-xs mt-1">{c.content}</p>
+                          <span className="text-gray-500 text-xs">{new Date(c.created_at).toLocaleDateString('ru-RU')}</span>
+                        </div>
+                        <button onClick={() => handleDeleteComment(c.id, anime.id)} className="text-red-400 hover:text-red-300 text-xs ml-2">Удалить</button>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
             )}

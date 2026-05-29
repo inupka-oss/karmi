@@ -9,9 +9,13 @@
   --color-neo-light-text: #111;
   --color-neo-light-card: #ffffff;
   --color-neo-light-border: #111;
+  /* Новая синяя тема */
+  --color-neo-blue-bg: #0a1929;
+  --color-neo-blue-card: rgba(10, 25, 47, 0.8);
+  --color-neo-blue-border: #1e3a5f;
 }
 
-/* Тёмная тема */
+/* Тёмная тема (по умолчанию) */
 body {
   background-color: var(--color-neo-dark);
   color: white;
@@ -21,10 +25,15 @@ body {
 }
 
 /* Светлая тема */
-.light body,
-body.light {
+.light body {
   background-color: var(--color-neo-light-bg);
   color: var(--color-neo-light-text);
+}
+
+/* Синяя тема */
+.blue body {
+  background-color: var(--color-neo-blue-bg);
+  color: #e0e0e0;
 }
 
 .glass {
@@ -53,39 +62,35 @@ body.light {
   box-shadow: 8px 8px 0 rgba(0,0,0,0.15);
 }
 
+.blue .glass {
+  background: var(--color-neo-blue-card);
+  border-color: var(--color-neo-blue-border);
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.5);
+}
+
+.blue .glass:hover {
+  border-color: var(--color-neo-pink);
+  box-shadow: 6px 6px 0 rgba(0,0,0,0.6);
+}
+
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: #0d0d0d; }
 ::-webkit-scrollbar-thumb { background: var(--color-neo-pink); border-radius: 3px; }
 .light ::-webkit-scrollbar-track { background: #e0e0e0; }
 .light ::-webkit-scrollbar-thumb { background: #111; }
+.blue ::-webkit-scrollbar-track { background: #0a1929; }
+.blue ::-webkit-scrollbar-thumb { background: #1e3a5f; }
 
 /* Свечения */
 @layer utilities {
-  .text-glow-pink {
-    text-shadow: 0 0 10px #ff2e63, 0 0 20px #ff2e63, 0 0 40px #ff2e63;
-  }
-  .text-glow-white {
-    text-shadow: 0 0 10px rgba(255,255,255,0.8), 0 0 20px rgba(255,255,255,0.5);
-  }
-  .card-glow {
-    box-shadow: 0 0 20px rgba(255, 46, 99, 0.3), 0 0 40px rgba(255, 46, 99, 0.1);
-  }
-  .card-hover-glow:hover {
-    box-shadow: 0 0 30px rgba(255, 46, 99, 0.6), 0 0 60px rgba(255, 46, 99, 0.3);
-  }
-  .animate-fade-in {
-    animation: fadeIn 0.5s ease-out;
-  }
-  .animate-press {
-    transition: transform 0.1s ease, box-shadow 0.1s ease;
-  }
-  .animate-press:hover {
-    transform: scale(0.95);
-    box-shadow: 2px 2px 0 rgba(0,0,0,0.5);
-  }
-  .animate-pulse-subtle {
-    animation: pulseSubtle 2s infinite;
-  }
+  .text-glow-pink { text-shadow: 0 0 10px #ff2e63, 0 0 20px #ff2e63, 0 0 40px #ff2e63; }
+  .text-glow-white { text-shadow: 0 0 10px rgba(255,255,255,0.8), 0 0 20px rgba(255,255,255,0.5); }
+  .card-glow { box-shadow: 0 0 20px rgba(255, 46, 99, 0.3), 0 0 40px rgba(255, 46, 99, 0.1); }
+  .card-hover-glow:hover { box-shadow: 0 0 30px rgba(255, 46, 99, 0.6), 0 0 60px rgba(255, 46, 99, 0.3); }
+  .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+  .animate-press { transition: transform 0.1s ease, box-shadow 0.1s ease; }
+  .animate-press:hover { transform: scale(0.95); box-shadow: 2px 2px 0 rgba(0,0,0,0.5); }
+  .animate-pulse-subtle { animation: pulseSubtle 2s infinite; }
 }
 
 @keyframes fadeIn {
@@ -119,6 +124,10 @@ body::before {
   background: linear-gradient(135deg, #f0f2f5 0%, #e9ecef 30%, #f0f2f5 70%, #e9ecef 100%);
 }
 
+.blue body::before {
+  background: linear-gradient(135deg, #0a1929 0%, #0d2137 30%, #0a1929 70%, #0d2137 100%);
+}
+
 body::after {
   content: "";
   position: fixed;
@@ -142,6 +151,13 @@ body::after {
                     radial-gradient(2px 2px at 220px 90px, #111, transparent);
 }
 
+.blue body::after {
+  background-image: radial-gradient(3px 3px at 20px 30px, #ff2e63, transparent),
+                    radial-gradient(2px 2px at 80px 10px, #1e3a5f, transparent),
+                    radial-gradient(3px 3px at 150px 60px, #ff2e63, transparent),
+                    radial-gradient(2px 2px at 220px 90px, #1e3a5f, transparent);
+}
+
 @keyframes twinkle {
   0% { opacity: 0.4; }
   100% { opacity: 0.8; }
@@ -156,46 +172,40 @@ body::after {
   color: #111;
   font-weight: 500;
 }
-.light input:focus,
-.light textarea:focus,
-.light select:focus {
+.light input:focus, .light textarea:focus, .light select:focus {
   border-color: var(--color-neo-pink);
   outline: none;
   box-shadow: 4px 4px 0 rgba(0,0,0,0.1);
 }
 
-.light .bg-neo-pink {
+/* Стили синей темы */
+.blue input,
+.blue textarea,
+.blue select {
+  background-color: rgba(10, 25, 47, 0.8);
+  border: 2px solid #1e3a5f;
+  color: white;
+}
+.blue input:focus, .blue textarea:focus, .blue select:focus {
+  border-color: var(--color-neo-pink);
+  outline: none;
+}
+
+/* Кнопки в синей теме */
+.blue .bg-neo-pink {
   background-color: var(--color-neo-pink);
   color: white;
-  border: 2px solid #111;
-  box-shadow: 4px 4px 0 #111;
 }
-.light .bg-neo-pink:hover {
-  background-color: #e02557;
-  box-shadow: 6px 6px 0 #111;
+.blue .bg-white\/10,
+.blue .bg-white\/5 {
+  background-color: rgba(10, 25, 47, 0.8);
+  border-color: #1e3a5f;
 }
-
-.light .bg-white\/10,
-.light .bg-white\/5 {
-  background-color: #fff;
-  border: 2px solid #111;
-  color: #111;
-  box-shadow: 3px 3px 0 rgba(0,0,0,0.1);
+.blue .text-white {
+  color: #e0e0e0;
 }
-.light .bg-white\/10:hover {
-  background-color: #f0f0f0;
+.blue .text-gray-300,
+.blue .text-gray-400,
+.blue .text-gray-500 {
+  color: #94a3b8;
 }
-
-.light .text-glow-pink,
-.light .text-glow-white {
-  text-shadow: none;
-}
-.light .card-glow {
-  box-shadow: 4px 4px 0 rgba(0,0,0,0.15);
-}
-.light .card-hover-glow:hover {
-  box-shadow: 6px 6px 0 rgba(0,0,0,0.25);
-}
-
-.light a { color: #111; }
-.light a:hover { color: var(--color-neo-pink); }
