@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import toast, { Toaster } from 'react-hot-toast'
+import * as tus from 'tus-js-client'
 
 interface Genre {
   id: number
@@ -381,6 +382,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     }
   }
 
+  // Загрузка видео через TUS
   const handleAddEpisode = async (animeId: string) => {
     const accessToken = getAccessToken()
     let finalVideoUrl = episodeForm.video_url
@@ -389,45 +391,68 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
       setUploadingVideo(true)
       try {
         const fileName = `${Date.now()}_${videoFile.name.replace(/\s/g, '_')}`
-        const uploadUrl = `${supabaseUrl}/storage/v1/object/videos/${fileName}`
-        console.log('Загрузка в:', uploadUrl)
-        
-        const res = await fetch(uploadUrl, {
-          method: 'POST',
+        const upload = new tus.Upload(videoFile, {
+          endpoint: `${supabaseUrl}/storage/v1/upload/resumable`,
+          retryDelays: [0, 3000, 5000, 10000, 20000],
           headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'apikey': supabaseAnonKey,
-            'Content-Type': videoFile.type,
+            authorization: `Bearer ${accessToken}`,
+            'x-upsert': 'true',
           },
-          body: videoFile,
+          uploadDataDuringCreation: true,
+          removeFingerprintOnSuccess: true,
+          metadata: {
+            bucketName: 'videos',
+            objectName: fileName,
+            contentType: videoFile.type,
+            cacheControl: '3600',
+          },
+          chunkSize: 50 * 1024 * 1024,
+          onError: (error) => {
+            console.error('TUS error:', error)
+            toast.error(`Ошибка загрузки: ${error.message}`)
+            setUploadingVideo(false)
+          },
+          onProgress: (bytesUploaded, bytesTotal) => {
+            const percentage = ((bytesUploaded / bytesTotal) * 100).toFixed(1)
+            console.log(`Загружено ${percentage}%`)
+          },
+          onSuccess: () => {
+            finalVideoUrl = `${supabaseUrl}/storage/v1/object/public/videos/${fileName}`
+            toast.success('Видео загружено')
+            setUploadingVideo(false)
+            setVideoFile(null)
+            saveEpisode(animeId, finalVideoUrl)
+          },
         })
 
-        if (!res.ok) {
-          const error = await res.json()
-          console.error('Ошибка загрузки:', error)
-          throw new Error(error.message || 'Upload failed')
-        }
-        finalVideoUrl = `${supabaseUrl}/storage/v1/object/public/videos/${fileName}`
-        toast.success('Видео загружено в Supabase Storage')
+        upload.findPreviousUploads().then((previousUploads) => {
+          if (previousUploads.length > 0) {
+            upload.resumeFromPreviousUpload(previousUploads[0])
+          }
+          upload.start()
+        })
+        return
       } catch (err: any) {
-        toast.error(`Ошибка загрузки: ${err.message}`)
+        toast.error('Не удалось начать загрузку')
         setUploadingVideo(false)
         return
       }
-      setUploadingVideo(false)
-      setVideoFile(null)
     }
 
-    if (!finalVideoUrl) {
+    if (finalVideoUrl) {
+      await saveEpisode(animeId, finalVideoUrl)
+    } else {
       toast.error('Введите ссылку или выберите видеофайл')
-      return
     }
+  }
 
+  const saveEpisode = async (animeId: string, videoUrl: string) => {
+    const accessToken = getAccessToken()
     const body = {
       anime_id: animeId,
       episode_number: episodeForm.episode_number,
       title: episodeForm.title || null,
-      video_url: finalVideoUrl,
+      video_url: videoUrl,
       opening_start: episodeForm.opening_start || null,
       opening_end: episodeForm.opening_end || null,
       ending_start: episodeForm.ending_start || null,
@@ -764,7 +789,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                       className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm flex-1 w-full sm:w-auto" />
                     
                     <div className="flex flex-col gap-1 w-full sm:w-auto">
-                      <label className="text-xs text-gray-400">Видеофайл (до 500 МБ)</label>
+                      <label className="text-xs text-gray-400">Видеофайл (до 5 ГБ)</label>
                       <input
                         type="file"
                         accept="video/*"
