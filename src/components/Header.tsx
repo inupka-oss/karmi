@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useFavorites } from '@/hooks/useFavorites'
+import { useNotifications } from '@/hooks/useNotifications'
 
 export default function Header() {
   const pathname = usePathname()
@@ -10,6 +11,7 @@ export default function Header() {
   const [loggedIn, setLoggedIn] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const { favorites } = useFavorites()
+  const { newEpisodes, clearNotifications } = useNotifications()
 
   useEffect(() => {
     const saved = localStorage.getItem('karmi-theme')
@@ -41,7 +43,6 @@ export default function Header() {
       pathname === href ? 'bg-neo-pink/20 text-neo-pink' : 'text-gray-300 hover:text-white hover:bg-white/10'
     }`
 
-  // Закрывать меню при переходе
   const handleNavClick = () => setMenuOpen(false)
 
   return (
@@ -70,8 +71,18 @@ export default function Header() {
           )}
         </nav>
 
-        {/* Правая часть: тема + бургер */}
+        {/* Правая часть: уведомления, тема, бургер */}
         <div className="flex items-center gap-2">
+          {/* Колокольчик уведомлений */}
+          <Link href="/notifications" className="relative p-2 rounded-xl bg-white/10 hover:bg-white/20 transition" onClick={() => clearNotifications()}>
+            🔔
+            {newEpisodes.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                {newEpisodes.length}
+              </span>
+            )}
+          </Link>
+
           <button
             onClick={toggleTheme}
             className="text-lg px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 transition"

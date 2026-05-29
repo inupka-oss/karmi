@@ -20,7 +20,7 @@ const PAGE_SIZE = 20
 export default async function CatalogPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ q?: string; genre?: string; year?: string; page?: string }>
+  searchParams?: Promise<{ q?: string; genre?: string; year?: string; status?: string; page?: string }>
 }) {
   const sp = await searchParams
   const currentPage = parseInt(sp?.page || '1') || 1
@@ -37,6 +37,9 @@ export default async function CatalogPage({
   if (sp?.year) {
     query = query.eq('year', parseInt(sp.year))
   }
+  if (sp?.status && sp.status !== 'all') {
+    query = query.eq('status', sp.status)
+  }
 
   const from = (currentPage - 1) * PAGE_SIZE
   const to = from + PAGE_SIZE - 1
@@ -51,6 +54,7 @@ export default async function CatalogPage({
     if (sp?.q) params.set('q', sp.q)
     if (sp?.genre) params.set('genre', sp.genre)
     if (sp?.year) params.set('year', sp.year)
+    if (sp?.status && sp.status !== 'all') params.set('status', sp.status)
     params.set('page', page.toString())
     return `/catalog?${params.toString()}`
   }
@@ -73,6 +77,12 @@ export default async function CatalogPage({
           ))}
         </select>
         <input type="number" name="year" placeholder="Год" defaultValue={sp?.year || ''} className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white text-sm sm:text-base w-full sm:w-24" />
+        <select name="status" defaultValue={sp?.status || 'all'} className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white text-sm sm:text-base w-full sm:w-auto">
+          <option value="all">Все статусы</option>
+          <option value="ongoing">Выходит</option>
+          <option value="completed">Завершён</option>
+          <option value="announced">Анонсирован</option>
+        </select>
         <button type="submit" className="bg-neo-pink hover:bg-neo-pink/80 text-white px-5 py-2 rounded-xl text-sm sm:text-base">Фильтровать</button>
       </form>
 

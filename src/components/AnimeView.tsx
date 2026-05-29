@@ -8,6 +8,7 @@ import RelatedAnime from './RelatedAnime'
 import EpisodeList from './EpisodeList'
 import AnimeActions from './AnimeActions'
 import ScreenshotGallery from './ScreenshotGallery'
+import { useNotifications } from '@/hooks/useNotifications'
 
 interface Episode {
   id: string
@@ -53,6 +54,9 @@ export default function AnimeView({
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   const [shareUrl, setShareUrl] = useState('')
+
+  // Уведомления
+  const { subscriptions, toggleSubscription } = useNotifications()
 
   useEffect(() => {
     setShareUrl(window.location.href)
@@ -135,6 +139,17 @@ export default function AnimeView({
               </a>
             </div>
           )}
+          {/* Кнопка подписки */}
+          <button
+            onClick={() => toggleSubscription(anime.id)}
+            className={`mt-3 w-full px-4 py-2 rounded-xl text-sm font-semibold transition ${
+              subscriptions.includes(anime.id)
+                ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50 hover:bg-yellow-500/30'
+                : 'bg-white/10 text-white border border-white/20 hover:bg-white/20'
+            }`}
+          >
+            {subscriptions.includes(anime.id) ? '🔔 Вы подписаны' : '🔔 Подписаться на новые серии'}
+          </button>
         </div>
         <div className="flex-1">
           <h1 className="text-4xl font-bold text-white">{anime.title_ru}</h1>
