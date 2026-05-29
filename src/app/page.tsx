@@ -61,7 +61,7 @@ export default async function HomePage({
         Karmi
       </h1>
 
-      {/* Единый ряд: поиск + кнопки иконок */}
+      {/* Поиск и кнопки в одном ряду */}
       <div className="flex flex-wrap items-center gap-3 mb-4 sm:mb-6">
         <SearchBar />
         <RandomAnimeButton />

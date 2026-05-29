@@ -24,7 +24,6 @@ body.light {
   color: #111111;
 }
 
-/* Стеклянные карточки */
 .glass {
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
@@ -37,13 +36,11 @@ body.light {
   border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-/* Скроллбар */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: #0d0d0d; }
 ::-webkit-scrollbar-thumb { background: #ff2e63; border-radius: 3px; }
 .light ::-webkit-scrollbar-track { background: #e0e0e0; }
 
-/* Тени и свечения */
 @layer utilities {
   .text-glow-pink {
     text-shadow: 0 0 10px #ff2e63, 0 0 20px #ff2e63, 0 0 40px #ff2e63;
@@ -59,7 +56,6 @@ body.light {
   }
 }
 
-/* Анимированный фон */
 @keyframes gradientShift {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
@@ -110,7 +106,7 @@ body::after {
   100% { opacity: 0.7; }
 }
 
-/* Исправления для светлой темы */
+/* Доп. исправления для светлой темы */
 .light input,
 .light textarea,
 .light select {
@@ -135,7 +131,7 @@ body::after {
 }
 
 .light .text-neo-pink {
-  color: #ff2e63 !important; /* неоновый розовый оставляем */
+  color: #ff2e63 !important;
 }
 
 .light .bg-neo-pink\/20 {
