@@ -112,6 +112,8 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
   // Комментарии
   const [comments, setComments] = useState<Comment[]>([])
   const [loadingComments, setLoadingComments] = useState(false)
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
+  const [editCommentText, setEditCommentText] = useState('')
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -561,6 +563,41 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     loadComments(animeId)
   }
 
+  const startEditComment = (comment: Comment) => {
+    setEditingCommentId(comment.id)
+    setEditCommentText(comment.content)
+  }
+
+  const cancelEditComment = () => {
+    setEditingCommentId(null)
+    setEditCommentText('')
+  }
+
+  const saveComment = async (commentId: string, animeId: string) => {
+    if (!editCommentText.trim()) {
+      toast.error('Текст комментария не может быть пустым')
+      return
+    }
+    const accessToken = getAccessToken()
+    const res = await fetch(`${supabaseUrl}/rest/v1/comments?id=eq.${commentId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': supabaseAnonKey,
+        'Authorization': `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ content: editCommentText }),
+    })
+    if (!res.ok) {
+      toast.error('Ошибка сохранения')
+      return
+    }
+    toast.success('Комментарий обновлён')
+    setEditingCommentId(null)
+    setEditCommentText('')
+    loadComments(animeId)
+  }
+
   const toggleEpisodesPanel = (animeId: string) => {
     if (expandedAnimeId === animeId) {
       setExpandedAnimeId(null)
@@ -570,7 +607,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
       loadEpisodes(animeId)
       loadRelated(animeId)
       loadScreenshots(animeId)
-      loadComments(animeId) // Загрузка комментариев
+      loadComments(animeId)
     }
   }
 
@@ -775,12 +812,32 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                   <ul className="space-y-2 mb-4">
                     {comments.map(c => (
                       <li key={c.id} className="flex justify-between items-start bg-white/5 p-2 rounded-lg text-sm">
-                        <div>
+                        <div className="flex-1">
                           <span className="text-white font-medium">{c.user_name}</span>
-                          <p className="text-gray-400 text-xs mt-1">{c.content}</p>
+                          {editingCommentId === c.id ? (
+                            <div className="mt-1">
+                              <textarea
+                                value={editCommentText}
+                                onChange={e => setEditCommentText(e.target.value)}
+                                className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm"
+                                rows={2}
+                              />
+                              <div className="flex gap-2 mt-1">
+                                <button onClick={() => saveComment(c.id, anime.id)} className="text-green-400 hover:text-green-300 text-xs">Сохранить</button>
+                                <button onClick={cancelEditComment} className="text-gray-400 hover:text-gray-300 text-xs">Отмена</button>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-gray-400 text-xs mt-1">{c.content}</p>
+                          )}
                           <span className="text-gray-500 text-xs">{new Date(c.created_at).toLocaleDateString('ru-RU')}</span>
                         </div>
-                        <button onClick={() => handleDeleteComment(c.id, anime.id)} className="text-red-400 hover:text-red-300 text-xs ml-2">Удалить</button>
+                        {editingCommentId !== c.id && (
+                          <div className="flex gap-2 ml-2">
+                            <button onClick={() => startEditComment(c)} className="text-blue-400 hover:text-blue-300 text-xs">Ред.</button>
+                            <button onClick={() => handleDeleteComment(c.id, anime.id)} className="text-red-400 hover:text-red-300 text-xs">Удалить</button>
+                          </div>
+                        )}
                       </li>
                     ))}
                   </ul>
