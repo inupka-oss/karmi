@@ -26,6 +26,12 @@ interface RelatedAnime {
   relation_type: string
 }
 
+interface Screenshot {
+  id: string
+  url: string
+  order_index: number
+}
+
 interface Anime {
   id: string
   title_ru: string
@@ -88,6 +94,11 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
   })
   const [videoFile, setVideoFile] = useState<File | null>(null)
   const [uploadingVideo, setUploadingVideo] = useState(false)
+
+  // Скриншоты
+  const [screenshots, setScreenshots] = useState<Screenshot[]>([])
+  const [screenshotFile, setScreenshotFile] = useState<File | null>(null)
+  const [uploadingScreenshot, setUploadingScreenshot] = useState(false)
 
   const supabaseUrl = "https://vwmtcdegjkgudhdxnpjr.supabase.co"
   const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3bXRjZGVnamtndWRoZHhucGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NDI3ODMsImV4cCI6MjA5NTUxODc4M30.3r_lriy5OKfcyFop2OL3j1YJ6wp1BTpkWKHC9QSuNos"
@@ -286,7 +297,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     } else alert('Ошибка удаления')
   }
 
-  // Загрузка связанных аниме
+  // Связанные аниме
   const loadRelated = async (animeId: string) => {
     const accessToken = getAccessToken()
     const res = await fetch(`${supabaseUrl}/rest/v1/related_anime?anime_id=eq.${animeId}`, {
@@ -419,7 +430,64 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
       setExpandedAnimeId(animeId)
       loadEpisodes(animeId)
       loadRelated(animeId)
+      loadScreenshots(animeId)
     }
+  }
+
+  // Скриншоты
+  const loadScreenshots = async (animeId: string) => {
+    const accessToken = getAccessToken()
+    const res = await fetch(`${supabaseUrl}/rest/v1/screenshots?anime_id=eq.${animeId}&order=order_index.asc`, {
+      headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${accessToken}` },
+    })
+    if (res.ok) {
+      const data = await res.json()
+      setScreenshots(data)
+    }
+  }
+
+  const handleAddScreenshot = async (animeId: string) => {
+    if (!screenshotFile) return
+    setUploadingScreenshot(true)
+    try {
+      const accessToken = getAccessToken()
+      const res = await fetch(`${supabaseUrl}/storage/v1/object/screenshots/${screenshotFile.name}`, {
+        method: 'POST',
+        headers: {
+          'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': screenshotFile.type,
+        },
+        body: screenshotFile,
+      })
+      if (!res.ok) throw new Error('Upload failed')
+      const publicUrl = `${supabaseUrl}/storage/v1/object/public/screenshots/${screenshotFile.name}`
+
+      await fetch(`${supabaseUrl}/rest/v1/screenshots`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ anime_id: animeId, url: publicUrl, order_index: screenshots.length }),
+      })
+      await loadScreenshots(animeId)
+    } catch (err) {
+      alert('Ошибка загрузки скриншота')
+    } finally {
+      setUploadingScreenshot(false)
+      setScreenshotFile(null)
+    }
+  }
+
+  const handleDeleteScreenshot = async (screenshotId: string, animeId: string) => {
+    const accessToken = getAccessToken()
+    await fetch(`${supabaseUrl}/rest/v1/screenshots?id=eq.${screenshotId}`, {
+      method: 'DELETE',
+      headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${accessToken}` },
+    })
+    await loadScreenshots(animeId)
   }
 
   useEffect(() => {
@@ -484,7 +552,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
               </div>
             </div>
 
-            {/* Панель управления сериями и связями */}
+            {/* Панель управления сериями, связями и скриншотами */}
             {expandedAnimeId === anime.id && (
               <div className="mt-2 p-3 sm:p-4 glass rounded-xl space-y-4 sm:space-y-6">
                 {/* Серии */}
@@ -577,6 +645,25 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                       ))}
                     </select>
                     <button onClick={() => handleAddRelated(anime.id)} className="bg-neo-pink hover:bg-neo-pink/80 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base">Добавить связь</button>
+                  </div>
+                </div>
+
+                {/* Кадры из аниме */}
+                <div>
+                  <h4 className="text-base sm:text-lg font-semibold mb-2">Кадры</h4>
+                  <div className="flex gap-2 overflow-x-auto pb-2">
+                    {screenshots.map(sc => (
+                      <div key={sc.id} className="relative flex-shrink-0 w-20 h-14 rounded overflow-hidden">
+                        <img src={sc.url} className="object-cover w-full h-full" />
+                        <button onClick={() => handleDeleteScreenshot(sc.id, anime.id)} className="absolute top-0 right-0 bg-red-500/50 text-white text-xs p-0.5">×</button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex gap-2 items-center mt-2">
+                    <input type="file" accept="image/*" onChange={e => setScreenshotFile(e.target.files?.[0] || null)} className="text-white text-xs" />
+                    <button onClick={() => handleAddScreenshot(anime.id)} disabled={uploadingScreenshot} className="bg-neo-pink text-white px-3 py-1 rounded-lg text-xs">
+                      {uploadingScreenshot ? '...' : 'Загрузить'}
+                    </button>
                   </div>
                 </div>
               </div>

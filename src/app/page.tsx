@@ -26,8 +26,35 @@ export default async function HomePage({
   const sp = await searchParams
   const currentPage = parseInt(sp?.page || '1') || 1
   const supabase = await createServerSupabase()
-  let query = supabase.from('anime').select(`*, genres(name, slug)`, { count: 'exact' })
 
+  // Последние обновления (аниме, у которых есть новые эпизоды)
+  const { data: recentlyUpdated } = await supabase
+    .from('episodes')
+    .select('anime_id, anime!inner(title_ru, poster_url, genres(name, slug))')
+    .order('created_at', { ascending: false })
+    .limit(10)
+
+  const uniqueRecent = recentlyUpdated
+    ? Array.from(new Map(recentlyUpdated.map((item: any) => [item.anime_id, item.anime])).values())
+    : []
+
+  // Популярное (по рейтингу)
+  const { data: popular } = await supabase
+    .from('anime')
+    .select(`*, genres(name, slug)`)
+    .order('rating', { ascending: false })
+    .limit(10)
+
+  // Онгоинги
+  const { data: ongoing } = await supabase
+    .from('anime')
+    .select(`*, genres(name, slug)`)
+    .eq('status', 'ongoing')
+    .order('created_at', { ascending: false })
+    .limit(10)
+
+  // Поиск и фильтрация (основной список)
+  let query = supabase.from('anime').select(`*, genres(name, slug)`, { count: 'exact' })
   if (sp?.q) {
     query = query.or(`title_ru.ilike.%${sp.q}%,title_en.ilike.%${sp.q}%`)
   }
@@ -37,12 +64,11 @@ export default async function HomePage({
   if (sp?.year) {
     query = query.eq('year', parseInt(sp.year))
   }
-
   const from = (currentPage - 1) * PAGE_SIZE
   const to = from + PAGE_SIZE - 1
   query = query.range(from, to).order('created_at', { ascending: false })
-
   const { data: anime, count } = await query
+
   const genres = await getGenres()
   const totalPages = Math.ceil((count || 0) / PAGE_SIZE)
 
@@ -61,81 +87,72 @@ export default async function HomePage({
         Karmi
       </h1>
 
-      {/* Поиск и кнопки в одном ряду */}
+      {/* Поиск и кнопки */}
       <div className="flex flex-wrap items-center gap-3 mb-4 sm:mb-6">
         <SearchBar />
         <RandomAnimeButton />
-        <Link
-          href="/favorites"
-          className="bg-white/10 hover:bg-white/20 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base transition"
-          title="Избранное"
-        >
-          ♥
-        </Link>
-        <Link
-          href="/ongoing"
-          className="bg-white/10 hover:bg-white/20 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base transition"
-          title="Онгоинги"
-        >
-          📅
-        </Link>
-        <Link
-          href="/profile"
-          className="bg-white/10 hover:bg-white/20 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base transition"
-          title="Профиль"
-        >
-          👤
-        </Link>
+        <Link href="/favorites" className="bg-white/10 hover:bg-white/20 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base transition" title="Избранное">♥</Link>
+        <Link href="/ongoing" className="bg-white/10 hover:bg-white/20 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base transition" title="Онгоинги">📅</Link>
+        <Link href="/profile" className="bg-white/10 hover:bg-white/20 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base transition" title="Профиль">👤</Link>
       </div>
 
       {/* Фильтры */}
       <form className="flex flex-wrap items-center gap-3 mb-6">
-        <select
-          name="genre"
-          defaultValue={sp?.genre || ''}
-          className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white text-sm sm:text-base w-full sm:w-auto"
-        >
+        <select name="genre" defaultValue={sp?.genre || ''} className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white text-sm sm:text-base w-full sm:w-auto">
           <option value="">Все жанры</option>
           {genres.map((g: any) => (
             <option key={g.slug} value={g.slug}>{g.name}</option>
           ))}
         </select>
-        <input
-          type="number"
-          name="year"
-          placeholder="Год"
-          defaultValue={sp?.year || ''}
-          className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white text-sm sm:text-base w-full sm:w-24"
-        />
-        <button type="submit" className="bg-neo-pink hover:bg-neo-pink/80 text-white px-5 py-2 rounded-xl text-sm sm:text-base">
-          Фильтровать
-        </button>
+        <input type="number" name="year" placeholder="Год" defaultValue={sp?.year || ''} className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white text-sm sm:text-base w-full sm:w-24" />
+        <button type="submit" className="bg-neo-pink hover:bg-neo-pink/80 text-white px-5 py-2 rounded-xl text-sm sm:text-base">Фильтровать</button>
       </form>
 
-      <AnimeGrid anime={anime || []} />
+      {/* Секция: Последние обновления */}
+      {uniqueRecent.length > 0 && (
+        <section className="mb-10">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">🔥 Последние обновления</h2>
+          <AnimeGrid anime={uniqueRecent.slice(0, 6)} />
+        </section>
+      )}
 
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-4 mt-8">
-          {currentPage > 1 && (
-            <Link
-              href={buildPageUrl(currentPage - 1)}
-              className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-sm sm:text-base transition"
-            >
-              ← Назад
-            </Link>
+      {/* Секция: Популярное */}
+      {popular && popular.length > 0 && (
+        <section className="mb-10">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">⭐ Популярное</h2>
+          <AnimeGrid anime={popular} />
+        </section>
+      )}
+
+      {/* Секция: Сейчас выходит */}
+      {ongoing && ongoing.length > 0 && (
+        <section className="mb-10">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">📺 Сейчас выходит</h2>
+          <AnimeGrid anime={ongoing} />
+        </section>
+      )}
+
+      {/* Результаты поиска (если есть фильтры или поиск) */}
+      {anime && anime.length > 0 && (sp?.q || sp?.genre || sp?.year) && (
+        <section className="mb-10">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">🔍 Результаты поиска</h2>
+          <AnimeGrid anime={anime} />
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-4 mt-8">
+              {currentPage > 1 && (
+                <Link href={buildPageUrl(currentPage - 1)} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-sm sm:text-base transition">
+                  ← Назад
+                </Link>
+              )}
+              <span className="text-white text-sm sm:text-base">Страница {currentPage} из {totalPages}</span>
+              {currentPage < totalPages && (
+                <Link href={buildPageUrl(currentPage + 1)} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-sm sm:text-base transition">
+                  Вперед →
+                </Link>
+              )}
+            </div>
           )}
-          <span className="text-white text-sm sm:text-base">
-            Страница {currentPage} из {totalPages}
-          </span>
-          {currentPage < totalPages && (
-            <Link
-              href={buildPageUrl(currentPage + 1)}
-              className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-sm sm:text-base transition"
-            >
-              Вперед →
-            </Link>
-          )}
-        </div>
+        </section>
       )}
     </div>
   )

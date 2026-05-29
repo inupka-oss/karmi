@@ -7,6 +7,7 @@ import CommentSection from './CommentSection'
 import RelatedAnime from './RelatedAnime'
 import EpisodeList from './EpisodeList'
 import AnimeActions from './AnimeActions'
+import ScreenshotGallery from './ScreenshotGallery'
 
 interface Episode {
   id: string
@@ -54,7 +55,6 @@ export default function AnimeView({
   useEffect(() => {
     const token = getAccessToken()
     if (token) {
-      // Загружаем прогресс из облака
       const loadCloudProgress = async () => {
         try {
           const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
@@ -151,6 +151,7 @@ export default function AnimeView({
         activeEpisodeId={activeEpisode?.id || episodes[0]?.id}
       />
 
+      <ScreenshotGallery animeId={anime.id} />
       <RelatedAnime animeId={anime.id} />
       <CommentSection animeId={anime.id} />
     </div>
