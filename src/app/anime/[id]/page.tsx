@@ -6,7 +6,6 @@ import StarRating from '@/components/StarRating'
 import CommentSection from '@/components/CommentSection'
 import RatingForm from '@/components/RatingForm'
 import RelatedAnime from '@/components/RelatedAnime'
-import AnimeActions from '@/components/AnimeActions'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -83,12 +82,6 @@ export default async function AnimePage({ params }: { params: Promise<{ id: stri
             </div>
             <div><span className="text-gray-500">Статус:</span> {animeWithGenres.status}</div>
           </div>
-          <AnimeActions
-            trailerUrl={animeWithGenres.trailer_url}
-            episodes={episodes}
-            onStartWatching={() => {}}
-            onContinueWatching={() => {}}
-          />
           <RatingForm animeId={anime.id} />
 
           {/* Создатели */}
