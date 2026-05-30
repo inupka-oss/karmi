@@ -381,7 +381,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     }
   }
 
-  // Загрузка видео через pre-signed URL (Storj)
+  // Загрузка видео через presigned URL (Storj)
   const handleAddEpisode = async (animeId: string) => {
     let finalVideoUrl = episodeForm.video_url
 
@@ -393,7 +393,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
           .replace(/[^a-zA-Z0-9._-]/g, '')
         const fileName = `${Date.now()}_${safeName}`
 
-        // 1. Получаем presigned URL от нашего API
+        // 1. Получаем presigned URL
         const presignedRes = await fetch('/api/storj-upload', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -412,14 +412,15 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
           body: videoFile,
         })
         if (!uploadRes.ok) {
-          const error = await uploadRes.text()
-          throw new Error(error || 'Upload failed')
+          const errorText = await uploadRes.text()
+          throw new Error(errorText || 'Upload failed')
         }
 
         finalVideoUrl = publicUrl
         toast.success('Видео загружено в Storj')
         setUploadingVideo(false)
         setVideoFile(null)
+        // Сохраняем эпизод в Supabase
         saveEpisode(animeId, finalVideoUrl)
       } catch (err: any) {
         toast.error(`Ошибка загрузки: ${err.message}`)
