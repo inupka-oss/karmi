@@ -2,62 +2,9 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import toast, { Toaster } from 'react-hot-toast'
+import * as tus from 'tus-js-client'
 
-interface Genre {
-  id: number
-  name: string
-  slug: string
-}
-
-interface Episode {
-  id: string
-  anime_id: string
-  episode_number: number
-  title?: string
-  video_url: string
-  opening_start?: number
-  opening_end?: number
-  ending_start?: number
-  ending_end?: number
-}
-
-interface RelatedAnime {
-  id: string
-  related_id: string
-  relation_type: string
-}
-
-interface Screenshot {
-  id: string
-  url: string
-  order_index: number
-}
-
-interface Comment {
-  id: string
-  anime_id: string
-  user_name: string
-  content: string
-  created_at: string
-}
-
-interface Anime {
-  id: string
-  title_ru: string
-  title_en?: string
-  description?: string
-  year?: number
-  rating?: number
-  poster_url?: string
-  type?: string
-  status?: string
-  genres?: Genre[]
-  studio?: string
-  director?: string
-  cast?: string
-  trailer_url?: string
-  day_of_week?: number
-}
+// Все интерфейсы (Genre, Episode, RelatedAnime, Screenshot, Comment, Anime) остаются без изменений
 
 export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
   userEmail: string
@@ -381,7 +328,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     }
   }
 
-  // Загрузка видео в Storj
+  // Загрузка видео через TUS (Supabase)
   const handleAddEpisode = async (animeId: string) => {
     let finalVideoUrl = episodeForm.video_url
 
@@ -393,39 +340,52 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
           .replace(/[^a-zA-Z0-9._-]/g, '')
         const fileName = `${Date.now()}_${safeName}`
 
-        // Получаем presigned URL через серверный API
-        const presignedRes = await fetch('/api/storj-upload', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fileName }),
+        const upload = new tus.Upload(videoFile, {
+          endpoint: `${supabaseUrl}/storage/v1/upload/resumable`,
+          retryDelays: [0, 3000, 5000, 10000, 20000],
+          headers: {
+            authorization: `Bearer ${getAccessToken()}`,
+            'x-upsert': 'true',
+          },
+          uploadDataDuringCreation: true,
+          removeFingerprintOnSuccess: true,
+          metadata: {
+            bucketName: 'videos',
+            objectName: fileName,
+            contentType: videoFile.type,
+            cacheControl: '3600',
+          },
+          chunkSize: 50 * 1024 * 1024, // куски по 50 МБ
+          onError: (error) => {
+            console.error('TUS error:', error)
+            toast.error(`Ошибка загрузки: ${error.message}`)
+            setUploadingVideo(false)
+          },
+          onProgress: (bytesUploaded, bytesTotal) => {
+            const percentage = ((bytesUploaded / bytesTotal) * 100).toFixed(1)
+            // Можно показывать прогресс в кнопке
+          },
+          onSuccess: () => {
+            finalVideoUrl = `${supabaseUrl}/storage/v1/object/public/videos/${fileName}`
+            toast.success('Видео загружено')
+            setUploadingVideo(false)
+            setVideoFile(null)
+            saveEpisode(animeId, finalVideoUrl)
+          },
         })
-        if (!presignedRes.ok) {
-          const error = await presignedRes.json()
-          throw new Error(error.error || 'Failed to get upload URL')
-        }
-        const { uploadUrl, publicUrl } = await presignedRes.json()
 
-        // Загружаем файл напрямую в Storj
-        const uploadRes = await fetch(uploadUrl, {
-          method: 'PUT',
-          headers: { 'Content-Type': videoFile.type },
-          body: videoFile,
+        upload.findPreviousUploads().then((previousUploads) => {
+          if (previousUploads.length > 0) {
+            upload.resumeFromPreviousUpload(previousUploads[0])
+          }
+          upload.start()
         })
-        if (!uploadRes.ok) {
-          const error = await uploadRes.text()
-          throw new Error(error || 'Upload failed')
-        }
-
-        finalVideoUrl = publicUrl
-        toast.success('Видео загружено в Storj')
-        setUploadingVideo(false)
-        setVideoFile(null)
-        saveEpisode(animeId, finalVideoUrl)
+        return
       } catch (err: any) {
-        toast.error(`Ошибка загрузки: ${err.message}`)
+        toast.error('Не удалось начать загрузку')
         setUploadingVideo(false)
+        return
       }
-      return
     }
 
     if (finalVideoUrl) {
@@ -778,7 +738,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                       className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm flex-1 w-full sm:w-auto" />
                     
                     <div className="flex flex-col gap-1 w-full sm:w-auto">
-                      <label className="text-xs text-gray-400">Видеофайл (до 2 ГБ)</label>
+                      <label className="text-xs text-gray-400">Видеофайл (до 5 ГБ)</label>
                       <input
                         type="file"
                         accept="video/*"

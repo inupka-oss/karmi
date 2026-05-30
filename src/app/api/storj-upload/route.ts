@@ -25,5 +25,13 @@ export async function POST(request: Request) {
   const uploadUrl = await getSignedUrl(client, command, { expiresIn: 3600 })
   const publicUrl = `${process.env.STORJ_ENDPOINT}/${bucket}/${fileName}`
 
-  return NextResponse.json({ uploadUrl, publicUrl })
+  // Добавим CORS-заголовки
+  return new NextResponse(JSON.stringify({ uploadUrl, publicUrl }), {
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  })
 }
