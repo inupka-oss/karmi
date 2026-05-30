@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import toast, { Toaster } from 'react-hot-toast'
+import { Storage } from 'megajs'
 
 interface Genre {
   id: number
@@ -124,7 +125,8 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  const ipfsGateway = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://gateway.pinata.cloud/ipfs'
+  const megaEmail = process.env.NEXT_PUBLIC_MEGA_EMAIL!
+  const megaPassword = process.env.NEXT_PUBLIC_MEGA_PASSWORD!
 
   const getAccessToken = () => {
     const match = document.cookie.match(/sb-access-token=([^;]+)/)
@@ -382,43 +384,44 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     }
   }
 
-  // Загрузка видео напрямую в Pinata (минуя Vercel)
+  // Загрузка видео напрямую в MEGA
   const handleAddEpisode = async (animeId: string) => {
     let finalVideoUrl = episodeForm.video_url
 
     if (videoFile) {
       setUploadingVideo(true)
       try {
-        // 1. Получаем временный JWT-токен от нашего API
-        const tokenRes = await fetch('/api/pinata-token')
-        if (!tokenRes.ok) {
-          const tokenError = await tokenRes.json()
-          throw new Error(tokenError.error || 'Failed to get upload token')
-        }
-        const { jwt } = await tokenRes.json()
+        // 1. Подключаемся к MEGA
+        const storage = await new Storage({
+          email: megaEmail,
+          password: megaPassword,
+        }).ready
 
-        // 2. Загружаем файл напрямую в Pinata (файл не идёт через Vercel)
-        const formData = new FormData()
-        formData.append('file', videoFile)
-
-        const uploadRes = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${jwt}`,
-          },
-          body: formData,
+        // 2. Загружаем файл
+        const uploadStream = storage.upload({
+          name: videoFile.name,
+          size: videoFile.size,
         })
 
-        if (!uploadRes.ok) {
-          const error = await uploadRes.json()
-          throw new Error(error.error?.message || 'Upload failed')
+        const reader = videoFile.stream().getReader()
+        const pump = async () => {
+          const { done, value } = await reader.read()
+          if (done) {
+            uploadStream.end()
+            return
+          }
+          uploadStream.write(value)
+          await pump()
         }
+        await pump()
 
-        const data = await uploadRes.json()
-        const ipfsHash = data.IpfsHash
-        finalVideoUrl = `${ipfsGateway}/${ipfsHash}`
+        const file = await uploadStream.complete
 
-        toast.success('Видео загружено в IPFS')
+        // 3. Получаем публичную ссылку
+        const link = await file.link()
+        finalVideoUrl = link
+
+        toast.success('Видео загружено в MEGA')
         setUploadingVideo(false)
         setVideoFile(null)
         await saveEpisode(animeId, finalVideoUrl)
@@ -779,7 +782,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                       className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm flex-1 w-full sm:w-auto" />
                     
                     <div className="flex flex-col gap-1 w-full sm:w-auto">
-                      <label className="text-xs text-gray-400">Видеофайл (до 1 ГБ)</label>
+                      <label className="text-xs text-gray-400">Видеофайл (без ограничений)</label>
                       <input
                         type="file"
                         accept="video/*"
