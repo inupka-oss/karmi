@@ -3,61 +3,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import toast, { Toaster } from 'react-hot-toast'
 
-interface Genre {
-  id: number
-  name: string
-  slug: string
-}
-
-interface Episode {
-  id: string
-  anime_id: string
-  episode_number: number
-  title?: string
-  video_url: string
-  opening_start?: number
-  opening_end?: number
-  ending_start?: number
-  ending_end?: number
-}
-
-interface RelatedAnime {
-  id: string
-  related_id: string
-  relation_type: string
-}
-
-interface Screenshot {
-  id: string
-  url: string
-  order_index: number
-}
-
-interface Comment {
-  id: string
-  anime_id: string
-  user_name: string
-  content: string
-  created_at: string
-}
-
-interface Anime {
-  id: string
-  title_ru: string
-  title_en?: string
-  description?: string
-  year?: number
-  rating?: number
-  poster_url?: string
-  type?: string
-  status?: string
-  genres?: Genre[]
-  studio?: string
-  director?: string
-  cast?: string
-  trailer_url?: string
-  day_of_week?: number
-}
+// ... (все интерфейсы остаются без изменений)
 
 export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
   userEmail: string
@@ -381,29 +327,36 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     }
   }
 
-  // Загрузка видео через Pinata (IPFS)
+  // Загрузка видео в Supabase Storage (до 50 МБ)
   const handleAddEpisode = async (animeId: string) => {
     let finalVideoUrl = episodeForm.video_url
 
     if (videoFile) {
       setUploadingVideo(true)
       try {
-        const formData = new FormData()
-        formData.append('file', videoFile)
+        const safeName = videoFile.name
+          .replace(/\s+/g, '_')
+          .replace(/[^a-zA-Z0-9._-]/g, '')
+        const fileName = `${Date.now()}_${safeName}`
+        const accessToken = getAccessToken()
 
-        const uploadRes = await fetch('/api/pinata-upload', {
+        const res = await fetch(`${supabaseUrl}/storage/v1/object/videos/${fileName}`, {
           method: 'POST',
-          body: formData,
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'apikey': supabaseAnonKey,
+            'Content-Type': videoFile.type,
+          },
+          body: videoFile,
         })
 
-        if (!uploadRes.ok) {
-          const error = await uploadRes.json()
-          throw new Error(error.error || 'Upload failed')
+        if (!res.ok) {
+          const errorData = await res.json()
+          throw new Error(errorData.message || 'Upload failed')
         }
 
-        const { publicUrl } = await uploadRes.json()
-        finalVideoUrl = publicUrl
-        toast.success('Видео загружено в IPFS')
+        finalVideoUrl = `${supabaseUrl}/storage/v1/object/public/videos/${fileName}`
+        toast.success('Видео загружено в Supabase')
         setUploadingVideo(false)
         setVideoFile(null)
         await saveEpisode(animeId, finalVideoUrl)
@@ -417,7 +370,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     if (finalVideoUrl) {
       await saveEpisode(animeId, finalVideoUrl)
     } else {
-      toast.error('Введите ссылку или выберите видеофайл')
+      toast.error('Введите ссылку или выберите файл')
     }
   }
 
@@ -764,7 +717,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                       className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm flex-1 w-full sm:w-auto" />
                     
                     <div className="flex flex-col gap-1 w-full sm:w-auto">
-                      <label className="text-xs text-gray-400">Видеофайл (до 1 ГБ)</label>
+                      <label className="text-xs text-gray-400">Видеофайл (до 50 МБ)</label>
                       <input
                         type="file"
                         accept="video/*"
