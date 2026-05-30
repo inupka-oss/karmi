@@ -1,35 +1,32 @@
 import { NextResponse } from 'next/server'
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
-
-const client = new S3Client({
-  region: 'us-east-1',
-  endpoint: process.env.STORJ_ENDPOINT!,
-  credentials: {
-    accessKeyId: process.env.STORJ_ACCESS_KEY!,
-    secretAccessKey: process.env.STORJ_SECRET_KEY!,
-  },
-  forcePathStyle: true,
-})
 
 export async function POST(request: Request) {
-  const { fileName } = await request.json()
-  if (!fileName) {
-    return NextResponse.json({ error: 'No file name' }, { status: 400 })
-  }
-
-  const bucket = process.env.NEXT_PUBLIC_STORJ_BUCKET!
-  const command = new PutObjectCommand({
-    Bucket: bucket,
-    Key: fileName,
-  })
-
   try {
-    const uploadUrl = await getSignedUrl(client, command, { expiresIn: 3600 })
-    const publicUrl = `${process.env.STORJ_ENDPOINT}/${bucket}/${fileName}`
-    return NextResponse.json({ uploadUrl, publicUrl })
+    const { fileName } = await request.json()
+    if (!fileName) {
+      return NextResponse.json({ error: 'No file name' }, { status: 400 })
+    }
+
+    // Проверяем, что переменные окружения доступны
+    const accessKey = process.env.STORJ_ACCESS_KEY
+    const secretKey = process.env.STORJ_SECRET_KEY
+    const endpoint = process.env.STORJ_ENDPOINT
+    const bucket = process.env.NEXT_PUBLIC_STORJ_BUCKET
+
+    if (!accessKey || !secretKey || !endpoint || !bucket) {
+      return NextResponse.json(
+        { error: 'Missing Storj environment variables. Check Vercel settings.' },
+        { status: 500 }
+      )
+    }
+
+    // Если все ключи есть, но мы не можем использовать AWS SDK, временно пропустим
+    // и вернём заглушку, чтобы проверить связь
+    return NextResponse.json({
+      uploadUrl: `${endpoint}/${bucket}/${fileName}`,
+      publicUrl: `${endpoint}/${bucket}/${fileName}`,
+    })
   } catch (error: any) {
-    console.error('Storj presigned error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
