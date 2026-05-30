@@ -381,7 +381,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     }
   }
 
-  // Загрузка видео через presigned URL (Storj)
+  // Загрузка видео в Storj
   const handleAddEpisode = async (animeId: string) => {
     let finalVideoUrl = episodeForm.video_url
 
@@ -393,6 +393,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
           .replace(/[^a-zA-Z0-9._-]/g, '')
         const fileName = `${Date.now()}_${safeName}`
 
+        // Получаем presigned URL через серверный API
         const presignedRes = await fetch('/api/storj-upload', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -404,14 +405,15 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
         }
         const { uploadUrl, publicUrl } = await presignedRes.json()
 
+        // Загружаем файл напрямую в Storj
         const uploadRes = await fetch(uploadUrl, {
           method: 'PUT',
           headers: { 'Content-Type': videoFile.type },
           body: videoFile,
         })
         if (!uploadRes.ok) {
-          const errorText = await uploadRes.text()
-          throw new Error(errorText || 'Upload failed')
+          const error = await uploadRes.text()
+          throw new Error(error || 'Upload failed')
         }
 
         finalVideoUrl = publicUrl
@@ -776,7 +778,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                       className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm flex-1 w-full sm:w-auto" />
                     
                     <div className="flex flex-col gap-1 w-full sm:w-auto">
-                      <label className="text-xs text-gray-400">Видеофайл (до 500 МБ)</label>
+                      <label className="text-xs text-gray-400">Видеофайл (до 2 ГБ)</label>
                       <input
                         type="file"
                         accept="video/*"
