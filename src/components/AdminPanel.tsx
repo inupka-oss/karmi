@@ -384,7 +384,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     }
   }
 
-    // Загрузка видео напрямую в MEGA (исправленная)
+  // Загрузка видео напрямую в MEGA (исправленная)
   const handleAddEpisode = async (animeId: string) => {
     let finalVideoUrl = episodeForm.video_url
 
@@ -396,27 +396,8 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
           password: megaPassword,
         }).ready
 
-        // Загружаем файл в корневую папку
-        const uploadTask = storage.upload({
-          name: videoFile.name,
-          size: videoFile.size,
-        })
-
-        // Передаём данные файла
-        const reader = videoFile.stream().getReader()
-        const pump = async () => {
-          const { done, value } = await reader.read()
-          if (done) {
-            uploadTask.complete()   // ← правильный метод
-            return
-          }
-          uploadTask.write(value)
-          await pump()
-        }
-        await pump()
-
-        const file = await uploadTask.complete
-        const link = await file.link()
+        const uploadedFile = await storage.upload(videoFile).complete
+        const link = await uploadedFile.link()
         finalVideoUrl = link
 
         toast.success('Видео загружено в MEGA')
