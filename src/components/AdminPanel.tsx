@@ -381,12 +381,48 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     }
   }
 
+  // Загрузка видео через presigned URL (Storj)
   const handleAddEpisode = async (animeId: string) => {
-    const finalVideoUrl = episodeForm.video_url
+    let finalVideoUrl = episodeForm.video_url
 
     if (videoFile) {
-      // Заглушка: пока файлы не загружаются
-      toast.error('Загрузка файлов временно недоступна. Вставьте ссылку на видео.')
+      setUploadingVideo(true)
+      try {
+        const safeName = videoFile.name
+          .replace(/\s+/g, '_')
+          .replace(/[^a-zA-Z0-9._-]/g, '')
+        const fileName = `${Date.now()}_${safeName}`
+
+        const presignedRes = await fetch('/api/storj-upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileName }),
+        })
+        if (!presignedRes.ok) {
+          const error = await presignedRes.json()
+          throw new Error(error.error || 'Failed to get upload URL')
+        }
+        const { uploadUrl, publicUrl } = await presignedRes.json()
+
+        const uploadRes = await fetch(uploadUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': videoFile.type },
+          body: videoFile,
+        })
+        if (!uploadRes.ok) {
+          const errorText = await uploadRes.text()
+          throw new Error(errorText || 'Upload failed')
+        }
+
+        finalVideoUrl = publicUrl
+        toast.success('Видео загружено в Storj')
+        setUploadingVideo(false)
+        setVideoFile(null)
+        saveEpisode(animeId, finalVideoUrl)
+      } catch (err: any) {
+        toast.error(`Ошибка загрузки: ${err.message}`)
+        setUploadingVideo(false)
+      }
       return
     }
 
@@ -740,7 +776,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                       className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm flex-1 w-full sm:w-auto" />
                     
                     <div className="flex flex-col gap-1 w-full sm:w-auto">
-                      <label className="text-xs text-gray-400">Видеофайл (до 2 ГБ)</label>
+                      <label className="text-xs text-gray-400">Видеофайл (до 500 МБ)</label>
                       <input
                         type="file"
                         accept="video/*"
