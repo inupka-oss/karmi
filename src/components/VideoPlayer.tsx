@@ -5,12 +5,39 @@ import 'plyr/dist/plyr.css'
 import Hls from 'hls.js'
 
 function getAccessToken(): string | null {
+  if (typeof document === 'undefined') return null
   const match = document.cookie.match(/sb-access-token=([^;]+)/)
   return match ? match[1] : null
 }
 
 async function saveProgressToCloud(episodeId: string, time: number) {
-  // ... без изменений
+  const token = getAccessToken()
+  if (!token) return
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+  try {
+    const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${token}` },
+    })
+    if (!userRes.ok) return
+    const user = await userRes.json()
+    const userId = user.id
+
+    await fetch(`${supabaseUrl}/rest/v1/user_profiles?user_identifier=eq.${userId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': supabaseAnonKey,
+        'Authorization': `Bearer ${token}`,
+        'Prefer': 'return=representation',
+      },
+      body: JSON.stringify({ progress: { episodeId, time } }),
+    })
+  } catch (e) {
+    console.error('Save progress error:', e)
+  }
 }
 
 export default function VideoPlayer({
@@ -35,19 +62,17 @@ export default function VideoPlayer({
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const playerRef = useRef<Plyr | null>(null)
   const hlsRef = useRef<Hls | null>(null)
-  const containerRef = useRef<HTMLDivElement | null>(null)
 
   const skipTo = useCallback((time: number) => {
     const video = videoRef.current
-    if (video) {
-      video.currentTime = time
-    }
+    if (video) video.currentTime = time
   }, [])
 
-  const initPlayer = useCallback(() => {
+  useEffect(() => {
     const video = videoRef.current
     if (!video || !src) return
 
+    // Уничтожаем предыдущий плеер
     if (playerRef.current) {
       playerRef.current.destroy()
       playerRef.current = null
@@ -57,7 +82,6 @@ export default function VideoPlayer({
       hlsRef.current = null
     }
 
-    // Определяем тип источника
     if (src.endsWith('.m3u8')) {
       if (Hls.isSupported()) {
         const hls = new Hls()
@@ -68,7 +92,6 @@ export default function VideoPlayer({
         video.src = src
       }
     } else {
-      // Прямая ссылка на mp4 или другой формат
       video.src = src
     }
 
@@ -94,24 +117,105 @@ export default function VideoPlayer({
       if (onEnded) onEnded()
     })
 
-    // ... остальная логика сохранения прогресса без изменений
+    let saveInterval: NodeJS.Timeout | null = null
+    player.on('play', () => {
+      saveInterval = setInterval(() => {
+        if (activeEpisodeId && video) {
+          saveProgressToCloud(activeEpisodeId, video.currentTime)
+          localStorage.setItem('karmi-progress', JSON.stringify({
+            episodeId: activeEpisodeId,
+            time: video.currentTime,
+          }))
+        }
+      }, 10000)
+    })
+
+    player.on('pause', () => {
+      if (saveInterval) clearInterval(saveInterval)
+      if (activeEpisodeId && video) {
+        saveProgressToCloud(activeEpisodeId, video.currentTime)
+        localStorage.setItem('karmi-progress', JSON.stringify({
+          episodeId: activeEpisodeId,
+          time: video.currentTime,
+        }))
+      }
+    })
+
+    // Восстановление времени
+    const stored = localStorage.getItem('karmi-progress')
+    if (stored && activeEpisodeId) {
+      try {
+        const progress = JSON.parse(stored)
+        if (progress.episodeId === activeEpisodeId && progress.time) {
+          video.currentTime = progress.time
+          localStorage.removeItem('karmi-progress')
+        }
+      } catch {}
+    } else if (getAccessToken() && activeEpisodeId) {
+      const loadCloudProgress = async () => {
+        const token = getAccessToken()
+        if (!token) return
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+        const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        try {
+          const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
+            headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${token}` },
+          })
+          if (!userRes.ok) return
+          const user = await userRes.json()
+          const userId = user.id
+
+          const res = await fetch(`${supabaseUrl}/rest/v1/user_profiles?user_identifier=eq.${userId}`, {
+            headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${token}` },
+          })
+          if (res.ok) {
+            const data = await res.json()
+            if (data.length > 0 && data[0].progress) {
+              const cloudProgress = data[0].progress
+              if (cloudProgress.episodeId === activeEpisodeId && cloudProgress.time && video) {
+                video.currentTime = cloudProgress.time
+              }
+            }
+          }
+        } catch {}
+      }
+      loadCloudProgress()
+    }
+
+    return () => {
+      if (saveInterval) clearInterval(saveInterval)
+      if (playerRef.current) {
+        playerRef.current.destroy()
+        playerRef.current = null
+      }
+      if (hlsRef.current) {
+        hlsRef.current.destroy()
+        hlsRef.current = null
+      }
+    }
   }, [src, title, onEnded, activeEpisodeId, openingStart, openingEnd, endingStart, endingEnd])
 
-  useEffect(() => {
-    const cleanup = initPlayer()
-    return () => {
-      if (playerRef.current) playerRef.current.destroy()
-      if (hlsRef.current) hlsRef.current.destroy()
-      if (cleanup) cleanup()
-    }
-  }, [initPlayer])
-
   return (
-    <div className="relative" ref={containerRef}>
+    <div className="relative">
       <div className="aspect-video rounded-xl overflow-hidden glass mb-6">
         <video ref={videoRef} className="w-full h-full" playsInline crossOrigin="anonymous" />
       </div>
-      {/* Кнопки пропуска опенинга / эндинга остаются */}
+      {openingEnd && (
+        <button
+          onClick={() => skipTo(openingEnd)}
+          className="absolute bottom-8 left-4 bg-neo-pink/80 hover:bg-neo-pink text-white px-3 py-1 rounded-lg text-xs font-semibold backdrop-blur-sm"
+        >
+          Пропустить опенинг
+        </button>
+      )}
+      {endingStart && (
+        <button
+          onClick={() => skipTo(endingStart)}
+          className="absolute bottom-8 right-4 bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded-lg text-xs font-semibold backdrop-blur-sm"
+        >
+          К эндингу
+        </button>
+      )}
     </div>
   )
 }
