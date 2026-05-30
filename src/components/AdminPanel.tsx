@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import toast, { Toaster } from 'react-hot-toast'
-import { Storage } from 'megajs'
 
 interface Genre {
   id: number
@@ -125,8 +124,6 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  const megaEmail = process.env.NEXT_PUBLIC_MEGA_EMAIL!
-  const megaPassword = process.env.NEXT_PUBLIC_MEGA_PASSWORD!
 
   const getAccessToken = () => {
     const match = document.cookie.match(/sb-access-token=([^;]+)/)
@@ -384,23 +381,43 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     }
   }
 
-  // Загрузка видео напрямую в MEGA (исправленная)
+  // Загрузка видео через S3
   const handleAddEpisode = async (animeId: string) => {
     let finalVideoUrl = episodeForm.video_url
 
     if (videoFile) {
       setUploadingVideo(true)
       try {
-        const storage = await new Storage({
-          email: megaEmail,
-          password: megaPassword,
-        }).ready
+        const safeName = videoFile.name
+          .replace(/\s+/g, '_')
+          .replace(/[^a-zA-Z0-9._-]/g, '')
+        const fileName = `${Date.now()}_${safeName}`
 
-        const uploadedFile = await storage.upload(videoFile).complete
-        const link = await uploadedFile.link(true)   // ← исправлено: link(true) для публичной ссылки
-        finalVideoUrl = link
+        // 1. Получаем presigned URL
+        const presignedRes = await fetch('/api/s3-upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileName }),
+        })
+        if (!presignedRes.ok) {
+          const error = await presignedRes.json()
+          throw new Error(error.error || 'Failed to get upload URL')
+        }
+        const { uploadUrl, publicUrl } = await presignedRes.json()
 
-        toast.success('Видео загружено в MEGA')
+        // 2. Загружаем файл напрямую в облако
+        const uploadRes = await fetch(uploadUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': videoFile.type },
+          body: videoFile,
+        })
+        if (!uploadRes.ok) {
+          const errorText = await uploadRes.text()
+          throw new Error(errorText || 'Upload failed')
+        }
+
+        finalVideoUrl = publicUrl
+        toast.success('Видео загружено в облако')
         setUploadingVideo(false)
         setVideoFile(null)
         await saveEpisode(animeId, finalVideoUrl)
@@ -761,7 +778,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                       className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm flex-1 w-full sm:w-auto" />
                     
                     <div className="flex flex-col gap-1 w-full sm:w-auto">
-                      <label className="text-xs text-gray-400">Видеофайл (без ограничений)</label>
+                      <label className="text-xs text-gray-400">Видеофайл (до 500 МБ)</label>
                       <input
                         type="file"
                         accept="video/*"
