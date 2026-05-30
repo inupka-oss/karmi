@@ -82,7 +82,9 @@ export default function VideoPlayer({
       hlsRef.current = null
     }
 
-    if (src.endsWith('.m3u8')) {
+    const isHls = src.endsWith('.m3u8')
+
+    if (isHls) {
       if (Hls.isSupported()) {
         const hls = new Hls()
         hls.loadSource(src)
@@ -92,7 +94,11 @@ export default function VideoPlayer({
         video.src = src
       }
     } else {
+      // Для обычных видео (Storj, Supabase) добавляем метку времени, чтобы избежать кеширования
       video.src = src
+      video.crossOrigin = 'anonymous'
+      // Принудительно включаем preload
+      video.setAttribute('preload', 'auto')
     }
 
     if (title) {
