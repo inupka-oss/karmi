@@ -381,46 +381,32 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     }
   }
 
-  // Загрузка видео в Storj
+  // Загрузка видео через Pinata (IPFS)
   const handleAddEpisode = async (animeId: string) => {
     let finalVideoUrl = episodeForm.video_url
 
     if (videoFile) {
       setUploadingVideo(true)
       try {
-        const safeName = videoFile.name
-          .replace(/\s+/g, '_')
-          .replace(/[^a-zA-Z0-9._-]/g, '')
-        const fileName = `${Date.now()}_${safeName}`
+        const formData = new FormData()
+        formData.append('file', videoFile)
 
-        // Получаем presigned URL через серверный API
-        const presignedRes = await fetch('/api/storj-upload', {
+        const uploadRes = await fetch('/api/pinata-upload', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fileName }),
+          body: formData,
         })
-        if (!presignedRes.ok) {
-          const error = await presignedRes.json()
-          throw new Error(error.error || 'Failed to get upload URL')
-        }
-        const { uploadUrl, publicUrl } = await presignedRes.json()
 
-        // Загружаем файл напрямую в Storj
-        const uploadRes = await fetch(uploadUrl, {
-          method: 'PUT',
-          headers: { 'Content-Type': videoFile.type },
-          body: videoFile,
-        })
         if (!uploadRes.ok) {
-          const error = await uploadRes.text()
-          throw new Error(error || 'Upload failed')
+          const error = await uploadRes.json()
+          throw new Error(error.error || 'Upload failed')
         }
 
+        const { publicUrl } = await uploadRes.json()
         finalVideoUrl = publicUrl
-        toast.success('Видео загружено в Storj')
+        toast.success('Видео загружено в IPFS')
         setUploadingVideo(false)
         setVideoFile(null)
-        saveEpisode(animeId, finalVideoUrl)
+        await saveEpisode(animeId, finalVideoUrl)
       } catch (err: any) {
         toast.error(`Ошибка загрузки: ${err.message}`)
         setUploadingVideo(false)
@@ -778,7 +764,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                       className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm flex-1 w-full sm:w-auto" />
                     
                     <div className="flex flex-col gap-1 w-full sm:w-auto">
-                      <label className="text-xs text-gray-400">Видеофайл (до 2 ГБ)</label>
+                      <label className="text-xs text-gray-400">Видеофайл (до 1 ГБ)</label>
                       <input
                         type="file"
                         accept="video/*"
