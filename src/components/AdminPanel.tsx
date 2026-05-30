@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import toast, { Toaster } from 'react-hot-toast'
-import * as tus from 'tus-js-client'
 
 interface Genre {
   id: number
@@ -125,6 +124,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const ipfsGateway = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://gateway.pinata.cloud/ipfs'
 
   const getAccessToken = () => {
     const match = document.cookie.match(/sb-access-token=([^;]+)/)
@@ -382,67 +382,51 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     }
   }
 
-  // Загрузка видео через TUS (resumable upload)
+  // Загрузка видео напрямую в Pinata (минуя Vercel)
   const handleAddEpisode = async (animeId: string) => {
     let finalVideoUrl = episodeForm.video_url
 
     if (videoFile) {
       setUploadingVideo(true)
       try {
-        const safeName = videoFile.name
-          .replace(/\s+/g, '_')
-          .replace(/[^a-zA-Z0-9._-]/g, '')
-        const fileName = `${Date.now()}_${safeName}`
-        const accessToken = getAccessToken()
+        // 1. Получаем временный JWT-токен от нашего API
+        const tokenRes = await fetch('/api/pinata-token')
+        if (!tokenRes.ok) {
+          const tokenError = await tokenRes.json()
+          throw new Error(tokenError.error || 'Failed to get upload token')
+        }
+        const { jwt } = await tokenRes.json()
 
-        // Создаём TUS-загрузку
-        const upload = new tus.Upload(videoFile, {
-          endpoint: `${supabaseUrl}/storage/v1/upload/resumable`,
-          retryDelays: [0, 3000, 5000, 10000, 20000],
+        // 2. Загружаем файл напрямую в Pinata (файл не идёт через Vercel)
+        const formData = new FormData()
+        formData.append('file', videoFile)
+
+        const uploadRes = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
+          method: 'POST',
           headers: {
-            authorization: `Bearer ${accessToken}`,
-            'x-upsert': 'true',
+            'Authorization': `Bearer ${jwt}`,
           },
-          uploadDataDuringCreation: true,
-          removeFingerprintOnSuccess: true,
-          metadata: {
-            bucketName: 'videos',
-            objectName: fileName,
-            contentType: videoFile.type,
-            cacheControl: '3600',
-          },
-          chunkSize: 50 * 1024 * 1024, // куски по 50 МБ
-          onError: (error) => {
-            console.error('TUS error:', error)
-            toast.error(`Ошибка загрузки: ${error.message}`)
-            setUploadingVideo(false)
-          },
-          onProgress: (bytesUploaded, bytesTotal) => {
-            const percentage = ((bytesUploaded / bytesTotal) * 100).toFixed(1)
-            console.log(`Загружено ${percentage}%`)
-          },
-          onSuccess: () => {
-            finalVideoUrl = `${supabaseUrl}/storage/v1/object/public/videos/${fileName}`
-            toast.success('Видео загружено')
-            setUploadingVideo(false)
-            setVideoFile(null)
-            saveEpisode(animeId, finalVideoUrl)
-          },
+          body: formData,
         })
 
-        // Начинаем загрузку
-        upload.findPreviousUploads().then((previousUploads) => {
-          if (previousUploads.length > 0) {
-            upload.resumeFromPreviousUpload(previousUploads[0])
-          }
-          upload.start()
-        })
-        return
-      } catch (err: any) {
-        toast.error('Не удалось начать загрузку')
+        if (!uploadRes.ok) {
+          const error = await uploadRes.json()
+          throw new Error(error.error?.message || 'Upload failed')
+        }
+
+        const data = await uploadRes.json()
+        const ipfsHash = data.IpfsHash
+        finalVideoUrl = `${ipfsGateway}/${ipfsHash}`
+
+        toast.success('Видео загружено в IPFS')
         setUploadingVideo(false)
-        return
+        setVideoFile(null)
+        await saveEpisode(animeId, finalVideoUrl)
+      } catch (err: any) {
+        toast.error(`Ошибка загрузки: ${err.message}`)
+        setUploadingVideo(false)
       }
+      return
     }
 
     if (finalVideoUrl) {
@@ -795,7 +779,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                       className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm flex-1 w-full sm:w-auto" />
                     
                     <div className="flex flex-col gap-1 w-full sm:w-auto">
-                      <label className="text-xs text-gray-400">Видеофайл (до 500 МБ)</label>
+                      <label className="text-xs text-gray-400">Видеофайл (до 1 ГБ)</label>
                       <input
                         type="file"
                         accept="video/*"
