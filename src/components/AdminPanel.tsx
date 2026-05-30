@@ -3,7 +3,61 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import toast, { Toaster } from 'react-hot-toast'
 
-// ... (все интерфейсы остаются без изменений)
+interface Genre {
+  id: number
+  name: string
+  slug: string
+}
+
+interface Episode {
+  id: string
+  anime_id: string
+  episode_number: number
+  title?: string
+  video_url: string
+  opening_start?: number
+  opening_end?: number
+  ending_start?: number
+  ending_end?: number
+}
+
+interface RelatedAnime {
+  id: string
+  related_id: string
+  relation_type: string
+}
+
+interface Screenshot {
+  id: string
+  url: string
+  order_index: number
+}
+
+interface Comment {
+  id: string
+  anime_id: string
+  user_name: string
+  content: string
+  created_at: string
+}
+
+interface Anime {
+  id: string
+  title_ru: string
+  title_en?: string
+  description?: string
+  year?: number
+  rating?: number
+  poster_url?: string
+  type?: string
+  status?: string
+  genres?: Genre[]
+  studio?: string
+  director?: string
+  cast?: string
+  trailer_url?: string
+  day_of_week?: number
+}
 
 export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
   userEmail: string
