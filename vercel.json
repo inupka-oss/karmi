@@ -1,0 +1,9 @@
+{
+  "functions": {
+    "src/app/api/upload-video/route.ts": {
+      "maxDuration": 60,
+      "memory": 1024
+    }
+  },
+  "maxBodySize": "500mb"
+}

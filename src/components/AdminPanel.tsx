@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import toast, { Toaster } from 'react-hot-toast'
-import * as tus from 'tus-js-client'
 
 interface Genre {
   id: number
@@ -382,66 +381,51 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     }
   }
 
-  // Загрузка видео через TUS с безопасным именем файла
+  // Загрузка видео в Storj
   const handleAddEpisode = async (animeId: string) => {
-    const accessToken = getAccessToken()
     let finalVideoUrl = episodeForm.video_url
 
     if (videoFile) {
       setUploadingVideo(true)
       try {
-        // Очищаем имя от кириллицы и спецсимволов
         const safeName = videoFile.name
           .replace(/\s+/g, '_')
           .replace(/[^a-zA-Z0-9._-]/g, '')
         const fileName = `${Date.now()}_${safeName}`
-        
-        const upload = new tus.Upload(videoFile, {
-          endpoint: `${supabaseUrl}/storage/v1/upload/resumable`,
-          retryDelays: [0, 3000, 5000, 10000, 20000],
-          headers: {
-            authorization: `Bearer ${accessToken}`,
-            'x-upsert': 'true',
-          },
-          uploadDataDuringCreation: true,
-          removeFingerprintOnSuccess: true,
-          metadata: {
-            bucketName: 'videos',
-            objectName: fileName,
-            contentType: videoFile.type,
-            cacheControl: '3600',
-          },
-          chunkSize: 50 * 1024 * 1024,
-          onError: (error) => {
-            console.error('TUS error:', error)
-            toast.error(`Ошибка загрузки: ${error.message}`)
-            setUploadingVideo(false)
-          },
-          onProgress: (bytesUploaded, bytesTotal) => {
-            const percentage = ((bytesUploaded / bytesTotal) * 100).toFixed(1)
-            console.log(`Загружено ${percentage}%`)
-          },
-          onSuccess: () => {
-            finalVideoUrl = `${supabaseUrl}/storage/v1/object/public/videos/${fileName}`
-            toast.success('Видео загружено')
-            setUploadingVideo(false)
-            setVideoFile(null)
-            saveEpisode(animeId, finalVideoUrl)
-          },
-        })
 
-        upload.findPreviousUploads().then((previousUploads) => {
-          if (previousUploads.length > 0) {
-            upload.resumeFromPreviousUpload(previousUploads[0])
-          }
-          upload.start()
+        // Получаем presigned URL через серверный API
+        const presignedRes = await fetch('/api/storj-upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileName }),
         })
-        return
-      } catch (err: any) {
-        toast.error('Не удалось начать загрузку')
+        if (!presignedRes.ok) {
+          const error = await presignedRes.json()
+          throw new Error(error.error || 'Failed to get upload URL')
+        }
+        const { uploadUrl, publicUrl } = await presignedRes.json()
+
+        // Загружаем файл напрямую в Storj
+        const uploadRes = await fetch(uploadUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': videoFile.type },
+          body: videoFile,
+        })
+        if (!uploadRes.ok) {
+          const error = await uploadRes.text()
+          throw new Error(error || 'Upload failed')
+        }
+
+        finalVideoUrl = publicUrl
+        toast.success('Видео загружено в Storj')
         setUploadingVideo(false)
-        return
+        setVideoFile(null)
+        saveEpisode(animeId, finalVideoUrl)
+      } catch (err: any) {
+        toast.error(`Ошибка загрузки: ${err.message}`)
+        setUploadingVideo(false)
       }
+      return
     }
 
     if (finalVideoUrl) {
@@ -794,7 +778,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                       className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm flex-1 w-full sm:w-auto" />
                     
                     <div className="flex flex-col gap-1 w-full sm:w-auto">
-                      <label className="text-xs text-gray-400">Видеофайл (до 5 ГБ)</label>
+                      <label className="text-xs text-gray-400">Видеофайл (до 2 ГБ)</label>
                       <input
                         type="file"
                         accept="video/*"
