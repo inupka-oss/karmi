@@ -381,43 +381,29 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     }
   }
 
-  // Загрузка видео через S3
+  // Загрузка видео через серверный API (прокси)
   const handleAddEpisode = async (animeId: string) => {
     let finalVideoUrl = episodeForm.video_url
 
     if (videoFile) {
       setUploadingVideo(true)
       try {
-        const safeName = videoFile.name
-          .replace(/\s+/g, '_')
-          .replace(/[^a-zA-Z0-9._-]/g, '')
-        const fileName = `${Date.now()}_${safeName}`
+        const formData = new FormData()
+        formData.append('file', videoFile)
 
-        // 1. Получаем presigned URL
-        const presignedRes = await fetch('/api/s3-upload', {
+        const uploadRes = await fetch('/api/upload', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fileName }),
+          body: formData,
         })
-        if (!presignedRes.ok) {
-          const error = await presignedRes.json()
-          throw new Error(error.error || 'Failed to get upload URL')
-        }
-        const { uploadUrl, publicUrl } = await presignedRes.json()
 
-        // 2. Загружаем файл напрямую в облако
-        const uploadRes = await fetch(uploadUrl, {
-          method: 'PUT',
-          headers: { 'Content-Type': videoFile.type },
-          body: videoFile,
-        })
         if (!uploadRes.ok) {
-          const errorText = await uploadRes.text()
-          throw new Error(errorText || 'Upload failed')
+          const errorData = await uploadRes.json()
+          throw new Error(errorData.error || 'Upload failed')
         }
 
-        finalVideoUrl = publicUrl
-        toast.success('Видео загружено в облако')
+        const { url } = await uploadRes.json()
+        finalVideoUrl = url
+        toast.success('Видео загружено в Selectel')
         setUploadingVideo(false)
         setVideoFile(null)
         await saveEpisode(animeId, finalVideoUrl)
