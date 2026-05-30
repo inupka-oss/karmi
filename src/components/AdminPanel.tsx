@@ -124,11 +124,6 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  
-  // Storj ключи (теперь напрямую в клиенте)
-  const storjAccessKey = process.env.NEXT_PUBLIC_STORJ_ACCESS_KEY!
-  const storjEndpoint = process.env.NEXT_PUBLIC_STORJ_ENDPOINT!
-  const storjBucket = process.env.NEXT_PUBLIC_STORJ_BUCKET!
 
   const getAccessToken = () => {
     const match = document.cookie.match(/sb-access-token=([^;]+)/)
@@ -386,7 +381,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     }
   }
 
-  // Прямая загрузка видео в Storj
+  // Загрузка видео через pre-signed URL (Storj)
   const handleAddEpisode = async (animeId: string) => {
     let finalVideoUrl = episodeForm.video_url
 
@@ -397,23 +392,31 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
           .replace(/\s+/g, '_')
           .replace(/[^a-zA-Z0-9._-]/g, '')
         const fileName = `${Date.now()}_${safeName}`
-        const uploadUrl = `${storjEndpoint}/${storjBucket}/${fileName}`
 
-        const res = await fetch(uploadUrl, {
+        // 1. Получаем presigned URL от нашего API
+        const presignedRes = await fetch('/api/storj-upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileName }),
+        })
+        if (!presignedRes.ok) {
+          const error = await presignedRes.json()
+          throw new Error(error.error || 'Failed to get upload URL')
+        }
+        const { uploadUrl, publicUrl } = await presignedRes.json()
+
+        // 2. Загружаем файл напрямую в Storj
+        const uploadRes = await fetch(uploadUrl, {
           method: 'PUT',
-          headers: {
-            'AccessKey': storjAccessKey,
-            'Content-Type': 'application/octet-stream',
-          },
+          headers: { 'Content-Type': videoFile.type },
           body: videoFile,
         })
-
-        if (!res.ok) {
-          const error = await res.text()
+        if (!uploadRes.ok) {
+          const error = await uploadRes.text()
           throw new Error(error || 'Upload failed')
         }
 
-        finalVideoUrl = `${storjEndpoint}/${storjBucket}/${fileName}`
+        finalVideoUrl = publicUrl
         toast.success('Видео загружено в Storj')
         setUploadingVideo(false)
         setVideoFile(null)

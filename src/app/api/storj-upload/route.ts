@@ -14,7 +14,9 @@ const client = new S3Client({
 
 export async function POST(request: Request) {
   const { fileName } = await request.json()
-  if (!fileName) return NextResponse.json({ error: 'No file name' }, { status: 400 })
+  if (!fileName) {
+    return NextResponse.json({ error: 'No file name' }, { status: 400 })
+  }
 
   const bucket = process.env.NEXT_PUBLIC_STORJ_BUCKET!
   const command = new PutObjectCommand({
@@ -22,16 +24,12 @@ export async function POST(request: Request) {
     Key: fileName,
   })
 
-  const uploadUrl = await getSignedUrl(client, command, { expiresIn: 3600 })
-  const publicUrl = `${process.env.STORJ_ENDPOINT}/${bucket}/${fileName}`
-
-  // Добавим CORS-заголовки
-  return new NextResponse(JSON.stringify({ uploadUrl, publicUrl }), {
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
-  })
+  try {
+    const uploadUrl = await getSignedUrl(client, command, { expiresIn: 3600 })
+    const publicUrl = `${process.env.STORJ_ENDPOINT}/${bucket}/${fileName}`
+    return NextResponse.json({ uploadUrl, publicUrl })
+  } catch (error: any) {
+    console.error('Storj presigned error:', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
 }
