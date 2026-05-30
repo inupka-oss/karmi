@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import toast, { Toaster } from 'react-hot-toast'
+import * as tus from 'tus-js-client'
 
 interface Genre {
   id: number
@@ -381,7 +382,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     }
   }
 
-  // Загрузка видео в Supabase Storage (до 50 МБ)
+  // Загрузка видео через TUS (resumable upload)
   const handleAddEpisode = async (animeId: string) => {
     let finalVideoUrl = episodeForm.video_url
 
@@ -394,37 +395,60 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
         const fileName = `${Date.now()}_${safeName}`
         const accessToken = getAccessToken()
 
-        const res = await fetch(`${supabaseUrl}/storage/v1/object/videos/${fileName}`, {
-          method: 'POST',
+        // Создаём TUS-загрузку
+        const upload = new tus.Upload(videoFile, {
+          endpoint: `${supabaseUrl}/storage/v1/upload/resumable`,
+          retryDelays: [0, 3000, 5000, 10000, 20000],
           headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'apikey': supabaseAnonKey,
-            'Content-Type': videoFile.type,
+            authorization: `Bearer ${accessToken}`,
+            'x-upsert': 'true',
           },
-          body: videoFile,
+          uploadDataDuringCreation: true,
+          removeFingerprintOnSuccess: true,
+          metadata: {
+            bucketName: 'videos',
+            objectName: fileName,
+            contentType: videoFile.type,
+            cacheControl: '3600',
+          },
+          chunkSize: 50 * 1024 * 1024, // куски по 50 МБ
+          onError: (error) => {
+            console.error('TUS error:', error)
+            toast.error(`Ошибка загрузки: ${error.message}`)
+            setUploadingVideo(false)
+          },
+          onProgress: (bytesUploaded, bytesTotal) => {
+            const percentage = ((bytesUploaded / bytesTotal) * 100).toFixed(1)
+            console.log(`Загружено ${percentage}%`)
+          },
+          onSuccess: () => {
+            finalVideoUrl = `${supabaseUrl}/storage/v1/object/public/videos/${fileName}`
+            toast.success('Видео загружено')
+            setUploadingVideo(false)
+            setVideoFile(null)
+            saveEpisode(animeId, finalVideoUrl)
+          },
         })
 
-        if (!res.ok) {
-          const errorData = await res.json()
-          throw new Error(errorData.message || 'Upload failed')
-        }
-
-        finalVideoUrl = `${supabaseUrl}/storage/v1/object/public/videos/${fileName}`
-        toast.success('Видео загружено в Supabase')
-        setUploadingVideo(false)
-        setVideoFile(null)
-        await saveEpisode(animeId, finalVideoUrl)
+        // Начинаем загрузку
+        upload.findPreviousUploads().then((previousUploads) => {
+          if (previousUploads.length > 0) {
+            upload.resumeFromPreviousUpload(previousUploads[0])
+          }
+          upload.start()
+        })
+        return
       } catch (err: any) {
-        toast.error(`Ошибка загрузки: ${err.message}`)
+        toast.error('Не удалось начать загрузку')
         setUploadingVideo(false)
+        return
       }
-      return
     }
 
     if (finalVideoUrl) {
       await saveEpisode(animeId, finalVideoUrl)
     } else {
-      toast.error('Введите ссылку или выберите файл')
+      toast.error('Введите ссылку или выберите видеофайл')
     }
   }
 
@@ -771,7 +795,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                       className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm flex-1 w-full sm:w-auto" />
                     
                     <div className="flex flex-col gap-1 w-full sm:w-auto">
-                      <label className="text-xs text-gray-400">Видеофайл (до 50 МБ)</label>
+                      <label className="text-xs text-gray-400">Видеофайл (до 500 МБ)</label>
                       <input
                         type="file"
                         accept="video/*"
