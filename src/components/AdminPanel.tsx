@@ -397,7 +397,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
         }).ready
 
         const uploadedFile = await storage.upload(videoFile).complete
-        const link = await uploadedFile.link()
+        const link = await uploadedFile.link(true)   // ← исправлено: link(true) для публичной ссылки
         finalVideoUrl = link
 
         toast.success('Видео загружено в MEGA')
