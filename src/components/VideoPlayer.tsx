@@ -205,8 +205,8 @@ export default function VideoPlayer({
 
   return (
     <div className="relative">
-      <div className="aspect-video rounded-xl overflow-hidden glass mb-6">
-        <video ref={videoRef} className="w-full h-full" playsInline preload="metadata" />
+      <div className="video-shell aspect-video rounded-xl overflow-hidden bg-black mb-6 border-2 border-white/15">
+        <video ref={videoRef} playsInline preload="metadata" />
       </div>
       {openingEnd && (
         <button
