@@ -158,38 +158,46 @@ export default function VideoPlayer({
   }, [])
 
   // Полноэкранный режим с поддержкой iOS Safari
-  const toggleFullscreen = useCallback((e?: React.MouseEvent) => {
-    e?.stopPropagation()
-    e?.preventDefault()
+  const toggleFullscreen = useCallback(() => {
+    console.log('Fullscreen button clicked')
     const video = videoRef.current
-    if (!video) return
+    if (!video) {
+      console.log('No video element')
+      return
+    }
     
     // Проверка на iOS Safari
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 2 && /Mac/.test(navigator.platform))
+    console.log('Is iOS:', isIOS)
     
     if (isIOS) {
       // iOS Safari требует webkitEnterFullscreen на видеоэлементе
-      if ((video as any).webkitEnterFullscreen) {
-        ;(video as any).webkitEnterFullscreen()
-      } else if (video.requestFullscreen) {
-        video.requestFullscreen().catch(err => console.error('Fullscreen error:', err))
-      }
+      // Запускаем без задержек
+      setTimeout(() => {
+        console.log('Calling webkitEnterFullscreen')
+        if ((video as any).webkitEnterFullscreen) {
+          ;(video as any).webkitEnterFullscreen()
+          console.log('Fullscreen called')
+        } else {
+          console.log('webkitEnterFullscreen not available')
+        }
+      }, 50)
     } else {
       // Десктоп и Android - используем контейнер
       const container = containerRef.current
-      if (!container) return
-      
-      if (document.fullscreenElement) {
-        document.exitFullscreen().catch(err => console.error('ExitFullscreen error:', err))
-      } else {
-        if (container.requestFullscreen) {
-          container.requestFullscreen().catch(err => console.error('Fullscreen error:', err))
-        } else if ((container as any).webkitRequestFullscreen) {
-          ;(container as any).webkitRequestFullscreen()
-        } else if ((container as any).msRequestFullscreen) {
-          ;(container as any).msRequestFullscreen()
-        }
+      if (!container) {
+        console.log('No container element')
+        return
       }
+      
+      setTimeout(() => {
+        console.log('Using Fullscreen API')
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch(() => {})
+        } else {
+          container.requestFullscreen().catch(() => {})
+        }
+      }, 50)
     }
   }, [])
 
@@ -402,12 +410,12 @@ export default function VideoPlayer({
             {/* Правая часть: Фуллскрин + Бургер-меню */}
             <div className="flex items-center gap-2">
               {/* Полноэкранный режим - отдельная кнопка */}
-              <button onClick={toggleFullscreen} className="text-white hover:text-neo-pink transition p-2" style={{ WebkitTapHighlightColor: 'transparent' }}>
+              <button onClick={toggleFullscreen} className="text-white hover:text-neo-pink transition p-2" style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}>
                 <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
               </button>
               
               {/* Бургер-меню */}
-              <button onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen) }} className="text-white hover:text-neo-pink transition p-2" style={{ WebkitTapHighlightColor: 'transparent' }}>
+              <button onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen) }} className="text-white hover:text-neo-pink transition p-2" style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}>
                 <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
               </button>
             </div>
