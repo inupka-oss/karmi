@@ -80,7 +80,9 @@ export default function VideoPlayer({
   const [showSpeedMenu, setShowSpeedMenu] = useState(false)
   const [showQualityMenu, setShowQualityMenu] = useState(false)
 
-  // Инициализация качества для HLS
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+    (navigator.maxTouchPoints && navigator.maxTouchPoints > 2 && /Mac/.test(navigator.platform))
+
   useEffect(() => {
     if (src.endsWith('.m3u8') && hlsRef.current) {
       const hls = hlsRef.current
@@ -106,9 +108,7 @@ export default function VideoPlayer({
   }, [])
 
   useEffect(() => {
-    return () => {
-      if (nextEpisodeTimeoutRef.current) clearTimeout(nextEpisodeTimeoutRef.current)
-    }
+    return () => { if (nextEpisodeTimeoutRef.current) clearTimeout(nextEpisodeTimeoutRef.current) }
   }, [])
 
   const togglePlay = useCallback((e?: React.MouseEvent) => {
@@ -130,6 +130,7 @@ export default function VideoPlayer({
     e?.stopPropagation()
     const video = videoRef.current
     if (!video) return
+    // На iOS программное изменение громкости запрещено, поэтому просто обновляем состояние
     video.volume = newVolume
     setVolume(newVolume)
     setIsMuted(newVolume === 0)
@@ -157,13 +158,9 @@ export default function VideoPlayer({
     setMenuOpen(false)
   }, [])
 
-  // Улучшенный полноэкранный режим
   const toggleFullscreen = useCallback(() => {
     const video = videoRef.current
     if (!video) return
-
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-      (navigator.maxTouchPoints && navigator.maxTouchPoints > 2 && /Mac/.test(navigator.platform))
 
     if (isIOS) {
       if ((video as any).webkitEnterFullscreen) {
@@ -177,16 +174,14 @@ export default function VideoPlayer({
     } else {
       const container = containerRef.current
       if (!container) return
-
       if (document.fullscreenElement) {
         document.exitFullscreen().catch(() => {})
       } else {
         container.requestFullscreen().catch(() => {})
       }
     }
-  }, [])
+  }, [isIOS])
 
-  // Слушатель fullscreenchange
   useEffect(() => {
     const onFsChange = () => {}
     document.addEventListener('fullscreenchange', onFsChange)
@@ -199,7 +194,6 @@ export default function VideoPlayer({
     controlsTimeoutRef.current = setTimeout(() => { if (isPlaying) setShowControls(false) }, 3000)
   }, [isPlaying])
 
-  // Инициализация видео
   useEffect(() => {
     const video = videoRef.current
     if (!video || !src) return
@@ -314,7 +308,6 @@ export default function VideoPlayer({
   const skipOpening = useCallback(() => skipTo(openingEnd || 0), [openingEnd, skipTo])
   const skipToEnding = useCallback(() => skipTo(endingStart || 0), [endingStart, skipTo])
 
-  // Переключение качества
   const changeQuality = useCallback((idx: number, e?: React.MouseEvent) => {
     e?.stopPropagation()
     setCurrentQualityIdx(idx)
@@ -352,16 +345,13 @@ export default function VideoPlayer({
         
         {nextCountdown !== null && nextCountdown > 0 && <div className="absolute top-4 right-4 bg-black/70 backdrop-blur-sm text-white px-4 py-2 rounded-lg z-30 flex items-center gap-3"><span className="text-sm">След. серия через {nextCountdown}s</span><button onClick={(e) => { e.stopPropagation(); cancelNextEpisode() }} className="text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded">Отмена</button></div>}
 
-        {/* Кастомные контролы с плавным появлением */}
         <div className={`controls-container absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-3 sm:p-4 transition-opacity duration-300 z-30 ${showControls || !isPlaying ? 'opacity-100' : 'opacity-0'}`}>
-          {/* Прогресс-бар */}
           <div className="relative h-1 bg-white/20 rounded-full cursor-pointer mb-2 sm:mb-3" onClick={(e) => { e.stopPropagation(); const rect = e.currentTarget.getBoundingClientRect(); seekTo((e.clientX - rect.left) / rect.width * duration) }}>
             <div className="absolute top-0 left-0 h-full bg-white/30 rounded-full" style={{ width: `${duration > 0 ? (buffered / duration) * 100 : 0}%` }} />
             <div className="absolute top-0 left-0 h-full bg-neo-pink rounded-full" style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }} />
           </div>
 
           <div className="flex items-center justify-between">
-            {/* Левая часть */}
             <div className="flex items-center gap-2 sm:gap-4">
               <button onClick={togglePlay} className="text-white hover:text-neo-pink transition p-1 sm:p-2" style={{ WebkitTapHighlightColor: 'transparent' }}>
                 {isPlaying ? (
@@ -381,13 +371,22 @@ export default function VideoPlayer({
                     <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
                   )}
                 </button>
-                <input type="range" min="0" max="1" step="0.1" value={isMuted ? 0 : volume} onChange={(e) => setVolumeLevel(parseFloat(e.target.value))} className="w-16 sm:w-24 accent-neo-pink" style={{ WebkitTapHighlightColor: 'transparent' }} />
+                {/* Слайдер громкости скрываем на iOS, т.к. программное изменение громкости запрещено */}
+                {!isIOS && (
+                  <input 
+                    type="range" 
+                    min="0" max="1" step="0.1" 
+                    value={isMuted ? 0 : volume} 
+                    onInput={(e) => setVolumeLevel(parseFloat((e.target as HTMLInputElement).value))} 
+                    className="w-16 sm:w-24 accent-neo-pink" 
+                    style={{ WebkitTapHighlightColor: 'transparent' }} 
+                  />
+                )}
               </div>
               
               <span className="text-white text-xs sm:text-sm font-mono">{formatTime(currentTime)} / {formatTime(duration)}</span>
             </div>
 
-            {/* Правая часть */}
             <div className="flex items-center gap-2">
               <button onClick={toggleFullscreen} className="text-white hover:text-neo-pink transition p-2" style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}>
                 <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
@@ -399,7 +398,6 @@ export default function VideoPlayer({
             </div>
           </div>
 
-          {/* Меню */}
           {menuOpen && (
             <div className="absolute bottom-16 right-4 bg-black/95 backdrop-blur rounded-lg p-3 z-40 min-w-[180px]">
               <div className="relative">
