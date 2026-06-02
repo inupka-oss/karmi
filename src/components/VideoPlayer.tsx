@@ -42,8 +42,6 @@ function formatTime(seconds: number): string {
   return h > 0 ? `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}` : `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
 }
 
-interface Bookmark { time: number; label: string }
-
 export default function VideoPlayer({
   src, title, onEnded, activeEpisodeId, openingStart, openingEnd, endingStart, endingEnd,
 }: {
@@ -62,8 +60,6 @@ export default function VideoPlayer({
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const nextEpisodeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const touchStartXRef = useRef(0)
-  const touchStartYRef = useRef(0)
 
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
@@ -76,42 +72,23 @@ export default function VideoPlayer({
   const [buffered, setBuffered] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [bookmarks, setBookmarks] = useState<Bookmark[]>([])
-  const [showBookmarks, setShowBookmarks] = useState(false)
   const [autoPlayNext, setAutoPlayNext] = useState(true)
   const [nextCountdown, setNextCountdown] = useState<number | null>(null)
   const [isBuffering, setIsBuffering] = useState(false)
+  const [qualityMenuOpen, setQualityMenuOpen] = useState(false)
+  const [qualities, setQualities] = useState<{ label: string; height: number }[]>([])
+  const [currentQualityIdx, setCurrentQualityIdx] = useState(0)
 
-  // Загрузка закладок
+  // Инициализация качества для HLS
   useEffect(() => {
-    if (!activeEpisodeId) return
-    const stored = localStorage.getItem(`bookmarks-${activeEpisodeId}`)
-    if (stored) {
-      try { setBookmarks(JSON.parse(stored)) } catch {}
+    if (src.endsWith('.m3u8') && hlsRef.current) {
+      const hls = hlsRef.current
+      const levels = hls.levels || []
+      if (levels.length > 0) {
+        setQualities(levels.map(l => ({ label: `${l.height}p`, height: l.height })))
+      }
     }
-  }, [activeEpisodeId])
-
-  const saveBookmarks = useCallback((newBookmarks: Bookmark[]) => {
-    setBookmarks(newBookmarks)
-    if (activeEpisodeId) localStorage.setItem(`bookmarks-${activeEpisodeId}`, JSON.stringify(newBookmarks))
-  }, [activeEpisodeId])
-
-  const addBookmark = useCallback((time: number, label: string) => {
-    saveBookmarks([...bookmarks, { time, label }])
-  }, [bookmarks, saveBookmarks])
-
-  const toggleBookmarkAtCurrent = useCallback(() => {
-    const label = prompt('Название закладки:', `Момент @ ${formatTime(currentTime)}`)
-    if (label) addBookmark(currentTime, label)
-  }, [currentTime, addBookmark])
-
-  const goToBookmark = useCallback((time: number) => {
-    if (videoRef.current) {
-      videoRef.current.currentTime = time
-      if (!isPlaying) videoRef.current.play()
-    }
-    setShowBookmarks(false)
-  }, [isPlaying])
+  }, [src])
 
   const scheduleNextEpisode = useCallback(() => {
     if (!autoPlayNext || !onEnded) return
@@ -133,20 +110,23 @@ export default function VideoPlayer({
     }
   }, [])
 
-  const togglePlay = useCallback(() => {
+  const togglePlay = useCallback((e?: React.MouseEvent) => {
+    e?.stopPropagation()
     const video = videoRef.current
     if (!video) return
     video.paused ? video.play() : video.pause()
   }, [])
 
-  const toggleMute = useCallback(() => {
+  const toggleMute = useCallback((e?: React.MouseEvent) => {
+    e?.stopPropagation()
     const video = videoRef.current
     if (!video) return
     video.muted = !video.muted
     setIsMuted(video.muted)
   }, [])
 
-  const setVolumeLevel = useCallback((newVolume: number) => {
+  const setVolumeLevel = useCallback((newVolume: number, e?: React.MouseEvent) => {
+    e?.stopPropagation()
     const video = videoRef.current
     if (!video) return
     video.volume = newVolume
@@ -154,7 +134,8 @@ export default function VideoPlayer({
     setIsMuted(newVolume === 0)
   }, [])
 
-  const seekTo = useCallback((time: number) => {
+  const seekTo = useCallback((time: number, e?: React.MouseEvent) => {
+    e?.stopPropagation()
     const video = videoRef.current
     if (!video) return
     video.currentTime = Math.max(0, Math.min(time, duration))
@@ -165,43 +146,39 @@ export default function VideoPlayer({
     if (video) video.currentTime = time
   }, [])
 
-  const changePlaybackRate = useCallback((rate: number) => {
+  const changePlaybackRate = useCallback((rate: number, e?: React.MouseEvent) => {
+    e?.stopPropagation()
     const video = videoRef.current
     if (!video) return
     video.playbackRate = rate
     setPlaybackRate(rate)
   }, [])
 
-  const toggleFullscreen = useCallback(() => {
+  const toggleFullscreen = useCallback((e?: React.MouseEvent) => {
+    e?.stopPropagation()
     const container = containerRef.current
     if (!container) return
     if (!document.fullscreenElement) {
-      container.requestFullscreen().then(() => setIsFullscreen(true))
+      container.requestFullscreen().catch(err => {
+        console.error('Fullscreen error:', err)
+      })
+      setIsFullscreen(true)
     } else {
-      document.exitFullscreen().then(() => setIsFullscreen(false))
+      document.exitFullscreen().catch(err => {
+        console.error('ExitFullscreen error:', err)
+      })
+      setIsFullscreen(false)
     }
   }, [])
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    touchStartXRef.current = e.touches[0].clientX
-    touchStartYRef.current = e.touches[0].clientY
-    setShowControls(true)
+  // Обработка fullscreenchange
+  useEffect(() => {
+    const onFsChange = () => {
+      setIsFullscreen(!!document.fullscreenElement)
+    }
+    document.addEventListener('fullscreenchange', onFsChange)
+    return () => document.removeEventListener('fullscreenchange', onFsChange)
   }, [])
-
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    const touchEndX = e.changedTouches[0].clientX
-    const touchEndY = e.changedTouches[0].clientY
-    const deltaX = touchEndX - touchStartXRef.current
-    const deltaY = touchEndY - touchStartYRef.current
-    const video = videoRef.current
-    if (!video) return
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
-      seekTo(video.currentTime + (deltaX > 0 ? 10 : -10))
-    }
-    if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 50) {
-      setVolumeLevel(Math.max(0, Math.min(1, volume + (deltaY > 0 ? -0.1 : 0.1))))
-    }
-  }, [seekTo, volume, setVolumeLevel])
 
   const handleMouseMove = useCallback(() => {
     setShowControls(true)
@@ -311,7 +288,7 @@ export default function VideoPlayer({
       video.removeEventListener('error', onError)
       if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null }
     }
-  }, [src, activeEpisodeId, scheduleNextEpisode, onEnded, seekTo])
+  }, [src, activeEpisodeId, scheduleNextEpisode, onEnded])
 
   useEffect(() => {
     if (nextCountdown === null || nextCountdown === 0) return
@@ -324,42 +301,86 @@ export default function VideoPlayer({
   const skipOpening = useCallback(() => skipTo(openingEnd || 0), [openingEnd, skipTo])
   const skipToEnding = useCallback(() => skipTo(endingStart || 0), [endingStart, skipTo])
 
+  // Переключение качества
+  const changeQuality = useCallback((idx: number, e?: React.MouseEvent) => {
+    e?.stopPropagation()
+    setCurrentQualityIdx(idx)
+    setQualityMenuOpen(false)
+    if (src.endsWith('.m3u8') && hlsRef.current && qualities[idx]) {
+      hlsRef.current.currentLevel = idx
+      hlsRef.current.nextLevel = idx
+    }
+  }, [src, qualities])
+
   return (
     <div className="relative" ref={containerRef}>
-      <div className="video-shell aspect-video rounded-xl overflow-hidden bg-black mb-6 relative group" ref={containerRef} onClick={togglePlay} onMouseMove={handleMouseMove} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} onMouseLeave={() => { if (isPlaying) setShowControls(false) }}>
-        <video ref={videoRef} playsInline preload="auto" style={{ width: '100%', height: '100%', objectFit: 'contain' }} className="video-player-native cursor-pointer" />
+      <div 
+        className="video-shell aspect-video rounded-xl overflow-hidden bg-black mb-6 relative" 
+        ref={containerRef}
+        onClick={togglePlay}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => { if (isPlaying) setShowControls(false) }}
+      >
+        <video 
+          ref={videoRef} 
+          playsInline 
+          preload="auto" 
+          style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
+          className="video-player-native cursor-pointer" 
+        />
         
         {isLoading && <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-20"><div className="w-12 h-12 border-4 border-neo-pink border-t-transparent rounded-full animate-spin" /></div>}
         {isBuffering && <div className="absolute inset-0 flex items-center justify-center bg-black/30 z-20"><div className="w-10 h-10 border-4 border-neo-pink border-t-transparent rounded-full animate-spin" /></div>}
-        {error && <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 z-20 text-white"><div className="text-5xl mb-4">⚠️</div><p className="text-lg mb-4">{error}</p><button onClick={() => { videoRef.current?.load(); setError(null) }} className="px-4 py-2 bg-neo-pink rounded-lg hover:bg-neo-red transition">Повторить</button></div>}
+        {error && <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 z-20 text-white"><div className="text-5xl mb-4">!</div><p className="text-lg mb-4">{error}</p><button onClick={(e) => { e.stopPropagation(); videoRef.current?.load(); setError(null) }} className="px-4 py-2 bg-neo-pink rounded-lg hover:bg-neo-red transition">Повторить</button></div>}
         
-        {openingEnd && currentTime >= openingStart && currentTime < openingEnd && <button onClick={(e) => { e.stopPropagation(); skipOpening() }} className="absolute bottom-20 left-4 bg-neo-pink/90 hover:bg-neo-pink text-white px-4 py-2 rounded-lg text-sm font-semibold backdrop-blur-sm transition z-10">⏭ Пропустить опенинг</button>}
-        {endingStart && currentTime >= endingStart - 30 && currentTime < endingStart && <button onClick={(e) => { e.stopPropagation(); skipToEnding() }} className="absolute bottom-20 right-4 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm font-semibold backdrop-blur-sm transition z-10">⏭ К эндингу</button>}
+        {openingEnd && currentTime >= openingStart && currentTime < openingEnd && <button onClick={(e) => { e.stopPropagation(); skipOpening() }} className="absolute bottom-24 left-4 bg-neo-pink/90 hover:bg-neo-pink text-white px-4 py-2 rounded-lg text-sm font-semibold backdrop-blur-sm transition z-10">Пропустить опенинг</button>}
+        {endingStart && currentTime >= endingStart - 30 && currentTime < endingStart && <button onClick={(e) => { e.stopPropagation(); skipToEnding() }} className="absolute bottom-24 right-4 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm font-semibold backdrop-blur-sm transition z-10">К эндингу</button>}
         
         {nextCountdown !== null && nextCountdown > 0 && <div className="absolute top-4 right-4 bg-black/70 backdrop-blur-sm text-white px-4 py-2 rounded-lg z-30 flex items-center gap-3"><span className="text-sm">След. серия через {nextCountdown}s</span><button onClick={(e) => { e.stopPropagation(); cancelNextEpisode() }} className="text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded">Отмена</button></div>}
 
-        <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent p-4 transition-opacity duration-300 z-30 ${showControls || !isPlaying ? 'opacity-100' : 'opacity-0'}`}>
-          <div className="relative h-1.5 bg-white/20 rounded-full cursor-pointer mb-3 group/timeline" onClick={(e) => { e.stopPropagation(); const rect = e.currentTarget.getBoundingClientRect(); seekTo((e.clientX - rect.left) / rect.width * duration) }}>
-            <div className="absolute top-0 left-0 h-full bg-white/30 rounded-full" style={{ width: `${(buffered / duration) * 100}%` }} />
-            <div className="absolute top-0 left-0 h-full bg-neo-pink rounded-full" style={{ width: `${(currentTime / duration) * 100}%` }} />
+        {/* Кастомные контролы */}
+        <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-4 transition-opacity duration-300 z-30 ${showControls || !isPlaying ? 'opacity-100' : 'opacity-0'}`}>
+          {/* Прогресс-бар */}
+          <div className="relative h-1 bg-white/20 rounded-full cursor-pointer mb-3" onClick={(e) => { e.stopPropagation(); const rect = e.currentTarget.getBoundingClientRect(); seekTo((e.clientX - rect.left) / rect.width * duration) }}>
+            <div className="absolute top-0 left-0 h-full bg-white/30 rounded-full" style={{ width: `${duration > 0 ? (buffered / duration) * 100 : 0}%` }} />
+            <div className="absolute top-0 left-0 h-full bg-neo-pink rounded-full" style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }} />
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button onClick={(e) => { e.stopPropagation(); togglePlay() }} className="text-white hover:text-neo-pink transition text-xl">{isPlaying ? '⏸' : '▶'}</button>
+            <div className="flex items-center gap-3 sm:gap-4">
+              <button onClick={togglePlay} className="text-white hover:text-neo-pink transition text-xl sm:text-2xl" style={{ WebkitTapHighlightColor: 'transparent' }}>{isPlaying ? '❚❚' : '▶'}</button>
               <div className="flex items-center gap-2">
-                <button onClick={(e) => { e.stopPropagation(); toggleMute() }} className="text-white hover:text-neo-pink transition">{isMuted || volume === 0 ? '🔇' : volume < 0.5 ? '🔉' : '🔊'}</button>
-                <input type="range" min="0" max="1" step="0.1" value={isMuted ? 0 : volume} onChange={(e) => { e.stopPropagation(); setVolumeLevel(parseFloat(e.target.value)) }} className="w-20 accent-neo-pink" onClick={(e) => e.stopPropagation()} />
+                <button onClick={toggleMute} className="text-white hover:text-neo-pink transition" style={{ WebkitTapHighlightColor: 'transparent' }}>{isMuted || volume === 0 ? '🔇' : volume < 0.5 ? '🔉' : '🔊'}</button>
+                <input type="range" min="0" max="1" step="0.1" value={isMuted ? 0 : volume} onChange={(e) => setVolumeLevel(parseFloat(e.target.value))} className="w-16 sm:w-24 accent-neo-pink" style={{ WebkitTapHighlightColor: 'transparent' }} />
               </div>
-              <span className="text-white text-sm font-mono">{formatTime(currentTime)} / {formatTime(duration)}</span>
+              <span className="text-white text-xs sm:text-sm font-mono">{formatTime(currentTime)} / {formatTime(duration)}</span>
             </div>
 
-            <div className="flex items-center gap-3">
-              {bookmarks.length > 0 && <div className="relative"><button onClick={(e) => { e.stopPropagation(); setShowBookmarks(!showBookmarks) }} className="text-white hover:text-neo-pink transition">🔖</button>{showBookmarks && <div className="absolute bottom-full right-0 mb-2 bg-black/90 backdrop-blur rounded-lg p-3 min-w-[200px] max-h-48 overflow-y-auto z-40">{bookmarks.map((bm, idx) => <div key={idx} onClick={(e) => { e.stopPropagation(); goToBookmark(bm.time) }} className="text-white text-sm py-1 px-2 hover:bg-neo-pink/50 rounded cursor-pointer flex justify-between items-center"><span>{bm.label}</span><span className="text-xs text-gray-400">{formatTime(bm.time)}</span></div>)}</div>}</div>}
-              <button onClick={(e) => { e.stopPropagation(); toggleBookmarkAtCurrent() }} className="text-white hover:text-neo-pink transition text-sm" title="Добавить закладку">+📑</button>
-              <button onClick={(e) => { e.stopPropagation(); changePlaybackRate(playbackRate === 1 ? 1.25 : playbackRate === 1.25 ? 1.5 : playbackRate === 1.5 ? 2 : 1) }} className="text-white hover:text-neo-pink transition text-sm font-mono w-10">{playbackRate}x</button>
-              <button onClick={(e) => { e.stopPropagation(); setAutoPlayNext(!autoPlayNext) }} className={`text-sm transition ${autoPlayNext ? 'text-neo-pink' : 'text-gray-400'}`} title="Автопереключение">{autoPlayNext ? '🔄 Вкл' : '🔄 Выкл'}</button>
-              <button onClick={(e) => { e.stopPropagation(); toggleFullscreen() }} className="text-white hover:text-neo-pink transition">⛶</button>
+            <div className="flex items-center gap-2 sm:gap-3">
+              {/* Качество */}
+              {qualities.length > 0 && (
+                <div className="relative">
+                  <button onClick={() => setQualityMenuOpen(!qualityMenuOpen)} className="text-white hover:text-neo-pink transition text-xs sm:text-sm font-bold w-10" style={{ WebkitTapHighlightColor: 'transparent' }}>{qualities[currentQualityIdx]?.label || 'HD'}</button>
+                  {qualityMenuOpen && (
+                    <div className="absolute bottom-full right-0 mb-2 bg-black/95 backdrop-blur rounded-lg p-2 z-40 min-w-[100px]">
+                      {qualities.map((q, idx) => (
+                        <button 
+                          key={idx} 
+                          onClick={(e) => changeQuality(idx, e)}
+                          className={`block w-full text-left text-xs sm:text-sm py-1 px-3 rounded ${currentQualityIdx === idx ? 'bg-neo-pink text-white' : 'text-white hover:bg-white/10'}`}
+                          style={{ WebkitTapHighlightColor: 'transparent' }}
+                        >
+                          {q.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              <button onClick={(e) => changePlaybackRate(playbackRate === 1 ? 1.25 : playbackRate === 1.25 ? 1.5 : playbackRate === 1.5 ? 2 : 1)} className="text-white hover:text-neo-pink transition text-xs sm:text-sm font-mono w-10" style={{ WebkitTapHighlightColor: 'transparent' }}>{playbackRate}x</button>
+              <button onClick={(e) => { e.stopPropagation(); setAutoPlayNext(!autoPlayNext) }} className={`text-xs sm:text-sm transition ${autoPlayNext ? 'text-neo-pink' : 'text-gray-400'}`} style={{ WebkitTapHighlightColor: 'transparent' }}>{autoPlayNext ? 'AUTO' : 'OFF'}</button>
+              <button onClick={toggleFullscreen} className="text-white hover:text-neo-pink transition text-lg sm:text-xl" style={{ WebkitTapHighlightColor: 'transparent' }}>{isFullscreen ? '⤢' : '⤢'}</button>
             </div>
           </div>
         </div>

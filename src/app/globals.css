@@ -80,6 +80,8 @@ body {
   isolation: isolate;
   transform: translateZ(0);
   will-change: contents;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 .video-shell video {
   width: 100%;
@@ -94,12 +96,25 @@ body {
   pointer-events: auto;
   -webkit-transform: translateZ(0);
   transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+.video-shell video::-webkit-media-controls {
+  display: none !important;
 }
 .video-shell video::-webkit-media-controls-panel {
   display: none !important;
 }
 .video-shell video::-webkit-media-controls-enclosure {
   display: none !important;
+}
+
+/* Кнопки плеера */
+.video-shell button {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* Инпуты range для громкости и прогресса */
@@ -110,6 +125,7 @@ input[type="range"] {
   background: rgba(255, 255, 255, 0.2);
   border-radius: 2px;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
