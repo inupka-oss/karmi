@@ -66,7 +66,6 @@ export default function VideoPlayer({
   const [duration, setDuration] = useState(0)
   const [volume, setVolume] = useState(1)
   const [isMuted, setIsMuted] = useState(false)
-  const [isFullscreen, setIsFullscreen] = useState(false)
   const [playbackRate, setPlaybackRate] = useState(1)
   const [showControls, setShowControls] = useState(true)
   const [buffered, setBuffered] = useState(0)
@@ -75,9 +74,11 @@ export default function VideoPlayer({
   const [autoPlayNext, setAutoPlayNext] = useState(true)
   const [nextCountdown, setNextCountdown] = useState<number | null>(null)
   const [isBuffering, setIsBuffering] = useState(false)
-  const [qualityMenuOpen, setQualityMenuOpen] = useState(false)
   const [qualities, setQualities] = useState<{ label: string; height: number }[]>([])
   const [currentQualityIdx, setCurrentQualityIdx] = useState(0)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [showSpeedMenu, setShowSpeedMenu] = useState(false)
+  const [showQualityMenu, setShowQualityMenu] = useState(false)
 
   // Инициализация качества для HLS
   useEffect(() => {
@@ -152,29 +153,61 @@ export default function VideoPlayer({
     if (!video) return
     video.playbackRate = rate
     setPlaybackRate(rate)
+    setShowSpeedMenu(false)
+    setMenuOpen(false)
   }, [])
 
+  // Исправленный полноэкранный режим
   const toggleFullscreen = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation()
     const container = containerRef.current
     if (!container) return
-    if (!document.fullscreenElement) {
-      container.requestFullscreen().catch(err => {
+    
+    // Останавливаем всплытие и предотвращаем клик по видео
+    e?.preventDefault()
+    
+    const isFullscreen = !!document.fullscreenElement
+    
+    // Используем requestFullscreen с vendor prefixes
+    const requestFullscreen = async () => {
+      try {
+        if (container.requestFullscreen) {
+          await container.requestFullscreen()
+        } else if ((container as any).webkitRequestFullscreen) {
+          ;(container as any).webkitRequestFullscreen()
+        } else if ((container as any).msRequestFullscreen) {
+          ;(container as any).msRequestFullscreen()
+        }
+      } catch (err) {
         console.error('Fullscreen error:', err)
-      })
-      setIsFullscreen(true)
-    } else {
-      document.exitFullscreen().catch(err => {
+      }
+    }
+    
+    const exitFullscreen = async () => {
+      try {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen()
+        } else if ((document as any).webkitExitFullscreen) {
+          ;(document as any).webkitExitFullscreen()
+        } else if ((document as any).msExitFullscreen) {
+          ;(document as any).msExitFullscreen()
+        }
+      } catch (err) {
         console.error('ExitFullscreen error:', err)
-      })
-      setIsFullscreen(false)
+      }
+    }
+    
+    if (isFullscreen) {
+      exitFullscreen()
+    } else {
+      requestFullscreen()
     }
   }, [])
 
-  // Обработка fullscreenchange
+  // Слушатель fullscreenchange
   useEffect(() => {
     const onFsChange = () => {
-      setIsFullscreen(!!document.fullscreenElement)
+      // Ничего не делаем, состояние не меняем
     }
     document.addEventListener('fullscreenchange', onFsChange)
     return () => document.removeEventListener('fullscreenchange', onFsChange)
@@ -305,7 +338,8 @@ export default function VideoPlayer({
   const changeQuality = useCallback((idx: number, e?: React.MouseEvent) => {
     e?.stopPropagation()
     setCurrentQualityIdx(idx)
-    setQualityMenuOpen(false)
+    setShowQualityMenu(false)
+    setMenuOpen(false)
     if (src.endsWith('.m3u8') && hlsRef.current && qualities[idx]) {
       hlsRef.current.currentLevel = idx
       hlsRef.current.nextLevel = idx
@@ -339,35 +373,98 @@ export default function VideoPlayer({
         {nextCountdown !== null && nextCountdown > 0 && <div className="absolute top-4 right-4 bg-black/70 backdrop-blur-sm text-white px-4 py-2 rounded-lg z-30 flex items-center gap-3"><span className="text-sm">След. серия через {nextCountdown}s</span><button onClick={(e) => { e.stopPropagation(); cancelNextEpisode() }} className="text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded">Отмена</button></div>}
 
         {/* Кастомные контролы */}
-        <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-4 transition-opacity duration-300 z-30 ${showControls || !isPlaying ? 'opacity-100' : 'opacity-0'}`}>
+        <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-3 sm:p-4 transition-opacity duration-300 z-30 ${showControls || !isPlaying ? 'opacity-100' : 'opacity-0'}`}>
           {/* Прогресс-бар */}
-          <div className="relative h-1 bg-white/20 rounded-full cursor-pointer mb-3" onClick={(e) => { e.stopPropagation(); const rect = e.currentTarget.getBoundingClientRect(); seekTo((e.clientX - rect.left) / rect.width * duration) }}>
+          <div className="relative h-1 bg-white/20 rounded-full cursor-pointer mb-2 sm:mb-3" onClick={(e) => { e.stopPropagation(); const rect = e.currentTarget.getBoundingClientRect(); seekTo((e.clientX - rect.left) / rect.width * duration) }}>
             <div className="absolute top-0 left-0 h-full bg-white/30 rounded-full" style={{ width: `${duration > 0 ? (buffered / duration) * 100 : 0}%` }} />
             <div className="absolute top-0 left-0 h-full bg-neo-pink rounded-full" style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }} />
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 sm:gap-4">
-              <button onClick={togglePlay} className="text-white hover:text-neo-pink transition text-xl sm:text-2xl" style={{ WebkitTapHighlightColor: 'transparent' }}>{isPlaying ? '❚❚' : '▶'}</button>
-              <div className="flex items-center gap-2">
-                <button onClick={toggleMute} className="text-white hover:text-neo-pink transition" style={{ WebkitTapHighlightColor: 'transparent' }}>{isMuted || volume === 0 ? '🔇' : volume < 0.5 ? '🔉' : '🔊'}</button>
+            {/* Левая часть: Play, громкость, время */}
+            <div className="flex items-center gap-2 sm:gap-4">
+              {/* Play/Pause */}
+              <button onClick={togglePlay} className="text-white hover:text-neo-pink transition p-1 sm:p-2" style={{ WebkitTapHighlightColor: 'transparent' }}>
+                {isPlaying ? (
+                  <svg className="w-6 h-6 sm:w-7 sm:h-7" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+                ) : (
+                  <svg className="w-6 h-6 sm:w-7 sm:h-7 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                )}
+              </button>
+              
+              {/* Громкость */}
+              <div className="flex items-center gap-1 sm:gap-2">
+                <button onClick={toggleMute} className="text-white hover:text-neo-pink transition p-1" style={{ WebkitTapHighlightColor: 'transparent' }}>
+                  {isMuted || volume === 0 ? (
+                    <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                  ) : volume < 0.5 ? (
+                    <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+                  ) : (
+                    <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                  )}
+                </button>
                 <input type="range" min="0" max="1" step="0.1" value={isMuted ? 0 : volume} onChange={(e) => setVolumeLevel(parseFloat(e.target.value))} className="w-16 sm:w-24 accent-neo-pink" style={{ WebkitTapHighlightColor: 'transparent' }} />
               </div>
+              
+              {/* Время */}
               <span className="text-white text-xs sm:text-sm font-mono">{formatTime(currentTime)} / {formatTime(duration)}</span>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-3">
-              {/* Качество */}
+            {/* Правая часть: Бургер-меню */}
+            <div className="flex items-center">
+              <button onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen) }} className="text-white hover:text-neo-pink transition p-2" style={{ WebkitTapHighlightColor: 'transparent' }}>
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
+              </button>
+            </div>
+          </div>
+
+          {/* Бургер-меню */}
+          {menuOpen && (
+            <div className="absolute bottom-16 right-4 bg-black/95 backdrop-blur rounded-lg p-3 z-40 min-w-[180px]">
+              {/* Полноэкранный режим */}
+              <button onClick={toggleFullscreen} className="flex items-center gap-3 w-full text-left text-white hover:text-neo-pink py-2 px-3 rounded hover:bg-white/10 transition" style={{ WebkitTapHighlightColor: 'transparent' }}>
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+                <span className="text-sm">На весь экран</span>
+              </button>
+
+              {/* Скорость воспроизведения */}
+              <div className="relative">
+                <button onClick={(e) => { e.stopPropagation(); setShowSpeedMenu(!showSpeedMenu); setShowQualityMenu(false) }} className="flex items-center gap-3 w-full text-left text-white hover:text-neo-pink py-2 px-3 rounded hover:bg-white/10 transition" style={{ WebkitTapHighlightColor: 'transparent' }}>
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                  <span className="text-sm">Скорость</span>
+                  <span className="text-xs text-neo-pink font-mono ml-auto">{playbackRate}x</span>
+                </button>
+                {showSpeedMenu && (
+                  <div className="absolute right-full top-0 bg-black/95 backdrop-blur rounded-lg p-2 z-50 min-w-[120px] mr-2">
+                    {[0.5, 0.75, 1, 1.25, 1.5, 2].map(rate => (
+                      <button 
+                        key={rate} 
+                        onClick={(e) => changePlaybackRate(rate, e)}
+                        className={`block w-full text-left text-sm py-1 px-3 rounded ${playbackRate === rate ? 'bg-neo-pink text-white' : 'text-white hover:bg-white/10'}`}
+                        style={{ WebkitTapHighlightColor: 'transparent' }}
+                      >
+                        {rate}x
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Качество (для HLS) */}
               {qualities.length > 0 && (
                 <div className="relative">
-                  <button onClick={() => setQualityMenuOpen(!qualityMenuOpen)} className="text-white hover:text-neo-pink transition text-xs sm:text-sm font-bold w-10" style={{ WebkitTapHighlightColor: 'transparent' }}>{qualities[currentQualityIdx]?.label || 'HD'}</button>
-                  {qualityMenuOpen && (
-                    <div className="absolute bottom-full right-0 mb-2 bg-black/95 backdrop-blur rounded-lg p-2 z-40 min-w-[100px]">
+                  <button onClick={(e) => { e.stopPropagation(); setShowQualityMenu(!showQualityMenu); setShowSpeedMenu(false) }} className="flex items-center gap-3 w-full text-left text-white hover:text-neo-pink py-2 px-3 rounded hover:bg-white/10 transition" style={{ WebkitTapHighlightColor: 'transparent' }}>
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                    <span className="text-sm">Качество</span>
+                    <span className="text-xs text-neo-pink ml-auto">{qualities[currentQualityIdx]?.label}</span>
+                  </button>
+                  {showQualityMenu && (
+                    <div className="absolute right-full top-0 bg-black/95 backdrop-blur rounded-lg p-2 z-50 min-w-[120px] mr-2">
                       {qualities.map((q, idx) => (
                         <button 
                           key={idx} 
                           onClick={(e) => changeQuality(idx, e)}
-                          className={`block w-full text-left text-xs sm:text-sm py-1 px-3 rounded ${currentQualityIdx === idx ? 'bg-neo-pink text-white' : 'text-white hover:bg-white/10'}`}
+                          className={`block w-full text-left text-sm py-1 px-3 rounded ${currentQualityIdx === idx ? 'bg-neo-pink text-white' : 'text-white hover:bg-white/10'}`}
                           style={{ WebkitTapHighlightColor: 'transparent' }}
                         >
                           {q.label}
@@ -377,12 +474,15 @@ export default function VideoPlayer({
                   )}
                 </div>
               )}
-              
-              <button onClick={(e) => changePlaybackRate(playbackRate === 1 ? 1.25 : playbackRate === 1.25 ? 1.5 : playbackRate === 1.5 ? 2 : 1)} className="text-white hover:text-neo-pink transition text-xs sm:text-sm font-mono w-10" style={{ WebkitTapHighlightColor: 'transparent' }}>{playbackRate}x</button>
-              <button onClick={(e) => { e.stopPropagation(); setAutoPlayNext(!autoPlayNext) }} className={`text-xs sm:text-sm transition ${autoPlayNext ? 'text-neo-pink' : 'text-gray-400'}`} style={{ WebkitTapHighlightColor: 'transparent' }}>{autoPlayNext ? 'AUTO' : 'OFF'}</button>
-              <button onClick={toggleFullscreen} className="text-white hover:text-neo-pink transition text-lg sm:text-xl" style={{ WebkitTapHighlightColor: 'transparent' }}>{isFullscreen ? '⤢' : '⤢'}</button>
+
+              {/* Автопереключение */}
+              <button onClick={(e) => { e.stopPropagation(); setAutoPlayNext(!autoPlayNext); setMenuOpen(false) }} className={`flex items-center gap-3 w-full text-left py-2 px-3 rounded transition ${autoPlayNext ? 'text-neo-pink' : 'text-gray-400 hover:text-white'}`} style={{ WebkitTapHighlightColor: 'transparent' }}>
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+                <span className="text-sm">Автопереключение</span>
+                <span className="text-xs ml-auto">{autoPlayNext ? 'ВКЛ' : 'ВЫКЛ'}</span>
+              </button>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
