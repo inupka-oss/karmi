@@ -281,3 +281,21 @@ body::after {
 .blue .text-gray-500 {
   color: #94a3b8;
 }
+/* Плавное появление контролов */
+.controls-container {
+  transition: opacity 0.3s ease;
+}
+
+/* Полноэкранный режим */
+.video-shell:fullscreen {
+  border-radius: 0;
+  background: black;
+}
+.video-shell:-webkit-full-screen {
+  border-radius: 0;
+  background: black;
+}
+.video-shell:-moz-full-screen {
+  border-radius: 0;
+  background: black;
+}
