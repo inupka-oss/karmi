@@ -72,9 +72,7 @@ body {
   box-shadow: 6px 6px 0 rgba(0,0,0,0.6);
 }
 
-/* Видеоплеер: контейнер НЕ должен иметь backdrop-filter,
-   иначе видео не рендерится (чёрный экран) на части GPU/браузеров.
-   Форсируем собственный слой композитинга для корректной отрисовки. */
+/* Видеоплеер: нативные контролы, без backdrop-filter */
 .video-shell {
   position: relative;
   backdrop-filter: none !important;
@@ -88,6 +86,15 @@ body {
   display: block;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  background: #000;
+}
+/* Стилизация нативных контролов (Chrome/Safari) */
+.video-player-native::-webkit-media-controls-panel {
+  background: linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.8));
+}
+.video-player-native::-webkit-media-controls-play-button {
+  background-color: var(--color-neo-pink);
+  border-radius: 50%;
 }
 
 ::-webkit-scrollbar { width: 6px; }

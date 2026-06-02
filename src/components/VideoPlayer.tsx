@@ -1,7 +1,5 @@
 'use client'
 import { useEffect, useRef, useCallback } from 'react'
-import Plyr from 'plyr'
-import 'plyr/dist/plyr.css'
 import Hls from 'hls.js'
 
 function getAccessToken(): string | null {
@@ -60,7 +58,6 @@ export default function VideoPlayer({
   endingEnd?: number
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null)
-  const playerRef = useRef<Plyr | null>(null)
   const hlsRef = useRef<Hls | null>(null)
 
   const skipTo = useCallback((time: number) => {
@@ -72,11 +69,7 @@ export default function VideoPlayer({
     const video = videoRef.current
     if (!video || !src) return
 
-    // Уничтожаем предыдущий плеер
-    if (playerRef.current) {
-      playerRef.current.destroy()
-      playerRef.current = null
-    }
+    // Уничтожаем предыдущий HLS
     if (hlsRef.current) {
       hlsRef.current.destroy()
       hlsRef.current = null
@@ -96,11 +89,14 @@ export default function VideoPlayer({
     } else {
       // Для обычных видео (Storj, Supabase)
       video.src = src
-      // Принудительно включаем preload
       video.setAttribute('preload', 'auto')
     }
 
-    // ВРЕМЕННАЯ ДИАГНОСТИКА: логируем всё, что происходит с видео
+    if (title) {
+      video.setAttribute('data-title', title)
+    }
+
+    // ВРЕМЕННАЯ ДИАГНОСТИКА
     const onError = () => {
       const err = video.error
       console.error('[VideoPlayer] video error:', {
@@ -123,32 +119,12 @@ export default function VideoPlayer({
     video.addEventListener('loadedmetadata', onLoadedMeta)
     video.addEventListener('canplay', onCanPlay)
 
-    if (title) {
-      video.setAttribute('data-plyr-title', title)
+    video.onended = () => {
+      if (onEnded) onEnded()
     }
 
-    const player = new Plyr(video, {
-      controls: [
-        'play-large', 'play', 'progress', 'current-time', 'mute', 'volume',
-        'captions', 'settings', 'pip', 'airplay', 'fullscreen'
-      ],
-      settings: ['speed', 'quality', 'captions'],
-      speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
-      keyboard: { focused: true, global: true },
-      tooltips: { controls: true, seek: true },
-      captions: { active: true, language: 'auto', update: true },
-      seekTime: 10,
-      ratio: '16:9',
-    })
-
-    playerRef.current = player
-
-    player.on('ended', () => {
-      if (onEnded) onEnded()
-    })
-
     let saveInterval: NodeJS.Timeout | null = null
-    player.on('play', () => {
+    video.onplay = () => {
       saveInterval = setInterval(() => {
         if (activeEpisodeId && video) {
           saveProgressToCloud(activeEpisodeId, video.currentTime)
@@ -158,9 +134,9 @@ export default function VideoPlayer({
           }))
         }
       }, 10000)
-    })
+    }
 
-    player.on('pause', () => {
+    video.onpause = () => {
       if (saveInterval) clearInterval(saveInterval)
       if (activeEpisodeId && video) {
         saveProgressToCloud(activeEpisodeId, video.currentTime)
@@ -169,7 +145,7 @@ export default function VideoPlayer({
           time: video.currentTime,
         }))
       }
-    })
+    }
 
     // Восстановление времени
     const stored = localStorage.getItem('karmi-progress')
@@ -217,10 +193,6 @@ export default function VideoPlayer({
       video.removeEventListener('error', onError)
       video.removeEventListener('loadedmetadata', onLoadedMeta)
       video.removeEventListener('canplay', onCanPlay)
-      if (playerRef.current) {
-        playerRef.current.destroy()
-        playerRef.current = null
-      }
       if (hlsRef.current) {
         hlsRef.current.destroy()
         hlsRef.current = null
@@ -231,7 +203,14 @@ export default function VideoPlayer({
   return (
     <div className="relative">
       <div className="video-shell aspect-video rounded-xl overflow-hidden bg-black mb-6">
-        <video ref={videoRef} playsInline preload="auto" style={{ width: '100%', height: '100%' }} />
+        <video
+          ref={videoRef}
+          playsInline
+          preload="auto"
+          controls
+          style={{ width: '100%', height: '100%' }}
+          className="video-player-native"
+        />
       </div>
       {openingEnd && (
         <button
