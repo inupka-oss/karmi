@@ -100,6 +100,29 @@ export default function VideoPlayer({
       video.setAttribute('preload', 'auto')
     }
 
+    // ВРЕМЕННАЯ ДИАГНОСТИКА: логируем всё, что происходит с видео
+    const onError = () => {
+      const err = video.error
+      console.error('[VideoPlayer] video error:', {
+        code: err?.code,
+        message: err?.message,
+        src: video.currentSrc || video.src,
+        networkState: video.networkState,
+        readyState: video.readyState,
+      })
+    }
+    const onLoadedMeta = () => {
+      console.log('[VideoPlayer] loadedmetadata OK:', {
+        videoWidth: video.videoWidth,
+        videoHeight: video.videoHeight,
+        duration: video.duration,
+      })
+    }
+    const onCanPlay = () => console.log('[VideoPlayer] canplay — видео декодируется')
+    video.addEventListener('error', onError)
+    video.addEventListener('loadedmetadata', onLoadedMeta)
+    video.addEventListener('canplay', onCanPlay)
+
     if (title) {
       video.setAttribute('data-plyr-title', title)
     }
@@ -114,7 +137,6 @@ export default function VideoPlayer({
       keyboard: { focused: true, global: true },
       tooltips: { controls: true, seek: true },
       captions: { active: true, language: 'auto', update: true },
-      // Увеличиваем tap-область для мобильных
       seekTime: 10,
       ratio: '16:9',
     })
@@ -192,6 +214,9 @@ export default function VideoPlayer({
 
     return () => {
       if (saveInterval) clearInterval(saveInterval)
+      video.removeEventListener('error', onError)
+      video.removeEventListener('loadedmetadata', onLoadedMeta)
+      video.removeEventListener('canplay', onCanPlay)
       if (playerRef.current) {
         playerRef.current.destroy()
         playerRef.current = null
@@ -205,8 +230,8 @@ export default function VideoPlayer({
 
   return (
     <div className="relative">
-      <div className="video-shell aspect-video rounded-xl overflow-hidden bg-black mb-6 border-2 border-white/15">
-        <video ref={videoRef} playsInline preload="metadata" />
+      <div className="video-shell aspect-video rounded-xl overflow-hidden bg-black mb-6">
+        <video ref={videoRef} playsInline preload="auto" style={{ width: '100%', height: '100%' }} />
       </div>
       {openingEnd && (
         <button

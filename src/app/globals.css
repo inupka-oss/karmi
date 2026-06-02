@@ -82,20 +82,12 @@ body {
   isolation: isolate;
   transform: translateZ(0);
 }
-.video-shell .plyr,
 .video-shell video {
   width: 100%;
   height: 100%;
   display: block;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
-}
-.video-shell .plyr {
-  --plyr-color-main: var(--color-neo-pink);
-}
-.video-shell .plyr video,
-.video-shell .plyr__video-wrapper {
-  background: #000;
 }
 
 ::-webkit-scrollbar { width: 6px; }
