@@ -94,9 +94,8 @@ export default function VideoPlayer({
         video.src = src
       }
     } else {
-      // Для обычных видео (Storj, Supabase) добавляем метку времени, чтобы избежать кеширования
+      // Для обычных видео (Storj, Supabase)
       video.src = src
-      video.crossOrigin = 'anonymous'
       // Принудительно включаем preload
       video.setAttribute('preload', 'auto')
     }
@@ -115,6 +114,9 @@ export default function VideoPlayer({
       keyboard: { focused: true, global: true },
       tooltips: { controls: true, seek: true },
       captions: { active: true, language: 'auto', update: true },
+      // Увеличиваем tap-область для мобильных
+      seekTime: 10,
+      ratio: '16:9',
     })
 
     playerRef.current = player
@@ -204,7 +206,7 @@ export default function VideoPlayer({
   return (
     <div className="relative">
       <div className="aspect-video rounded-xl overflow-hidden glass mb-6">
-        <video ref={videoRef} className="w-full h-full" playsInline crossOrigin="anonymous" />
+        <video ref={videoRef} className="w-full h-full" playsInline preload="metadata" />
       </div>
       {openingEnd && (
         <button
