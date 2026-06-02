@@ -157,50 +157,39 @@ export default function VideoPlayer({
     setMenuOpen(false)
   }, [])
 
-  // Исправленный полноэкранный режим
+  // Полноэкранный режим с поддержкой iOS Safari
   const toggleFullscreen = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation()
-    const container = containerRef.current
-    if (!container) return
-    
-    // Останавливаем всплытие и предотвращаем клик по видео
     e?.preventDefault()
+    const video = videoRef.current
+    if (!video) return
     
-    const isFullscreen = !!document.fullscreenElement
+    // Проверка на iOS Safari
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
     
-    // Используем requestFullscreen с vendor prefixes
-    const requestFullscreen = async () => {
-      try {
+    if (isIOS) {
+      // iOS Safari требует webkitEnterFullscreen на видеоэлементе
+      if ((video as any).webkitEnterFullscreen) {
+        ;(video as any).webkitEnterFullscreen()
+      } else if (video.requestFullscreen) {
+        video.requestFullscreen().catch(err => console.error('Fullscreen error:', err))
+      }
+    } else {
+      // Десктоп и Android - используем контейнер
+      const container = containerRef.current
+      if (!container) return
+      
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(err => console.error('ExitFullscreen error:', err))
+      } else {
         if (container.requestFullscreen) {
-          await container.requestFullscreen()
+          container.requestFullscreen().catch(err => console.error('Fullscreen error:', err))
         } else if ((container as any).webkitRequestFullscreen) {
           ;(container as any).webkitRequestFullscreen()
         } else if ((container as any).msRequestFullscreen) {
           ;(container as any).msRequestFullscreen()
         }
-      } catch (err) {
-        console.error('Fullscreen error:', err)
       }
-    }
-    
-    const exitFullscreen = async () => {
-      try {
-        if (document.exitFullscreen) {
-          await document.exitFullscreen()
-        } else if ((document as any).webkitExitFullscreen) {
-          ;(document as any).webkitExitFullscreen()
-        } else if ((document as any).msExitFullscreen) {
-          ;(document as any).msExitFullscreen()
-        }
-      } catch (err) {
-        console.error('ExitFullscreen error:', err)
-      }
-    }
-    
-    if (isFullscreen) {
-      exitFullscreen()
-    } else {
-      requestFullscreen()
     }
   }, [])
 
@@ -410,10 +399,16 @@ export default function VideoPlayer({
               <span className="text-white text-xs sm:text-sm font-mono">{formatTime(currentTime)} / {formatTime(duration)}</span>
             </div>
 
-            {/* Правая часть: Бургер-меню */}
-            <div className="flex items-center">
+            {/* Правая часть: Фуллскрин + Бургер-меню */}
+            <div className="flex items-center gap-2">
+              {/* Полноэкранный режим - отдельная кнопка */}
+              <button onClick={toggleFullscreen} className="text-white hover:text-neo-pink transition p-2" style={{ WebkitTapHighlightColor: 'transparent' }}>
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+              </button>
+              
+              {/* Бургер-меню */}
               <button onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen) }} className="text-white hover:text-neo-pink transition p-2" style={{ WebkitTapHighlightColor: 'transparent' }}>
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
               </button>
             </div>
           </div>
@@ -421,12 +416,6 @@ export default function VideoPlayer({
           {/* Бургер-меню */}
           {menuOpen && (
             <div className="absolute bottom-16 right-4 bg-black/95 backdrop-blur rounded-lg p-3 z-40 min-w-[180px]">
-              {/* Полноэкранный режим */}
-              <button onClick={toggleFullscreen} className="flex items-center gap-3 w-full text-left text-white hover:text-neo-pink py-2 px-3 rounded hover:bg-white/10 transition" style={{ WebkitTapHighlightColor: 'transparent' }}>
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
-                <span className="text-sm">На весь экран</span>
-              </button>
-
               {/* Скорость воспроизведения */}
               <div className="relative">
                 <button onClick={(e) => { e.stopPropagation(); setShowSpeedMenu(!showSpeedMenu); setShowQualityMenu(false) }} className="flex items-center gap-3 w-full text-left text-white hover:text-neo-pink py-2 px-3 rounded hover:bg-white/10 transition" style={{ WebkitTapHighlightColor: 'transparent' }}>
