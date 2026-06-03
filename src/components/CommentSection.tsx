@@ -318,7 +318,6 @@ export default function CommentSection({ animeId }: { animeId: string }) {
         },
         body: JSON.stringify({
           anime_id: animeId,
-          user_id: currentUser?.id || null,
           user_name: submitName,
           content: text,
           parent_id: null,
@@ -365,7 +364,6 @@ export default function CommentSection({ animeId }: { animeId: string }) {
       },
       body: JSON.stringify({
         anime_id: animeId,
-        user_id: currentUser?.id,
         user_name: currentUser?.name || 'Аноним',
         content: content,
         parent_id: parentComment.id,
@@ -420,7 +418,6 @@ export default function CommentSection({ animeId }: { animeId: string }) {
           'Prefer': 'resolution=merge-duplicates',
         },
         body: JSON.stringify({
-          user_id: currentUser?.id,
           comment_id: commentId,
           type: isRemoving ? null : type,
         }),
