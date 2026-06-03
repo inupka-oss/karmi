@@ -297,6 +297,12 @@ export default function CommentSection({ animeId }: { animeId: string }) {
     if (!text.trim()) return
 
     const token = getAccessToken()
+    
+    if (!token) {
+      alert('Пожалуйста, войдите в систему чтобы оставлять комментарии')
+      return
+    }
+
     const submitName = currentUser?.name || name || 'Аноним'
 
     console.log('Submitting comment:', {
@@ -304,23 +310,27 @@ export default function CommentSection({ animeId }: { animeId: string }) {
       userId: currentUser?.id,
       userName: submitName,
       hasToken: !!token,
+      tokenPreview: token ? token.substring(0, 20) + '...' : 'none',
       textLength: text.length,
     })
 
     try {
-      // Используем RPC функцию (обходит кэш схемы REST API)
-      const response = await fetch(`${supabaseUrl}/rest/v1/rpc/submit_anime_comment`, {
+      // Прямой INSERT без user_id (триггер добавит автоматически)
+      const response = await fetch(`${supabaseUrl}/rest/v1/comments`, {
         method: 'POST',
         headers: {
           'apikey': supabaseAnonKey,
           'Content-Type': 'application/json',
+          'Prefer': 'return=representation',
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          p_anime_id: animeId,
-          p_user_name: submitName,
-          p_content: text,
-          p_parent_id: null,
+          anime_id: animeId,
+          user_name: submitName,
+          content: text,
+          parent_id: null,
+          likes: 0,
+          dislikes: 0,
         }),
       })
 
@@ -352,19 +362,22 @@ export default function CommentSection({ animeId }: { animeId: string }) {
       return
     }
 
-    // Используем RPC функцию для ответа
-    await fetch(`${supabaseUrl}/rest/v1/rpc/submit_anime_comment`, {
+    // Прямой INSERT без user_id (триггер добавит автоматически)
+    await fetch(`${supabaseUrl}/rest/v1/comments`, {
       method: 'POST',
       headers: {
         'apikey': supabaseAnonKey,
         'Content-Type': 'application/json',
+        'Prefer': 'return=representation',
         'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify({
-        p_anime_id: animeId,
-        p_user_name: currentUser?.name || 'Аноним',
-        p_content: content,
-        p_parent_id: parentComment.id,
+        anime_id: animeId,
+        user_name: currentUser?.name || 'Аноним',
+        content: content,
+        parent_id: parentComment.id,
+        likes: 0,
+        dislikes: 0,
       }),
     })
     loadComments()
