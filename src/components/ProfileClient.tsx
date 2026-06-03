@@ -90,6 +90,9 @@ const ACHIEVEMENTS: Achievement[] = [
 
 export default function ProfileClient({ email, accessToken }: { email: string; accessToken: string }) {
   const [nickname, setNickname] = useState(email.split('@')[0])
+  const [username, setUsername] = useState('')
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null)
+  const [checkingUsername, setCheckingUsername] = useState(false)
   const [avatar, setAvatar] = useState('')
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState('')
@@ -113,6 +116,7 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
           const data = await res.json()
           if (data.length > 0) {
             if (data[0].nickname) setNickname(data[0].nickname)
+            if (data[0].username) setUsername(data[0].username)
             if (data[0].avatar) setAvatar(data[0].avatar)
             if (data[0].bio) setBio(data[0].bio)
             if (data[0].stats) setStats(data[0].stats)
@@ -260,6 +264,43 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
     setAvatarFile(file)
   }
 
+  // Проверка username на доступность
+  const checkUsernameAvailability = async (value: string) => {
+    if (!value || value.length < 3) {
+      setUsernameAvailable(null)
+      return
+    }
+    
+    // Проверка формата (только латиница, цифры, _)
+    const validPattern = /^[a-zA-Z0-9_]+$/
+    if (!validPattern.test(value)) {
+      setUsernameAvailable(false)
+      return
+    }
+    
+    setCheckingUsername(true)
+    try {
+      const res = await fetch(`${supabaseUrl}/rest/v1/rpc/check_username_available`, {
+        method: 'POST',
+        headers: {
+          'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ p_username: value }),
+      })
+      
+      if (res.ok) {
+        const isAvailable = await res.json()
+        setUsernameAvailable(isAvailable)
+      }
+    } catch (e) {
+      console.error('Check username error:', e)
+    } finally {
+      setCheckingUsername(false)
+    }
+  }
+
   const handleSave = async () => {
     let finalAvatar = avatar
     
@@ -271,6 +312,28 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
       }
     }
     
+    // Проверка username если он изменён
+    if (username && username.length < 3) {
+      alert('Username должен быть не менее 3 символов')
+      return
+    }
+    
+    if (username && !/^[a-zA-Z0-9_]+$/.test(username)) {
+      alert('Username может содержать только латиницу, цифры и _')
+      return
+    }
+    
+    const saveData: any = { 
+      user_identifier: email, 
+      nickname,
+      avatar: finalAvatar,
+      bio,
+    }
+    
+    if (username) {
+      saveData.username = username
+    }
+    
     await fetch(`${supabaseUrl}/rest/v1/user_profiles`, {
       method: 'POST',
       headers: {
@@ -279,12 +342,7 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
         'Authorization': `Bearer ${accessToken}`,
         'Prefer': 'resolution=merge-duplicates',
       },
-      body: JSON.stringify({ 
-        user_identifier: email, 
-        nickname,
-        avatar: finalAvatar,
-        bio,
-      }),
+      body: JSON.stringify(saveData),
     })
     
     // Очистка
@@ -328,7 +386,12 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
           </div>
           
           <div className="text-center sm:text-left flex-1">
-            <h1 className="text-3xl font-bold text-white">{nickname}</h1>
+            <div className="flex items-center gap-2 justify-center sm:justify-start">
+              <h1 className="text-3xl font-bold text-white">{nickname}</h1>
+              {username && (
+                <span className="text-neo-pink text-lg">@{username}</span>
+              )}
+            </div>
             <p className="text-gray-400">{email}</p>
             {bio && <p className="text-gray-300 mt-2">{bio}</p>}
           </div>
@@ -400,6 +463,43 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
         <div className="glass rounded-2xl p-6">
           <h2 className="text-xl font-bold text-white mb-4">Редактировать профиль</h2>
           <div className="space-y-4">
+            <div>
+              <label className="text-sm text-gray-400 mb-1 block">Username</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={username}
+                  onChange={e => {
+                    setUsername(e.target.value)
+                    checkUsernameAvailability(e.target.value)
+                  }}
+                  placeholder="@username"
+                  className="flex-1 bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white"
+                  pattern="[a-zA-Z0-9_]+"
+                  minLength={3}
+                  maxLength={20}
+                />
+                {checkingUsername && (
+                  <span className="text-gray-400 text-sm flex items-center">⏳</span>
+                )}
+                {!checkingUsername && username && username.length >= 3 && usernameAvailable === true && (
+                  <span className="text-green-400 text-sm flex items-center">✅</span>
+                )}
+                {!checkingUsername && username && username.length >= 3 && usernameAvailable === false && (
+                  <span className="text-red-400 text-sm flex items-center">❌</span>
+                )}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Только латиница, цифры и _ (3-20 символов)
+              </p>
+              {username && username.length < 3 && (
+                <p className="text-xs text-red-400 mt-1">Минимум 3 символа</p>
+              )}
+              {username && !/^[a-zA-Z0-9_]+$/.test(username) && (
+                <p className="text-xs text-red-400 mt-1">Только a-z, A-Z, 0-9, _</p>
+              )}
+            </div>
+
             <div>
               <label className="text-sm text-gray-400 mb-1 block">Никнейм</label>
               <input

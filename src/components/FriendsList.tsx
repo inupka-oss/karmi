@@ -19,6 +19,8 @@ export default function FriendsList({ userId }: FriendsListProps) {
   const [pendingRequests, setPendingRequests] = useState<Friend[]>([])
   const [showAddFriend, setShowAddFriend] = useState(false)
   const [friendEmail, setFriendEmail] = useState('')
+  const [friendUsername, setFriendUsername] = useState('')
+  const [addBy, setAddBy] = useState<'email' | 'username'>('email')
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
 
@@ -76,17 +78,30 @@ export default function FriendsList({ userId }: FriendsListProps) {
   }, [])
 
   const sendFriendRequest = async () => {
-    if (!friendEmail.trim()) return
+    if (addBy === 'email' && !friendEmail.trim()) return
+    if (addBy === 'username' && !friendUsername.trim()) return
+    
     setActionLoading('send')
 
     try {
-      const { error } = await supabase.rpc('send_friend_request', {
-        p_friend_email: friendEmail,
-      })
+      let error: any = null
+      
+      if (addBy === 'email') {
+        const result = await supabase.rpc('send_friend_request', {
+          p_friend_email: friendEmail,
+        })
+        error = result.error
+      } else {
+        const result = await supabase.rpc('send_friend_request_by_username', {
+          p_username: friendUsername,
+        })
+        error = result.error
+      }
 
       if (error) throw error
       alert('Заявка отправлена!')
       setFriendEmail('')
+      setFriendUsername('')
       setShowAddFriend(false)
       loadFriends()
     } catch (e: any) {
@@ -165,18 +180,54 @@ export default function FriendsList({ userId }: FriendsListProps) {
       {showAddFriend && (
         <div className="mb-6 p-4 bg-white/5 rounded-xl">
           <h3 className="text-white font-semibold mb-3">Добавить друга</h3>
+          
+          {/* Переключатель Email / Username */}
+          <div className="flex gap-2 mb-3">
+            <button
+              onClick={() => setAddBy('email')}
+              className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
+                addBy === 'email'
+                  ? 'bg-neo-pink text-white'
+                  : 'bg-white/10 text-gray-400 hover:text-white'
+              }`}
+            >
+              📧 Email
+            </button>
+            <button
+              onClick={() => setAddBy('username')}
+              className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
+                addBy === 'username'
+                  ? 'bg-neo-pink text-white'
+                  : 'bg-white/10 text-gray-400 hover:text-white'
+              }`}
+            >
+              👤 Username
+            </button>
+          </div>
+          
           <div className="flex gap-2">
-            <input
-              type="email"
-              placeholder="Email друга"
-              value={friendEmail}
-              onChange={(e) => setFriendEmail(e.target.value)}
-              className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
-            />
+            {addBy === 'email' ? (
+              <input
+                type="email"
+                placeholder="Email друга"
+                value={friendEmail}
+                onChange={(e) => setFriendEmail(e.target.value)}
+                className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+              />
+            ) : (
+              <input
+                type="text"
+                placeholder="Username (без @)"
+                value={friendUsername}
+                onChange={(e) => setFriendUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
+                className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                pattern="[a-zA-Z0-9_]+"
+              />
+            )}
             <button
               onClick={sendFriendRequest}
               disabled={actionLoading === 'send'}
-              className="bg-neo-pink hover:bg-neo-pink/80 text-white px-4 py-2 rounded-lg text-sm transition disabled:opacity-50"
+              className="bg-neo-pink hover:bg-neo-pink/80 text-white px-4 py-2 rounded-lg text-sm transition disabled:opacity-50 whitespace-nowrap"
             >
               {actionLoading === 'send' ? '⏳...' : 'Отправить'}
             </button>

@@ -17,17 +17,17 @@ CREATE INDEX IF NOT EXISTS idx_user_achievements_achievement ON user_achievement
 -- RLS политики
 ALTER TABLE user_achievements ENABLE ROW LEVEL SECURITY;
 
--- Все могут читать свои достижения
-CREATE POLICY "user_achievements_select_own" 
+-- Все могут читать достижения (для публичных профилей)
+CREATE POLICY "user_achievements_select_all" 
 ON user_achievements FOR SELECT 
-TO authenticated 
-USING (auth.uid() = user_id);
+TO anon, authenticated 
+USING (true);
 
 -- Система может создавать достижения
 CREATE POLICY "user_achievements_insert_system" 
 ON user_achievements FOR INSERT 
 TO authenticated 
-WITH CHECK (auth.uid() = user_id);
+WITH CHECK (auth.uid() = user_id OR auth.jwt() ->> 'role' = 'service_role');
 
 -- Обновление только своих
 CREATE POLICY "user_achievements_update_own" 
@@ -49,12 +49,8 @@ SELECT
   ua.unlocked_at
 FROM user_achievements ua;
 
-ALTER VIEW user_achievements_public ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "user_achievements_public_select" 
-ON user_achievements_public FOR SELECT 
-TO anon, authenticated 
-USING (true);
+-- Для views RLS настраивается через базовую таблицу
+-- View наследует политики от user_achievements
 
 -- =====================================================
 -- Триггеры для авто-разблокировки достижений
