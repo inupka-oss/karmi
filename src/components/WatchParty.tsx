@@ -66,7 +66,7 @@ export default function WatchParty({ episodeId, videoUrl, animeTitle, onClose }:
       setUserId(user.id)
       
       const { data } = await supabase
-        .from('user_friends_with_profiles')
+        .from('user_friends_full')
         .select('*')
         .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`)
         .eq('status', 'accepted')
