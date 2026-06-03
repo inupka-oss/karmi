@@ -37,12 +37,15 @@ export default async function ProfilePage() {
     <div className="max-w-6xl mx-auto px-4 py-8">
       <ProfileClient email={email} accessToken={accessToken} />
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8 mb-8">
-        <Challenges />
-        <FriendsList />
+      {/* Секция друзей с якорем */}
+      <div id="friends" className="mt-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Challenges />
+          <FriendsList />
+        </div>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 mt-8">
         <Leaderboard />
         <CollectionCards userId={email} />
       </div>

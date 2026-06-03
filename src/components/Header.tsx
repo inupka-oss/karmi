@@ -10,6 +10,7 @@ export default function Header() {
   const [theme, setTheme] = useState<'dark' | 'light' | 'blue'>('dark')
   const [loggedIn, setLoggedIn] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [friendsCount, setFriendsCount] = useState(0)
   const { favorites } = useFavorites()
   const { newEpisodes, clearNotifications } = useNotifications()
 
@@ -19,7 +20,36 @@ export default function Header() {
     else if (saved === 'blue') setTheme('blue')
     const hasToken = document.cookie.includes('sb-access-token=')
     setLoggedIn(hasToken)
+    
+    // Загружаем количество друзей
+    if (hasToken) {
+      loadFriendsCount()
+    }
   }, [])
+
+  const loadFriendsCount = async () => {
+    try {
+      const token = document.cookie.match(/sb-access-token=([^;]+)/)?.[1]
+      if (!token) return
+      
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      
+      const res = await fetch(`${supabaseUrl}/rest/v1/user_friends?status=eq.accepted`, {
+        headers: {
+          'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+      
+      if (res.ok) {
+        const data = await res.json()
+        setFriendsCount(data.length || 0)
+      }
+    } catch (e) {
+      console.error('Load friends count error:', e)
+    }
+  }
 
   useEffect(() => {
     document.documentElement.classList.remove('light', 'blue')
@@ -112,6 +142,14 @@ export default function Header() {
               <span className="ml-1 text-xs bg-neo-pink text-white px-1.5 py-0.5 rounded-full">{favorites.length}</span>
             )}
           </Link>
+          {loggedIn && (
+            <Link href="/profile#friends" onClick={handleNavClick} className={linkClass('/profile')}>
+              👥 Друзья
+              {friendsCount > 0 && (
+                <span className="ml-2 text-xs bg-neo-pink text-white px-1.5 py-0.5 rounded-full">{friendsCount}</span>
+              )}
+            </Link>
+          )}
           {loggedIn ? (
             <Link href="/profile" onClick={handleNavClick} className={linkClass('/profile')}>Профиль</Link>
           ) : (

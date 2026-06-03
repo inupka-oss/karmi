@@ -80,6 +80,16 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
       }
     }
     loadProfile()
+    
+    // Если есть хэш #friends в URL - скроллим к секции друзей
+    if (typeof window !== 'undefined' && window.location.hash === '#friends') {
+      setTimeout(() => {
+        const friendsSection = document.getElementById('friends')
+        if (friendsSection) {
+          friendsSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      }, 500)
+    }
   }, [email, accessToken, supabaseUrl, supabaseAnonKey])
 
   const handleLogout = () => {

@@ -299,6 +299,14 @@ export default function CommentSection({ animeId }: { animeId: string }) {
     const token = getAccessToken()
     const submitName = currentUser?.name || name || 'Аноним'
 
+    console.log('Submitting comment:', {
+      animeId,
+      userId: currentUser?.id,
+      userName: submitName,
+      hasToken: !!token,
+      textLength: text.length,
+    })
+
     try {
       const response = await fetch(`${supabaseUrl}/rest/v1/comments`, {
         method: 'POST',
@@ -310,7 +318,7 @@ export default function CommentSection({ animeId }: { animeId: string }) {
         },
         body: JSON.stringify({
           anime_id: animeId,
-          user_id: currentUser?.id,
+          user_id: currentUser?.id || null,
           user_name: submitName,
           content: text,
           parent_id: null,
@@ -319,18 +327,24 @@ export default function CommentSection({ animeId }: { animeId: string }) {
         }),
       })
 
+      console.log('Response status:', response.status)
+
       if (!response.ok) {
         const error = await response.json()
         console.error('Comment submit error:', error)
-        alert('Ошибка: ' + (error.message || 'Не удалось отправить комментарий'))
+        alert('Ошибка: ' + (error.message || error.details || 'Не удалось отправить комментарий'))
         return
       }
 
+      const result = await response.json()
+      console.log('Comment created:', result)
+      
       setText('')
       loadComments()
+      alert('Комментарий добавлен! ✅')
     } catch (error) {
       console.error('Comment submit error:', error)
-      alert('Ошибка при отправке комментария')
+      alert('Ошибка при отправке комментария. Проверьте консоль (F12)')
     }
   }
 
