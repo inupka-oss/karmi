@@ -25,18 +25,67 @@ interface Stats {
 }
 
 const ACHIEVEMENTS: Achievement[] = [
+  // 🎬 Просмотр аниме
   { id: 'first_anime', name: 'Первый шаг', description: 'Посмотреть первое аниме', icon: '🎬', unlocked: false },
+  { id: '5_anime', name: 'Новичок', description: 'Посмотреть 5 аниме', icon: '🌱', unlocked: false },
   { id: '10_anime', name: 'Опытный', description: 'Посмотреть 10 аниме', icon: '🌟', unlocked: false },
+  { id: '25_anime', name: 'Знаток', description: 'Посмотреть 25 аниме', icon: '✨', unlocked: false },
   { id: '50_anime', name: 'Эксперт', description: 'Посмотреть 50 аниме', icon: '⭐', unlocked: false },
+  { id: '75_anime', name: 'Мастер', description: 'Посмотреть 75 аниме', icon: '🌠', unlocked: false },
   { id: '100_anime', name: 'Легенда', description: 'Посмотреть 100 аниме', icon: '🏆', unlocked: false },
+  { id: '200_anime', name: 'Грандмастер', description: 'Посмотреть 200 аниме', icon: '👑', unlocked: false },
+  
+  // 📺 Эпизоды
+  { id: '10_episodes', name: 'Начало пути', description: 'Посмотреть 10 серий', icon: '📼', unlocked: false },
+  { id: '50_episodes', name: 'Серийный зритель', description: 'Посмотреть 50 серий', icon: '📺', unlocked: false },
+  { id: '100_episodes', name: 'Сотка', description: 'Посмотреть 100 серий', icon: '💯', unlocked: false },
+  { id: '500_episodes', name: 'Эпический', description: 'Посмотреть 500 серий', icon: '🎭', unlocked: false },
+  { id: '1000_episodes', name: 'Тысячник', description: 'Посмотреть 1000 серий', icon: '🔥', unlocked: false },
+  
+  // 💬 Комментарии
   { id: 'first_comment', name: 'Комментатор', description: 'Оставить первый комментарий', icon: '💬', unlocked: false },
   { id: '10_comments', name: 'Болтун', description: 'Оставить 10 комментариев', icon: '🗣️', unlocked: false },
+  { id: '50_comments', name: 'Оратор', description: 'Оставить 50 комментариев', icon: '📢', unlocked: false },
+  { id: '100_comments', name: 'Голос сообщества', description: 'Оставить 100 комментариев', icon: '🎤', unlocked: false },
+  { id: 'liked_comment', name: 'Популярный', description: 'Получить 10 лайков на комментарий', icon: '👍', unlocked: false },
+  
+  // 📝 Рецензии
   { id: 'first_review', name: 'Критик', description: 'Написать первую рецензию', icon: '📝', unlocked: false },
-  { id: 'collector', name: 'Коллекционер', description: 'Добавить 20 аниме в избранное', icon: '❤️', unlocked: false },
+  { id: '5_reviews', name: 'Рецензент', description: 'Написать 5 рецензий', icon: '📋', unlocked: false },
+  { id: '10_reviews', name: 'Эксперт кино', description: 'Написать 10 рецензий', icon: '🎬', unlocked: false },
+  
+  // ❤️ Избранное
+  { id: '10_favorites', name: 'Ценитель', description: 'Добавить 10 аниме в избранное', icon: '💖', unlocked: false },
+  { id: '25_favorites', name: 'Коллекционер', description: 'Добавить 25 аниме в избранное', icon: '❤️', unlocked: false },
+  { id: '50_favorites', name: 'Архивариус', description: 'Добавить 50 аниме в избранное', icon: '🏛️', unlocked: false },
+  
+  // 📅 Активность
+  { id: 'first_day', name: 'Первый день', description: 'Посетить сайт в первый раз', icon: '🎉', unlocked: false },
   { id: 'week_streak', name: 'Неделька', description: 'Посещать сайт 7 дней подряд', icon: '📅', unlocked: false },
   { id: 'month_streak', name: 'Месяц активности', description: 'Посещать сайт 30 дней подряд', icon: '🗓️', unlocked: false },
+  { id: 'year_streak', name: 'Год вместе', description: 'Посещать сайт 365 дней', icon: '🎊', unlocked: false },
   { id: 'night_owl', name: 'Сова', description: 'Смотреть аниме после 2 ночи', icon: '🦉', unlocked: false },
+  { id: 'early_bird', name: 'Жаворонок', description: 'Смотреть аниме до 6 утра', icon: '🌅', unlocked: false },
+  
+  // 🎉 Социальное
+  { id: 'first_friend', name: 'Новый друг', description: 'Добавить первого друга', icon: '🤝', unlocked: false },
+  { id: '5_friends', name: 'Компания', description: 'Иметь 5 друзей', icon: '👥', unlocked: false },
+  { id: '10_friends', name: 'Популярный', description: 'Иметь 10 друзей', icon: '⭐', unlocked: false },
+  { id: 'watch_party_first', name: 'Первая вечеринка', description: 'Участвовать в Watch Party', icon: '🎬', unlocked: false },
+  { id: 'watch_party_host', name: 'Организатор', description: 'Создать 5 Watch Party', icon: '🎪', unlocked: false },
+  
+  // 🏃 Марафоны
   { id: 'marathon', name: 'Марафонец', description: 'Посмотреть 10 серий за день', icon: '🏃', unlocked: false },
+  { id: 'ultra_marathon', name: 'Ультра', description: 'Посмотреть 20 серий за день', icon: '⚡', unlocked: false },
+  { id: 'binge_watcher', name: 'Запойный', description: 'Смотреть 5 часов подряд', icon: '🍿', unlocked: false },
+  
+  // 🎯 Особые
+  { id: 'level_10', name: 'Уровень 10', description: 'Достичь 10 уровня', icon: '🔟', unlocked: false },
+  { id: 'level_50', name: 'Уровень 50', description: 'Достичь 50 уровня', icon: '🎖️', unlocked: false },
+  { id: 'level_100', name: 'Максимальный', description: 'Достичь 100 уровня', icon: '💎', unlocked: false },
+  { id: 'first_notification', name: 'Подписчик', description: 'Подписаться на первое аниме', icon: '🔔', unlocked: false },
+  { id: 'completionist', name: 'Завершитель', description: 'Получить 25 достижений', icon: '🏅', unlocked: false },
+  { id: 'legend', name: 'Легенда KarMi', description: 'Получить все достижения', icon: '👻', unlocked: false },
 ]
 
 export default function ProfileClient({ email, accessToken }: { email: string; accessToken: string }) {
@@ -67,12 +116,13 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
             if (data[0].avatar) setAvatar(data[0].avatar)
             if (data[0].bio) setBio(data[0].bio)
             if (data[0].stats) setStats(data[0].stats)
-            if (data[0].achievements) {
-              setAchievements(prev => prev.map(a => {
-                const unlocked = data[0].achievements.includes(a.id)
-                return { ...a, unlocked }
-              }))
-            }
+            
+            // Загружаем достижения из БД или вычисляем автоматически
+            const savedAchievements = data[0].achievements || []
+            setAchievements(prev => prev.map(a => {
+              const unlocked = savedAchievements.includes(a.id)
+              return { ...a, unlocked }
+            }))
           }
         }
       } catch (e) {
@@ -100,6 +150,69 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
     localStorage.removeItem('karmi-favorites')
     router.push('/login')
   }
+
+  // Авто-разблокировка достижений на основе статистики
+  useEffect(() => {
+    if (!stats) return
+    
+    setAchievements(prev => prev.map(a => {
+      // Если уже разблокировано - оставляем
+      if (a.unlocked) return a
+      
+      // Проверяем по статистике
+      let shouldUnlock = false
+      
+      // Аниме
+      if (a.id === 'first_anime' && stats.animeWatched >= 1) shouldUnlock = true
+      if (a.id === '5_anime' && stats.animeWatched >= 5) shouldUnlock = true
+      if (a.id === '10_anime' && stats.animeWatched >= 10) shouldUnlock = true
+      if (a.id === '25_anime' && stats.animeWatched >= 25) shouldUnlock = true
+      if (a.id === '50_anime' && stats.animeWatched >= 50) shouldUnlock = true
+      if (a.id === '75_anime' && stats.animeWatched >= 75) shouldUnlock = true
+      if (a.id === '100_anime' && stats.animeWatched >= 100) shouldUnlock = true
+      if (a.id === '200_anime' && stats.animeWatched >= 200) shouldUnlock = true
+      
+      // Эпизоды
+      if (a.id === '10_episodes' && stats.episodesWatched >= 10) shouldUnlock = true
+      if (a.id === '50_episodes' && stats.episodesWatched >= 50) shouldUnlock = true
+      if (a.id === '100_episodes' && stats.episodesWatched >= 100) shouldUnlock = true
+      if (a.id === '500_episodes' && stats.episodesWatched >= 500) shouldUnlock = true
+      if (a.id === '1000_episodes' && stats.episodesWatched >= 1000) shouldUnlock = true
+      
+      // Комментарии
+      if (a.id === 'first_comment' && stats.commentsPosted >= 1) shouldUnlock = true
+      if (a.id === '10_comments' && stats.commentsPosted >= 10) shouldUnlock = true
+      if (a.id === '50_comments' && stats.commentsPosted >= 50) shouldUnlock = true
+      if (a.id === '100_comments' && stats.commentsPosted >= 100) shouldUnlock = true
+      
+      // Рецензии
+      if (a.id === 'first_review' && stats.reviewsWritten >= 1) shouldUnlock = true
+      if (a.id === '5_reviews' && stats.reviewsWritten >= 5) shouldUnlock = true
+      if (a.id === '10_reviews' && stats.reviewsWritten >= 10) shouldUnlock = true
+      
+      // Избранное
+      if (a.id === '10_favorites' && stats.favoritesCount >= 10) shouldUnlock = true
+      if (a.id === '25_favorites' && stats.favoritesCount >= 25) shouldUnlock = true
+      if (a.id === '50_favorites' && stats.favoritesCount >= 50) shouldUnlock = true
+      
+      // Активность
+      if (a.id === 'first_day' && stats.daysVisited >= 1) shouldUnlock = true
+      if (a.id === 'week_streak' && stats.daysVisited >= 7) shouldUnlock = true
+      if (a.id === 'month_streak' && stats.daysVisited >= 30) shouldUnlock = true
+      if (a.id === 'year_streak' && stats.daysVisited >= 365) shouldUnlock = true
+      
+      // Уровень
+      if (a.id === 'level_10' && stats.level >= 10) shouldUnlock = true
+      if (a.id === 'level_50' && stats.level >= 50) shouldUnlock = true
+      if (a.id === 'level_100' && stats.level >= 100) shouldUnlock = true
+      
+      // Завершитель (25 достижений)
+      const unlockedCount = prev.filter(x => x.unlocked).length
+      if (a.id === 'completionist' && unlockedCount >= 25) shouldUnlock = true
+      
+      return shouldUnlock ? { ...a, unlocked: true } : a
+    }))
+  }, [stats])
 
   const uploadAvatar = async (file: File): Promise<string> => {
     setUploadingAvatar(true)
@@ -370,30 +483,73 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
       )}
 
       {activeTab === 'achievements' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {achievements.map((achievement) => (
-            <div
-              key={achievement.id}
-              className={`glass rounded-2xl p-4 transition ${
-                achievement.unlocked 
-                  ? 'bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border-yellow-500/30' 
-                  : 'opacity-50 grayscale'
-              }`}
+        <div>
+          {/* Прогресс достижений */}
+          <div className="glass rounded-2xl p-4 mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-bold text-white">
+                Прогресс: {achievements.filter(a => a.unlocked).length}/{achievements.length}
+              </h3>
+              <span className="text-neo-pink font-semibold">
+                {Math.round((achievements.filter(a => a.unlocked).length / achievements.length) * 100)}%
+              </span>
+            </div>
+            <div className="h-3 bg-white/10 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-neo-pink to-neo-red transition-all duration-500"
+                style={{ width: `${(achievements.filter(a => a.unlocked).length / achievements.length) * 100}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Фильтры */}
+          <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
+            <button
+              onClick={() => setActiveTab('achievements')}
+              className="px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap bg-neo-pink/20 text-neo-pink border border-neo-pink/30"
             >
-              <div className="flex items-start gap-3">
-                <div className="text-4xl">{achievement.icon}</div>
-                <div>
-                  <h3 className="font-bold text-white">{achievement.name}</h3>
-                  <p className="text-sm text-gray-400">{achievement.description}</p>
-                  {achievement.unlocked && achievement.unlockedAt && (
-                    <p className="text-xs text-yellow-400 mt-1">
-                      Получено {new Date(achievement.unlockedAt).toLocaleDateString('ru-RU')}
-                    </p>
-                  )}
+              Все ({achievements.length})
+            </button>
+            <button
+              onClick={() => {}}
+              className="px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap bg-white/10 text-gray-400 hover:text-white"
+            >
+              ✅ Разблокировано ({achievements.filter(a => a.unlocked).length})
+            </button>
+            <button
+              onClick={() => {}}
+              className="px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap bg-white/10 text-gray-400 hover:text-white"
+            >
+              🔒 Закрыто ({achievements.filter(a => !a.unlocked).length})
+            </button>
+          </div>
+
+          {/* Сетка достижений */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {achievements.map((achievement) => (
+              <div
+                key={achievement.id}
+                className={`glass rounded-2xl p-4 transition hover:scale-105 ${
+                  achievement.unlocked 
+                    ? 'bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border-yellow-500/30' 
+                    : 'opacity-40 grayscale hover:grayscale-0 hover:opacity-60'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="text-4xl flex-shrink-0">{achievement.icon}</div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-bold text-white text-sm truncate">{achievement.name}</h3>
+                    <p className="text-xs text-gray-400 mt-1 line-clamp-2">{achievement.description}</p>
+                    {achievement.unlocked && achievement.unlockedAt && (
+                      <p className="text-xs text-yellow-400 mt-2">
+                        📅 {new Date(achievement.unlockedAt).toLocaleDateString('ru-RU')}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
     </div>
