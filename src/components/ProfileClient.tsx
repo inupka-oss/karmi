@@ -1,7 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 
 interface Achievement {
   id: string
@@ -202,13 +201,12 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
         <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-neo-pink/30 via-purple-500/30 to-blue-500/30" />
         
         <div className="relative flex flex-col sm:flex-row items-center sm:items-end gap-4 mt-8">
-          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-neo-pink to-neo-red flex items-center justify-center text-4xl font-bold text-white shadow-lg relative overflow-hidden">
+          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-neo-pink to-neo-red flex items-center justify-center text-4xl font-bold text-white shadow-lg overflow-hidden flex-shrink-0">
             {avatarPreview || avatar ? (
-              <Image 
+              <img 
                 src={avatarPreview || avatar} 
                 alt={nickname} 
-                fill 
-                className="rounded-full object-cover" 
+                className="w-full h-full object-cover" 
               />
             ) : (
               nickname.charAt(0).toUpperCase()

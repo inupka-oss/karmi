@@ -1,6 +1,5 @@
 'use client'
 import { useState, useEffect } from 'react'
-import Image from 'next/image'
 
 interface LeaderboardEntry {
   rank: number
@@ -128,9 +127,9 @@ export default function Leaderboard() {
               </div>
 
               {/* Аватар */}
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-neo-pink to-neo-red flex items-center justify-center text-white font-bold flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-neo-pink to-neo-red flex items-center justify-center text-white font-bold flex-shrink-0 overflow-hidden">
                 {entry.avatar ? (
-                  <Image src={entry.avatar} alt={entry.nickname} fill className="rounded-full object-cover" />
+                  <img src={entry.avatar} alt={entry.nickname} className="w-full h-full object-cover" />
                 ) : (
                   entry.nickname.charAt(0).toUpperCase()
                 )}
