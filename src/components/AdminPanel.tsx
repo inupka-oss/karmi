@@ -611,12 +611,27 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
   const handleDeleteComment = async (commentId: string, animeId: string) => {
     if (!confirm('Удалить комментарий?')) return
     const accessToken = getAccessToken()
-    await fetch(`${supabaseUrl}/rest/v1/comments?id=eq.${commentId}`, {
-      method: 'DELETE',
-      headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${accessToken}` },
-    })
-    toast.success('Комментарий удалён')
-    loadComments(animeId)
+    try {
+      const res = await fetch(`${supabaseUrl}/rest/v1/comments?id=eq.${commentId}`, {
+        method: 'DELETE',
+        headers: { 
+          'apikey': supabaseAnonKey, 
+          'Authorization': `Bearer ${accessToken}`,
+          'Prefer': 'return=minimal',
+        },
+      })
+      if (!res.ok) {
+        const error = await res.json()
+        console.error('Delete comment error:', error)
+        toast.error('Ошибка: ' + (error.message || 'Не удалось удалить'))
+        return
+      }
+      toast.success('Комментарий удалён')
+      loadComments(animeId)
+    } catch (e) {
+      console.error('Delete comment error:', e)
+      toast.error('Ошибка при удалении')
+    }
   }
 
   const startEditComment = (comment: Comment) => {
@@ -635,23 +650,31 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
       return
     }
     const accessToken = getAccessToken()
-    const res = await fetch(`${supabaseUrl}/rest/v1/comments?id=eq.${commentId}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': supabaseAnonKey,
-        'Authorization': `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({ content: editCommentText }),
-    })
-    if (!res.ok) {
-      toast.error('Ошибка сохранения')
-      return
+    try {
+      const res = await fetch(`${supabaseUrl}/rest/v1/comments?id=eq.${commentId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${accessToken}`,
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify({ content: editCommentText }),
+      })
+      if (!res.ok) {
+        const error = await res.json()
+        console.error('Update comment error:', error)
+        toast.error('Ошибка: ' + (error.message || 'Не удалось сохранить'))
+        return
+      }
+      toast.success('Комментарий обновлён')
+      setEditingCommentId(null)
+      setEditCommentText('')
+      loadComments(animeId)
+    } catch (e) {
+      console.error('Update comment error:', e)
+      toast.error('Ошибка при сохранении')
     }
-    toast.success('Комментарий обновлён')
-    setEditingCommentId(null)
-    setEditCommentText('')
-    loadComments(animeId)
   }
 
   const toggleEpisodesPanel = (animeId: string) => {
