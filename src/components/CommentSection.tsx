@@ -308,21 +308,19 @@ export default function CommentSection({ animeId }: { animeId: string }) {
     })
 
     try {
-      const response = await fetch(`${supabaseUrl}/rest/v1/comments`, {
+      // Используем RPC функцию вместо прямого INSERT (обходит кэш схемы)
+      const response = await fetch(`${supabaseUrl}/rest/v1/rpc/add_comment`, {
         method: 'POST',
         headers: {
           'apikey': supabaseAnonKey,
           'Content-Type': 'application/json',
-          'Prefer': 'return=representation',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          anime_id: animeId,
-          user_name: submitName,
-          content: text,
-          parent_id: null,
-          likes: 0,
-          dislikes: 0,
+          p_anime_id: animeId,
+          p_user_name: submitName,
+          p_content: text,
+          p_parent_id: null,
         }),
       })
 
@@ -354,21 +352,19 @@ export default function CommentSection({ animeId }: { animeId: string }) {
       return
     }
 
-    await fetch(`${supabaseUrl}/rest/v1/comments`, {
+    // Используем RPC функцию для ответа
+    await fetch(`${supabaseUrl}/rest/v1/rpc/add_comment`, {
       method: 'POST',
       headers: {
         'apikey': supabaseAnonKey,
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
-        'Prefer': 'return=representation',
       },
       body: JSON.stringify({
-        anime_id: animeId,
-        user_name: currentUser?.name || 'Аноним',
-        content: content,
-        parent_id: parentComment.id,
-        likes: 0,
-        dislikes: 0,
+        p_anime_id: animeId,
+        p_user_name: currentUser?.name || 'Аноним',
+        p_content: content,
+        p_parent_id: parentComment.id,
       }),
     })
     loadComments()
@@ -418,6 +414,7 @@ export default function CommentSection({ animeId }: { animeId: string }) {
           'Prefer': 'resolution=merge-duplicates',
         },
         body: JSON.stringify({
+          ...(currentUser?.id && { user_id: currentUser.id }),
           comment_id: commentId,
           type: isRemoving ? null : type,
         }),
