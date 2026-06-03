@@ -298,7 +298,7 @@ export default function CommentSection({ animeId }: { animeId: string }) {
     setLoading(true)
 
     try {
-      const response = await fetch(`${supabaseUrl}/rest/v1/rpc/save_anime_comment`, {
+      const response = await fetch(`${supabaseUrl}/rest/v1/comments`, {
         method: 'POST',
         headers: {
           'apikey': supabaseAnonKey,
@@ -306,10 +306,12 @@ export default function CommentSection({ animeId }: { animeId: string }) {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          p_anime_id: animeId,
-          p_user_name: submitName,
-          p_content: text,
-          p_parent_id: null,
+          anime_id: animeId,
+          user_name: submitName,
+          content: text,
+          parent_id: null,
+          likes: 0,
+          dislikes: 0,
         }),
       })
 
@@ -338,7 +340,7 @@ export default function CommentSection({ animeId }: { animeId: string }) {
       return
     }
 
-    await fetch(`${supabaseUrl}/rest/v1/rpc/save_anime_comment`, {
+    await fetch(`${supabaseUrl}/rest/v1/comments`, {
       method: 'POST',
       headers: {
         'apikey': supabaseAnonKey,
@@ -346,10 +348,12 @@ export default function CommentSection({ animeId }: { animeId: string }) {
         'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify({
-        p_anime_id: animeId,
-        p_user_name: currentUser?.name || 'Аноним',
-        p_content: content,
-        p_parent_id: parentComment.id,
+        anime_id: animeId,
+        user_name: currentUser?.name || 'Аноним',
+        content: content,
+        parent_id: parentComment.id,
+        likes: 0,
+        dislikes: 0,
       }),
     })
     loadComments()
