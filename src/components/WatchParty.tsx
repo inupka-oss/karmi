@@ -125,8 +125,9 @@ export default function WatchParty({ episodeId, videoUrl, animeTitle, onClose }:
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
+        const { data: { session } } = await supabase.auth.getSession()
         const res = await fetch(`${supabaseUrl}/rest/v1/user_profiles?user_identifier=eq.${user.email}`, {
-          headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${supabase.auth.session()?.access_token}` },
+          headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${session?.access_token}` },
         })
         if (res.ok) {
           const data = await res.json()
@@ -140,7 +141,6 @@ export default function WatchParty({ episodeId, videoUrl, animeTitle, onClose }:
     }
 
     // Подключаемся к Realtime каналу
-    const supabase = createClient(supabaseUrl, supabaseAnonKey)
     const channel = supabase.channel(`watchparty:${room}`)
 
     channel
