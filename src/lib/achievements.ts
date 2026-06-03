@@ -18,6 +18,7 @@ interface UserStats {
   commentsPosted: number
   favoritesCount: number
   level: number
+  xp?: number
   lastActive?: Date
 }
 
@@ -320,10 +321,22 @@ export async function updateChallengeProgress(
         })
 
         if (isCompleted) {
+          // Получаем текущий XP и обновляем
+          const currentProfile = await fetch(
+            `${supabaseUrl}/rest/v1/user_profiles?user_id=eq.${userId}&select=stats`,
+            {
+              headers: {
+                'apikey': supabaseAnonKey,
+                'Authorization': `Bearer ${getAccessToken()}`,
+              },
+            }
+          )
+          const profileData = await currentProfile.json()
+          const currentXp = profileData[0]?.stats?.xp || 0
+          
           // Начисляем награду (XP)
           await updateUserStats(supabaseUrl, supabaseAnonKey, userId, {
-            level: 0, // Будет пересчитано в триггере
-            xp: (currentXp: number) => (currentXp || 0) + challenge.reward,
+            xp: currentXp + challenge.reward,
           })
         }
 

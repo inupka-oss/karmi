@@ -61,7 +61,17 @@ export default function WatchParty({ episodeId, videoUrl, onClose }: WatchPartyP
     channel
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState()
-        const participantsList: Participant[] = Object.values(state as any).flat()
+        const values = Object.values(state as any) || []
+        const participantsList: Participant[] = values
+          .flat()
+          .filter((p: any) => p && p.id)
+          .map((p: any) => ({
+            id: p.id,
+            nickname: p.nickname || 'Аноним',
+            avatar: p.avatar,
+            isReady: p.isReady ?? true,
+            lastPing: p.lastPing || Date.now(),
+          }))
         setParticipants(participantsList)
       })
       .on('broadcast', { event: 'video-update' }, (payload) => {

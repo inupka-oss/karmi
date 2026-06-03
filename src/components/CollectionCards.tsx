@@ -84,7 +84,9 @@ export default function CollectionCards({ userId }: { userId?: string }) {
             })
             if (animeRes.ok) {
               const animeData = await animeRes.json()
-              const animeMap = new Map(animeData.map((a: any) => [a.id, a]))
+              const animeMap = new Map<string, { title_ru: string; poster_url: string }>(
+                animeData.map((a: any) => [a.id, { title_ru: a.title_ru, poster_url: a.poster_url }])
+              )
               
               const enrichedCards = userCards.map((c: CollectionCard) => ({
                 ...c,

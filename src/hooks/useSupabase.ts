@@ -1,24 +1,28 @@
 'use client'
-import { useEffect, useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { useEffect, useRef } from 'react'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+// Создаём единый экземпляр клиента
+let globalClient: SupabaseClient | null = null
 
 /**
  * Хук для получения Supabase клиента
  * Используется в client components
  */
 export function useSupabase() {
-  const [client, setClient] = useState<ReturnType<typeof createClient> | null>(null)
+  const clientRef = useRef<SupabaseClient | null>(null)
 
   useEffect(() => {
-    // Создаём клиент только на клиенте
-    const supabase = createClient(supabaseUrl, supabaseAnonKey)
-    setClient(supabase)
+    if (!globalClient) {
+      globalClient = createClient(supabaseUrl, supabaseAnonKey)
+    }
+    clientRef.current = globalClient
   }, [])
 
-  return client
+  return clientRef.current
 }
 
 /**
@@ -26,7 +30,10 @@ export function useSupabase() {
  * Можно импортировать и использовать напрямую
  */
 export const getSupabaseClient = () => {
-  return createClient(supabaseUrl, supabaseAnonKey)
+  if (!globalClient) {
+    globalClient = createClient(supabaseUrl, supabaseAnonKey)
+  }
+  return globalClient
 }
 
 export default useSupabase
