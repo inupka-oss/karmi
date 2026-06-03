@@ -16,23 +16,15 @@ interface Comment {
 
 type ReactionType = 'like' | 'dislike'
 
-interface User {
-  id: string
-  name: string
-  email: string
-}
-
 function CommentItem({ 
   comment, 
   onReply, 
-  onLike, 
-  onDislike,
+  onReaction,
   depth = 0 
 }: { 
   comment: Comment
   onReply: (parentId: string, content: string) => Promise<void>
-  onLike: (commentId: string, type: ReactionType) => Promise<void>
-  onDislike: (commentId: string, type: ReactionType) => Promise<void>
+  onReaction: (commentId: string, type: ReactionType) => Promise<void>
   depth?: number
 }) {
   const [showReplyForm, setShowReplyForm] = useState(false)
@@ -74,13 +66,13 @@ function CommentItem({
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1 bg-white/5 rounded-lg px-2 py-1">
               <button
-                onClick={() => onLike(comment.id, 'like')}
+                onClick={() => onReaction(comment.id, 'like')}
                 className="text-sm text-gray-400 hover:text-green-400 transition"
               >
                 👍 {comment.likes || 0}
               </button>
               <button
-                onClick={() => onDislike(comment.id, 'dislike')}
+                onClick={() => onReaction(comment.id, 'dislike')}
                 className="text-sm text-gray-400 hover:text-red-400 transition"
               >
                 👎 {comment.dislikes || 0}
@@ -136,8 +128,7 @@ function CommentItem({
               key={reply.id}
               comment={reply}
               onReply={onReply}
-              onLike={onLike}
-              onDislike={onDislike}
+              onReaction={onReaction}
               depth={depth + 1}
             />
           ))}
@@ -151,54 +142,17 @@ export default function CommentSection({ animeId }: { animeId: string }) {
   const [comments, setComments] = useState<Comment[]>([])
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
-  const [user, setUser] = useState<User | null>(null)
+  const [userName, setUserName] = useState('')
   
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-  // Загрузка пользователя
-  useEffect(() => {
-    const loadUser = async () => {
-      const token = document.cookie.match(/sb-access-token=([^;]+)/)?.[1]
-      if (!token) return
-
-      try {
-        const res = await fetch(`${supabaseUrl}/auth/v1/user`, {
-          headers: { 
-            'apikey': supabaseAnonKey, 
-            'Authorization': `Bearer ${token}` 
-          },
-        })
-        if (res.ok) {
-          const userData = await res.json()
-          setUser({
-            id: userData.id,
-            name: userData.email?.split('@')[0] || 'Аноним',
-            email: userData.email,
-          })
-        }
-      } catch (e) {
-        console.error('Load user error:', e)
-      }
-    }
-    loadUser()
-  }, [supabaseUrl, supabaseAnonKey])
-
   // Загрузка комментариев
   const loadComments = async () => {
     try {
-      const token = document.cookie.match(/sb-access-token=([^;]+)/)?.[1]
-      const headers: HeadersInit = { 
-        'apikey': supabaseAnonKey, 
-        'Content-Type': 'application/json' 
-      }
-      if (token) {
-        ;(headers as Record<string, string>)['Authorization'] = `Bearer ${token}`
-      }
-
       const res = await fetch(
         `${supabaseUrl}/rest/v1/comments?anime_id=eq.${animeId}&order=created_at.desc`,
-        { headers }
+        { headers: { 'apikey': supabaseAnonKey } }
       )
       
       if (!res.ok) {
@@ -208,7 +162,6 @@ export default function CommentSection({ animeId }: { animeId: string }) {
 
       const allComments: Comment[] = await res.json()
 
-      // Группировка комментариев (родители + ответы)
       const commentMap = new Map<string, Comment>()
       const rootComments: Comment[] = []
 
@@ -226,7 +179,6 @@ export default function CommentSection({ animeId }: { animeId: string }) {
         }
       })
 
-      // Сортировка ответов по дате
       commentMap.forEach(c => {
         if (c.replies) {
           c.replies.sort((a, b) => 
@@ -245,17 +197,10 @@ export default function CommentSection({ animeId }: { animeId: string }) {
     loadComments()
   }, [animeId])
 
-  // Отправка комментария
+  // Отправка комментария (без авторизации)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!text.trim()) return
-
-    const token = document.cookie.match(/sb-access-token=([^;]+)/)?.[1]
-    
-    if (!token) {
-      alert('Войдите чтобы оставлять комментарии')
-      return
-    }
 
     setLoading(true)
 
@@ -265,12 +210,11 @@ export default function CommentSection({ animeId }: { animeId: string }) {
         headers: {
           'apikey': supabaseAnonKey,
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
           'Prefer': 'return=representation',
         },
         body: JSON.stringify({
           anime_id: animeId,
-          user_name: user?.name || 'Аноним',
+          user_name: userName || 'Аноним',
           content: text,
           parent_id: null,
           likes: 0,
@@ -280,16 +224,13 @@ export default function CommentSection({ animeId }: { animeId: string }) {
 
       if (!res.ok) {
         const error = await res.json()
-        console.error('Submit error:', error)
         alert('Ошибка: ' + (error.message || 'Не удалось отправить'))
         return
       }
 
       setText('')
       await loadComments()
-      alert('Комментарий добавлен! ✅')
     } catch (error) {
-      console.error('Submit error:', error)
       alert('Ошибка при отправке')
     } finally {
       setLoading(false)
@@ -298,23 +239,16 @@ export default function CommentSection({ animeId }: { animeId: string }) {
 
   // Ответ на комментарий
   const handleReply = async (parentId: string, content: string) => {
-    const token = document.cookie.match(/sb-access-token=([^;]+)/)?.[1]
-    if (!token) {
-      alert('Войдите чтобы отвечать')
-      return
-    }
-
     try {
       await fetch(`${supabaseUrl}/rest/v1/comments`, {
         method: 'POST',
         headers: {
           'apikey': supabaseAnonKey,
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           anime_id: animeId,
-          user_name: user?.name || 'Аноним',
+          user_name: userName || 'Аноним',
           content: content,
           parent_id: parentId,
           likes: 0,
@@ -327,11 +261,11 @@ export default function CommentSection({ animeId }: { animeId: string }) {
     }
   }
 
-  // Реакции (лайк/дизлайк)
+  // Реакции (только для авторизованных)
   const handleReaction = async (commentId: string, type: 'like' | 'dislike') => {
     const token = document.cookie.match(/sb-access-token=([^;]+)/)?.[1]
     if (!token) {
-      alert('Войдите чтобы оценивать')
+      alert('Войдите чтобы оценивать комментарии')
       return
     }
 
@@ -385,6 +319,13 @@ export default function CommentSection({ animeId }: { animeId: string }) {
       </h2>
 
       <form onSubmit={handleSubmit} className="mb-6">
+        <input
+          type="text"
+          placeholder="Ваше имя (необязательно)"
+          value={userName}
+          onChange={(e) => setUserName(e.target.value)}
+          className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 mb-2 text-white"
+        />
         <textarea
           placeholder="Оставьте комментарий..."
           value={text}
@@ -413,8 +354,7 @@ export default function CommentSection({ animeId }: { animeId: string }) {
               key={c.id}
               comment={c}
               onReply={handleReply}
-              onLike={(id) => handleReaction(id, 'like')}
-              onDislike={(id) => handleReaction(id, 'dislike')}
+              onReaction={handleReaction}
             />
           ))}
         </div>
