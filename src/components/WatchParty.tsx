@@ -338,27 +338,10 @@ export default function WatchParty({ episodeId, videoUrl, animeTitle, onClose }:
           </span>
         </div>
         <div className="flex items-center gap-2">
-          {isHost && (
-            <>
-              <button
-                onClick={copyInviteLink}
-                className="hidden sm:block bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg text-sm transition"
-                title="Скопировать ссылку"
-              >
-                📋 Ссылка
-              </button>
-              <button
-                onClick={() => setShowFriendsList(!showFriendsList)}
-                className="bg-neo-pink/20 hover:bg-neo-pink/40 text-neo-pink px-3 py-1.5 rounded-lg text-sm transition flex items-center gap-1"
-                title="Пригласить друзей"
-              >
-                <span className="hidden sm:inline">👥 Друзья</span>
-                <span className="sm:hidden">👥</span>
-                {friends.length > 0 && (
-                  <span className="bg-neo-pink text-white text-[10px] px-1.5 rounded-full">{friends.length}</span>
-                )}
-              </button>
-            </>
+          {isHost && participants.length > 0 && (
+            <span className="text-xs text-gray-400 hidden sm:block">
+              Пригласи друзей в панели справа 👉
+            </span>
           )}
           <button
             onClick={onClose}
@@ -369,71 +352,7 @@ export default function WatchParty({ episodeId, videoUrl, animeTitle, onClose }:
         </div>
       </div>
 
-      {/* Список друзей для приглашения - плавающая панель */}
-      {showFriendsList && isHost && (
-        <div className="absolute top-full right-0 sm:right-4 z-20 w-full sm:w-72 mt-2">
-          <div className="glass border border-white/10 rounded-xl p-4 max-h-64 overflow-y-auto shadow-xl">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-white font-semibold text-sm">Пригласить друзей:</h3>
-              <button
-                onClick={() => setShowFriendsList(false)}
-                className="text-gray-400 hover:text-white text-lg"
-              >
-                ✕
-              </button>
-            </div>
-            {friends.length === 0 ? (
-              <div className="text-center py-4">
-                <p className="text-gray-400 text-sm mb-2">Нет друзей</p>
-                <a
-                  href="/profile"
-                  className="text-neo-pink text-xs hover:underline"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    window.open('/profile', '_blank');
-                  }}
-                >
-                  Добавить в профиле →
-                </a>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {friends.map((friend) => (
-                  <div
-                    key={friend.id}
-                    className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      {friend.avatar ? (
-                        <img src={friend.avatar} alt={friend.nickname} className="w-6 h-6 rounded-full flex-shrink-0" />
-                      ) : (
-                        <div className="w-6 h-6 rounded-full bg-neo-pink/20 flex items-center justify-center text-neo-pink text-xs flex-shrink-0">
-                          {friend.nickname[0].toUpperCase()}
-                        </div>
-                      )}
-                      <span className="text-white text-xs truncate">{friend.nickname}</span>
-                      {friend.isOnline && (
-                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0"></span>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => inviteFriend(friend.id)}
-                      disabled={invitingFriend === friend.id}
-                      className={`px-2 py-1 rounded text-[10px] font-medium transition flex-shrink-0 ml-2 ${
-                        invitingFriend === friend.id
-                          ? 'bg-gray-500 text-gray-300'
-                          : 'bg-neo-pink hover:bg-neo-pink/80 text-white'
-                      }`}
-                    >
-                      {invitingFriend === friend.id ? '⏳' : '➕'}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+
 
       <div className="flex-1 flex flex-col lg:flex-row">
         {/* Видео */}
@@ -497,6 +416,79 @@ export default function WatchParty({ episodeId, videoUrl, animeTitle, onClose }:
               ))}
             </div>
           </div>
+
+          {/* Пригласить друзей - только для хоста */}
+          {isHost && (
+            <div className="p-4 border-b border-white/10">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-white font-semibold text-sm">📩 Пригласить</h3>
+                <span className="text-xs text-gray-400">{friends.length} друзей</span>
+              </div>
+              <div className="flex gap-2 mb-3">
+                <button
+                  onClick={copyInviteLink}
+                  className="flex-1 bg-white/10 hover:bg-white/20 text-white py-2 rounded-lg text-xs transition"
+                >
+                  📋 Ссылка
+                </button>
+                <button
+                  onClick={() => setShowFriendsList(!showFriendsList)}
+                  className="flex-1 bg-neo-pink/20 hover:bg-neo-pink/40 text-neo-pink py-2 rounded-lg text-xs transition"
+                >
+                  👥 Друзья
+                </button>
+              </div>
+              
+              {/* Список друзей */}
+              {showFriendsList && (
+                <div className="bg-white/5 rounded-lg p-3 max-h-48 overflow-y-auto">
+                  {friends.length === 0 ? (
+                    <div className="text-center py-2">
+                      <p className="text-gray-400 text-xs mb-1">Нет друзей</p>
+                      <a
+                        href="/profile"
+                        target="_blank"
+                        className="text-neo-pink text-xs hover:underline"
+                      >
+                        Добавить в профиле →
+                      </a>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {friends.map((friend) => (
+                        <div
+                          key={friend.id}
+                          className="flex items-center justify-between bg-white/5 rounded px-2 py-1.5"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            {friend.avatar ? (
+                              <img src={friend.avatar} alt={friend.nickname} className="w-5 h-5 rounded-full flex-shrink-0" />
+                            ) : (
+                              <div className="w-5 h-5 rounded-full bg-neo-pink/20 flex items-center justify-center text-neo-pink text-[10px] flex-shrink-0">
+                                {friend.nickname[0].toUpperCase()}
+                              </div>
+                            )}
+                            <span className="text-white text-[10px] truncate">{friend.nickname}</span>
+                          </div>
+                          <button
+                            onClick={() => inviteFriend(friend.id)}
+                            disabled={invitingFriend === friend.id}
+                            className={`px-2 py-0.5 rounded text-[9px] font-medium transition flex-shrink-0 ml-2 ${
+                              invitingFriend === friend.id
+                                ? 'bg-gray-500 text-gray-300'
+                                : 'bg-neo-pink hover:bg-neo-pink/80 text-white'
+                            }`}
+                          >
+                            {invitingFriend === friend.id ? '⏳' : '➕'}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Чат */}
           <div className="flex-1 flex flex-col p-4">
