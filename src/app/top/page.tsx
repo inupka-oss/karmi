@@ -32,12 +32,13 @@ export default async function TopPage({
   const supabase = await createServerSupabase()
 
   // Получаем жанры для фильтра (если таблица существует)
-  const { data: genres } = await supabase
-    .from('genres')
-    .select('*')
-    .order('name')
-    .throwOnError()
-    .catch(() => ({ data: null }))
+  let genres = null
+  try {
+    const genresResult = await supabase.from('genres').select('*').order('name')
+    genres = genresResult.data
+  } catch (e) {
+    console.log('Genres table not available')
+  }
 
   // Формируем запрос
   let query = supabase
