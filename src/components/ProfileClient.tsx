@@ -11,6 +11,19 @@ interface Achievement {
   unlockedAt?: string
 }
 
+interface Challenge {
+  id: string
+  name: string
+  description: string
+  icon: string
+  category: 'daily' | 'weekly' | 'anime' | 'social' | 'special'
+  progress: number
+  target: number
+  reward: string
+  completed: boolean
+  expiresAt?: string
+}
+
 interface Stats {
   animeWatched: number
   episodesWatched: number
@@ -23,6 +36,48 @@ interface Stats {
   xp: number
   xpToNextLevel: number
 }
+
+const CHALLENGES: Challenge[] = [
+  // 📅 Ежедневные (6)
+  { id: 'daily_login', name: 'Ежедневный вход', description: 'Зайти на сайт сегодня', icon: '📅', category: 'daily', progress: 0, target: 1, reward: '+10 XP', completed: false },
+  { id: 'daily_3ep', name: 'Три серии', description: 'Посмотреть 3 серии за день', icon: '📺', category: 'daily', progress: 0, target: 3, reward: '+25 XP', completed: false },
+  { id: 'daily_comment', name: 'Коммент дня', description: 'Оставить комментарий', icon: '💬', category: 'daily', progress: 0, target: 1, reward: '+15 XP', completed: false },
+  { id: 'daily_like', name: 'Лайк мастер', description: 'Поставить 5 лайков', icon: '👍', category: 'daily', progress: 0, target: 5, reward: '+10 XP', completed: false },
+  { id: 'daily_share', name: 'Поделиться', description: 'Поделиться аниме с другом', icon: '🔗', category: 'daily', progress: 0, target: 1, reward: '+20 XP', completed: false },
+  { id: 'daily_favorite', name: 'В избранное', description: 'Добавить аниме в избранное', icon: '❤️', category: 'daily', progress: 0, target: 1, reward: '+10 XP', completed: false },
+  
+  // 📆 Еженедельные (6)
+  { id: 'weekly_7days', name: 'Неделя активности', description: 'Зайти 7 дней подряд', icon: '🗓️', category: 'weekly', progress: 0, target: 7, reward: '+100 XP', completed: false },
+  { id: 'weekly_10ep', name: 'Десяточка', description: 'Посмотреть 10 серий за неделю', icon: '🎬', category: 'weekly', progress: 0, target: 10, reward: '+75 XP', completed: false },
+  { id: 'weekly_5comments', name: 'Оратор недели', description: '10 комментариев за неделю', icon: '📢', category: 'weekly', progress: 0, target: 10, reward: '+50 XP', completed: false },
+  { id: 'weekly_review', name: 'Критик', description: 'Написать рецензию', icon: '📝', category: 'weekly', progress: 0, target: 1, reward: '+100 XP', completed: false },
+  { id: 'weekly_friends', name: 'Дружелюбный', description: 'Добавить друга', icon: '🤝', category: 'weekly', progress: 0, target: 1, reward: '+50 XP', completed: false },
+  { id: 'weekly_party', name: 'Тусовщик', description: 'Участвовать в Watch Party', icon: '🎉', category: 'weekly', progress: 0, target: 1, reward: '+80 XP', completed: false },
+  
+  // 🎬 Аниме челленджи (6)
+  { id: 'anime_first', name: 'Новичок', description: 'Посмотреть первое аниме', icon: '🌟', category: 'anime', progress: 0, target: 1, reward: '+50 XP', completed: false },
+  { id: 'anime_5series', name: 'Пять за раз', description: 'Завершить 5 сериалов', icon: '⭐', category: 'anime', progress: 0, target: 5, reward: '+100 XP', completed: false },
+  { id: 'anime_genre', name: 'Исследователь', description: 'Посмотреть 5 жанров', icon: '🎭', category: 'anime', progress: 0, target: 5, reward: '+75 XP', completed: false },
+  { id: 'anime_ongoing', name: 'В теме', description: 'Смотреть онгоинг', icon: '📡', category: 'anime', progress: 0, target: 1, reward: '+40 XP', completed: false },
+  { id: 'anime_classic', name: 'Классик', description: 'Посмотреть аниме до 2000', icon: '📼', category: 'anime', progress: 0, target: 1, reward: '+60 XP', completed: false },
+  { id: 'anime_marathon', name: 'Марафон', description: '10 серий за день', icon: '🏃', category: 'anime', progress: 0, target: 10, reward: '+150 XP', completed: false },
+  
+  // 👥 Социальные (6)
+  { id: 'social_friend', name: 'Первый друг', description: 'Добавить первого друга', icon: '👥', category: 'social', progress: 0, target: 1, reward: '+50 XP', completed: false },
+  { id: 'social_5friends', name: 'Популярный', description: '5 друзей в профиле', icon: '⭐', category: 'social', progress: 0, target: 5, reward: '+100 XP', completed: false },
+  { id: 'social_comment10', name: 'Душа компании', description: '20 комментариев', icon: '🗣️', category: 'social', progress: 0, target: 20, reward: '+80 XP', completed: false },
+  { id: 'social_helpful', name: 'Помощник', description: '10 лайков на комментах', icon: '💡', category: 'social', progress: 0, target: 10, reward: '+60 XP', completed: false },
+  { id: 'social_party_host', name: 'Организатор', description: 'Создать Watch Party', icon: '🎪', category: 'social', progress: 0, target: 1, reward: '+100 XP', completed: false },
+  { id: 'social_invite', name: 'Пригласитель', description: 'Пригласить 3 друзей', icon: '📨', category: 'social', progress: 0, target: 3, reward: '+75 XP', completed: false },
+  
+  // 🎯 Особые (6)
+  { id: 'special_birthday', name: 'День рождения', description: 'Зайти в свой ДР', icon: '🎂', category: 'special', progress: 0, target: 1, reward: '+200 XP', completed: false },
+  { id: 'special_newyear', name: 'С Новым Годом!', description: 'Зайти 1 января', icon: '🎄', category: 'special', progress: 0, target: 1, reward: '+300 XP', completed: false },
+  { id: 'special_night', name: 'Ночной смотр', description: 'Смотреть в 3 ночи', icon: '🌙', category: 'special', progress: 0, target: 1, reward: '+50 XP', completed: false },
+  { id: 'special_level10', name: 'Уровень 10', description: 'Достичь 10 уровня', icon: '🔟', category: 'special', progress: 0, target: 1, reward: '+150 XP', completed: false },
+  { id: 'special_level50', name: 'Ветеран', description: 'Достичь 50 уровня', icon: '🎖️', category: 'special', progress: 0, target: 1, reward: '+500 XP', completed: false },
+  { id: 'special_streak30', name: 'Месяц без пропусков', description: '30 дней подряд', icon: '🔥', category: 'special', progress: 0, target: 30, reward: '+1000 XP', completed: false },
+]
 
 const ACHIEVEMENTS: Achievement[] = [
   // 🎬 Просмотр аниме
@@ -101,7 +156,8 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
   const [achievements, setAchievements] = useState<Achievement[]>(ACHIEVEMENTS)
   const [loading, setLoading] = useState(true)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
-  const [activeTab, setActiveTab] = useState<'profile' | 'stats' | 'achievements'>('profile')
+  const [activeTab, setActiveTab] = useState<'profile' | 'stats' | 'achievements' | 'challenges'>('profile')
+  const [challenges, setChallenges] = useState<Challenge[]>([])
   const router = useRouter()
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -120,13 +176,22 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
             if (data[0].avatar) setAvatar(data[0].avatar)
             if (data[0].bio) setBio(data[0].bio)
             if (data[0].stats) setStats(data[0].stats)
-            
-            // Загружаем достижения из БД или вычисляем автоматически
-            const savedAchievements = data[0].achievements || []
-            setAchievements(prev => prev.map(a => {
-              const unlocked = savedAchievements.includes(a.id)
-              return { ...a, unlocked }
-            }))
+            if (data[0].achievements) {
+              setAchievements(prev => prev.map(a => {
+                const unlocked = data[0].achievements.includes(a.id)
+                return { ...a, unlocked }
+              }))
+            }
+            // Загружаем челленджи
+            if (data[0].challenges) {
+              setChallenges(prev => prev.map(c => {
+                const saved = data[0].challenges.find((s: any) => s.id === c.id)
+                if (saved) {
+                  return { ...c, progress: saved.progress, completed: saved.completed }
+                }
+                return c
+              }))
+            }
           }
         }
       } catch (e) {
@@ -137,7 +202,6 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
     }
     loadProfile()
     
-    // Если есть хэш #friends в URL - скроллим к секции друзей
     if (typeof window !== 'undefined' && window.location.hash === '#friends') {
       setTimeout(() => {
         const friendsSection = document.getElementById('friends')
@@ -160,13 +224,9 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
     if (!stats) return
     
     setAchievements(prev => prev.map(a => {
-      // Если уже разблокировано - оставляем
       if (a.unlocked) return a
-      
-      // Проверяем по статистике
       let shouldUnlock = false
       
-      // Аниме
       if (a.id === 'first_anime' && stats.animeWatched >= 1) shouldUnlock = true
       if (a.id === '5_anime' && stats.animeWatched >= 5) shouldUnlock = true
       if (a.id === '10_anime' && stats.animeWatched >= 10) shouldUnlock = true
@@ -175,46 +235,74 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
       if (a.id === '75_anime' && stats.animeWatched >= 75) shouldUnlock = true
       if (a.id === '100_anime' && stats.animeWatched >= 100) shouldUnlock = true
       if (a.id === '200_anime' && stats.animeWatched >= 200) shouldUnlock = true
-      
-      // Эпизоды
       if (a.id === '10_episodes' && stats.episodesWatched >= 10) shouldUnlock = true
       if (a.id === '50_episodes' && stats.episodesWatched >= 50) shouldUnlock = true
       if (a.id === '100_episodes' && stats.episodesWatched >= 100) shouldUnlock = true
       if (a.id === '500_episodes' && stats.episodesWatched >= 500) shouldUnlock = true
       if (a.id === '1000_episodes' && stats.episodesWatched >= 1000) shouldUnlock = true
-      
-      // Комментарии
       if (a.id === 'first_comment' && stats.commentsPosted >= 1) shouldUnlock = true
       if (a.id === '10_comments' && stats.commentsPosted >= 10) shouldUnlock = true
       if (a.id === '50_comments' && stats.commentsPosted >= 50) shouldUnlock = true
       if (a.id === '100_comments' && stats.commentsPosted >= 100) shouldUnlock = true
-      
-      // Рецензии
       if (a.id === 'first_review' && stats.reviewsWritten >= 1) shouldUnlock = true
       if (a.id === '5_reviews' && stats.reviewsWritten >= 5) shouldUnlock = true
       if (a.id === '10_reviews' && stats.reviewsWritten >= 10) shouldUnlock = true
-      
-      // Избранное
       if (a.id === '10_favorites' && stats.favoritesCount >= 10) shouldUnlock = true
       if (a.id === '25_favorites' && stats.favoritesCount >= 25) shouldUnlock = true
       if (a.id === '50_favorites' && stats.favoritesCount >= 50) shouldUnlock = true
-      
-      // Активность
       if (a.id === 'first_day' && stats.daysVisited >= 1) shouldUnlock = true
       if (a.id === 'week_streak' && stats.daysVisited >= 7) shouldUnlock = true
       if (a.id === 'month_streak' && stats.daysVisited >= 30) shouldUnlock = true
       if (a.id === 'year_streak' && stats.daysVisited >= 365) shouldUnlock = true
-      
-      // Уровень
       if (a.id === 'level_10' && stats.level >= 10) shouldUnlock = true
       if (a.id === 'level_50' && stats.level >= 50) shouldUnlock = true
       if (a.id === 'level_100' && stats.level >= 100) shouldUnlock = true
-      
-      // Завершитель (25 достижений)
       const unlockedCount = prev.filter(x => x.unlocked).length
       if (a.id === 'completionist' && unlockedCount >= 25) shouldUnlock = true
       
       return shouldUnlock ? { ...a, unlocked: true } : a
+    }))
+  }, [stats])
+
+  // Обновление прогресса челленджей
+  useEffect(() => {
+    if (!stats) return
+    
+    setChallenges(prev => prev.map(c => {
+      if (c.completed) return c
+      
+      let newProgress = c.progress
+      let completed = c.completed
+      
+      // Ежедневные
+      if (c.id === 'daily_login' && stats.daysVisited >= 1) { newProgress = 1; completed = true }
+      if (c.id === 'daily_3ep' && stats.episodesWatched >= 3) { newProgress = 3; completed = true }
+      if (c.id === 'daily_comment' && stats.commentsPosted >= 1) { newProgress = 1; completed = true }
+      if (c.id === 'daily_like') { newProgress = Math.min(stats.episodesWatched, 5); completed = newProgress >= 5 }
+      if (c.id === 'daily_favorite' && stats.favoritesCount >= 1) { newProgress = 1; completed = true }
+      
+      // Еженедельные
+      if (c.id === 'weekly_7days' && stats.daysVisited >= 7) { newProgress = 7; completed = true }
+      if (c.id === 'weekly_10ep' && stats.episodesWatched >= 10) { newProgress = 10; completed = true }
+      if (c.id === 'weekly_5comments' && stats.commentsPosted >= 10) { newProgress = 10; completed = true }
+      if (c.id === 'weekly_review' && stats.reviewsWritten >= 1) { newProgress = 1; completed = true }
+      
+      // Аниме
+      if (c.id === 'anime_first' && stats.animeWatched >= 1) { newProgress = 1; completed = true }
+      if (c.id === 'anime_5series' && stats.animeWatched >= 5) { newProgress = 5; completed = true }
+      if (c.id === 'anime_marathon' && stats.episodesWatched >= 10) { newProgress = 10; completed = true }
+      
+      // Социальные
+      if (c.id === 'social_friend') { newProgress = Math.min(stats.favoritesCount, 1); completed = newProgress >= 1 }
+      if (c.id === 'social_5friends') { newProgress = Math.min(stats.favoritesCount, 5); completed = newProgress >= 5 }
+      if (c.id === 'social_comment10' && stats.commentsPosted >= 20) { newProgress = 20; completed = true }
+      
+      // Особые
+      if (c.id === 'special_level10' && stats.level >= 10) { newProgress = 1; completed = true }
+      if (c.id === 'special_level50' && stats.level >= 50) { newProgress = 1; completed = true }
+      if (c.id === 'special_streak30' && stats.daysVisited >= 30) { newProgress = 30; completed = true }
+      
+      return { ...c, progress: newProgress, completed }
     }))
   }, [stats])
 
@@ -332,6 +420,15 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
     
     if (username) {
       saveData.username = username
+    }
+    
+    // Сохраняем прогресс челленджей
+    const completedChallenges = challenges
+      .filter(c => c.completed)
+      .map(c => ({ id: c.id, progress: c.progress, completed: true }))
+    
+    if (completedChallenges.length > 0) {
+      saveData.challenges = completedChallenges
     }
     
     await fetch(`${supabaseUrl}/rest/v1/user_profiles`, {
@@ -455,6 +552,16 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
           }`}
         >
           🏆 Достижения ({achievements.filter(a => a.unlocked).length}/{achievements.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('challenges')}
+          className={`px-4 py-2 rounded-xl font-medium whitespace-nowrap transition ${
+            activeTab === 'challenges'
+              ? 'bg-neo-pink text-white'
+              : 'bg-white/10 text-gray-400 hover:text-white'
+          }`}
+        >
+          🎯 Челленджи ({challenges.filter(c => c.completed).length}/{challenges.length})
         </button>
       </div>
 
@@ -582,6 +689,71 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
         </div>
       )}
 
+      {activeTab === 'challenges' && (
+        <div>
+          {/* Прогресс челленджей */}
+          <div className="glass rounded-2xl p-4 mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-bold text-white">
+                Выполнено: {challenges.filter(c => c.completed).length}/{challenges.length}
+              </h3>
+              <span className="text-neo-pink font-semibold">
+                {Math.round((challenges.filter(c => c.completed).length / challenges.length) * 100)}%
+              </span>
+            </div>
+            <div className="h-3 bg-white/10 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-neo-pink to-neo-red transition-all duration-500"
+                style={{ width: `${(challenges.filter(c => c.completed).length / challenges.length) * 100}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Категории */}
+          <div className="space-y-8">
+            {/* Ежедневные */}
+            <ChallengeCategory 
+              title="📅 Ежедневные" 
+              icon="📅"
+              challenges={challenges.filter(c => c.category === 'daily')} 
+              maxShow={5}
+            />
+            
+            {/* Еженедельные */}
+            <ChallengeCategory 
+              title="📆 Еженедельные" 
+              icon="📆"
+              challenges={challenges.filter(c => c.category === 'weekly')} 
+              maxShow={5}
+            />
+            
+            {/* Аниме */}
+            <ChallengeCategory 
+              title="🎬 Аниме челленджи" 
+              icon="🎬"
+              challenges={challenges.filter(c => c.category === 'anime')} 
+              maxShow={5}
+            />
+            
+            {/* Социальные */}
+            <ChallengeCategory 
+              title="👥 Социальные" 
+              icon="👥"
+              challenges={challenges.filter(c => c.category === 'social')} 
+              maxShow={5}
+            />
+            
+            {/* Особые */}
+            <ChallengeCategory 
+              title="🎯 Особые" 
+              icon="🎯"
+              challenges={challenges.filter(c => c.category === 'special')} 
+              maxShow={5}
+            />
+          </div>
+        </div>
+      )}
+
       {activeTab === 'achievements' && (
         <div>
           {/* Прогресс достижений */}
@@ -664,6 +836,90 @@ function StatCard({ icon, label, value, highlight }: { icon: string; label: stri
       <div className="text-sm text-gray-400">{label}</div>
     </div>
   )
+}
 
+function ChallengeCategory({ 
+  title, 
+  icon,
+  challenges, 
+  maxShow = 5 
+}: { 
+  title: string
+  icon: string
+  challenges: Challenge[]
+  maxShow?: number 
+}) {
+  const [showAll, setShowAll] = useState(false)
+  const displayed = showAll ? challenges : challenges.slice(0, maxShow)
+  const completedCount = challenges.filter(c => c.completed).length
   
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-xl font-bold text-white flex items-center gap-2">
+          {icon} {title}
+        </h3>
+        <span className="text-sm text-gray-400">
+          {completedCount}/{challenges.length} ✅
+        </span>
+      </div>
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {displayed.map((challenge) => (
+          <div
+            key={challenge.id}
+            className={`glass rounded-2xl p-4 transition hover:scale-105 ${
+              challenge.completed 
+                ? 'bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/30' 
+                : 'bg-white/5 border-white/10'
+            }`}
+          >
+            <div className="flex items-start gap-3 mb-3">
+              <div className="text-3xl flex-shrink-0">{challenge.icon}</div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-bold text-white text-sm truncate">{challenge.name}</h4>
+                <p className="text-xs text-gray-400 mt-1">{challenge.description}</p>
+              </div>
+            </div>
+            
+            {/* Прогресс бар */}
+            <div className="mb-2">
+              <div className="flex justify-between text-xs mb-1">
+                <span className="text-gray-400">Прогресс</span>
+                <span className={challenge.completed ? 'text-green-400' : 'text-neo-pink'}>
+                  {challenge.progress}/{challenge.target}
+                </span>
+              </div>
+              <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                <div 
+                  className={`h-full transition-all duration-500 ${
+                    challenge.completed 
+                      ? 'bg-gradient-to-r from-green-500 to-emerald-500' 
+                      : 'bg-gradient-to-r from-neo-pink to-neo-red'
+                  }`}
+                  style={{ width: `${Math.min((challenge.progress / challenge.target) * 100, 100)}%` }}
+                />
+              </div>
+            </div>
+            
+            {/* Награда */}
+            <div className={`text-xs font-semibold ${
+              challenge.completed ? 'text-green-400' : 'text-yellow-400'
+            }`}>
+              🎁 {challenge.reward}
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      {challenges.length > maxShow && (
+        <button
+          onClick={() => setShowAll(!showAll)}
+          className="mt-4 text-neo-pink hover:text-neo-pink/80 text-sm font-medium flex items-center gap-1"
+        >
+          {showAll ? 'Свернуть' : 'Показать все'} {showAll ? '↑' : '↓'}
+        </button>
+      )}
+    </div>
+  )
 }
