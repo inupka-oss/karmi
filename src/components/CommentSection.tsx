@@ -144,6 +144,7 @@ export default function CommentSection({ animeId }: { animeId: string }) {
   const [loading, setLoading] = useState(false)
   const [userName, setUserName] = useState('')
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [authLoading, setAuthLoading] = useState(true)
   
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -157,9 +158,12 @@ export default function CommentSection({ animeId }: { animeId: string }) {
   // Проверяем авторизацию и получаем имя пользователя
   useEffect(() => {
     const checkAuth = async () => {
+      setAuthLoading(true)
       const token = getAccessToken()
       if (!token) {
         setIsLoggedIn(false)
+        setUserName('')
+        setAuthLoading(false)
         return
       }
       try {
@@ -174,13 +178,17 @@ export default function CommentSection({ animeId }: { animeId: string }) {
           setIsLoggedIn(true)
           const name = userData.email?.split('@')[0] || 'Аноним'
           setUserName(name)
+          console.log('User logged in:', name)
         } else {
           setIsLoggedIn(false)
+          setUserName('')
         }
       } catch (e) {
         console.error('Auth check error:', e)
         setIsLoggedIn(false)
+        setUserName('')
       }
+      setAuthLoading(false)
     }
     checkAuth()
   }, [supabaseUrl, supabaseAnonKey])
@@ -232,8 +240,19 @@ export default function CommentSection({ animeId }: { animeId: string }) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!text.trim()) return
+    
+    // Ждём завершения загрузки авторизации
+    if (authLoading) {
+      alert('Подождите, загрузка...')
+      return
+    }
+    
     setLoading(true)
     const token = getAccessToken()
+    
+    // Определяем имя для комментария
+    const displayName = isLoggedIn && userName ? userName : (userName || 'Аноним')
+    
     try {
       const headers: HeadersInit = {
         'apikey': supabaseAnonKey,
@@ -248,7 +267,7 @@ export default function CommentSection({ animeId }: { animeId: string }) {
         headers,
         body: JSON.stringify({
           anime_id: animeId,
-          user_name: isLoggedIn ? userName : (userName || 'Аноним'),
+          user_name: displayName,
           content: text,
           parent_id: null,
           likes: 0,
@@ -271,7 +290,11 @@ export default function CommentSection({ animeId }: { animeId: string }) {
 
   // Ответ на комментарий
   const handleReply = async (parentId: string, content: string) => {
+    if (authLoading) return
+    
     const token = getAccessToken()
+    const displayName = isLoggedIn && userName ? userName : (userName || 'Аноним')
+    
     try {
       const headers: HeadersInit = {
         'apikey': supabaseAnonKey,
@@ -285,7 +308,7 @@ export default function CommentSection({ animeId }: { animeId: string }) {
         headers,
         body: JSON.stringify({
           anime_id: animeId,
-          user_name: isLoggedIn ? userName : (userName || 'Аноним'),
+          user_name: displayName,
           content: content,
           parent_id: parentId,
           likes: 0,
@@ -353,7 +376,9 @@ export default function CommentSection({ animeId }: { animeId: string }) {
       </h2>
 
       <form onSubmit={handleSubmit} className="mb-6">
-        {!isLoggedIn && (
+        {authLoading ? (
+          <p className="text-sm text-gray-400 mb-2">Загрузка...</p>
+        ) : !isLoggedIn && (
           <input
             type="text"
             placeholder="Ваше имя (необязательно)"
@@ -362,9 +387,9 @@ export default function CommentSection({ animeId }: { animeId: string }) {
             className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 mb-2 text-white"
           />
         )}
-        {isLoggedIn && (
+        {isLoggedIn && userName && (
           <p className="text-sm text-neo-pink mb-2">
-            Вы вошли как: <span className="text-white">{userName}</span>
+            Вы вошли как: <span className="text-white font-semibold">{userName}</span>
           </p>
         )}
         <textarea
