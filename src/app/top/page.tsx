@@ -31,25 +31,22 @@ export default async function TopPage({
   
   const supabase = await createServerSupabase()
 
-  // Получаем жанры для фильтра
-  const { data: genres, error: genresError } = await supabase
+  // Получаем жанры для фильтра (если таблица существует)
+  const { data: genres } = await supabase
     .from('genres')
     .select('*')
     .order('name')
+    .throwOnError()
+    .catch(() => ({ data: null }))
 
   // Формируем запрос
   let query = supabase
     .from('anime')
-    .select(`*, genres(name, slug)`, { count: 'exact' })
+    .select('*', { count: 'exact' })
 
   // Фильтр по типу
   if (type !== 'all') {
     query = query.eq('type', type)
-  }
-
-  // Фильтр по жанру
-  if (genre) {
-    query = query.filter('genres.slug', 'eq', genre)
   }
 
   // Сортировка в зависимости от периода
@@ -114,18 +111,20 @@ export default async function TopPage({
         </select>
 
         {/* Жанр */}
-        <select
-          value={genre}
-          onChange={(e) => {
-            window.location.href = `?period=${period}&type=${type}&genre=${e.target.value}`
-          }}
-          className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white text-sm"
-        >
-          <option value="">Все жанры</option>
-          {genres?.map((g: any) => (
-            <option key={g.slug} value={g.slug}>{g.name}</option>
-          ))}
-        </select>
+        {genres && genres.length > 0 && (
+          <select
+            value={genre}
+            onChange={(e) => {
+              window.location.href = `?period=${period}&type=${type}&genre=${e.target.value}`
+            }}
+            className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white text-sm"
+          >
+            <option value="">Все жанры</option>
+            {genres.map((g: any) => (
+              <option key={g.slug} value={g.slug}>{g.name}</option>
+            ))}
+          </select>
+        )}
       </div>
 
       {anime && anime.length > 0 ? (

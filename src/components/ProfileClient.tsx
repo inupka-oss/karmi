@@ -309,22 +309,44 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
   const uploadAvatar = async (file: File): Promise<string> => {
     setUploadingAvatar(true)
     try {
-      const safeName = `${email.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}_${file.name}`
-      const res = await fetch(`${supabaseUrl}/storage/v1/object/avatars/${safeName}`, {
-        method: 'POST',
+      const timestamp = Date.now()
+      const random = Math.random().toString(36).substring(2, 8)
+      const ext = file.name.split('.').pop() || 'jpg'
+      const safeName = `avatar_${email.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}_${random}.${ext}`
+      
+      const uploadUrl = `${supabaseUrl}/storage/v1/object/avatars/${safeName}`
+      const publicUrl = `${supabaseUrl}/storage/v1/object/public/avatars/${safeName}`
+      
+      console.log('📤 Upload avatar:', uploadUrl)
+      console.log('📊 File:', file.name, file.size, file.type)
+      
+      // Используем FormData для надёжности
+      const formData = new FormData()
+      formData.append('', file)
+      
+      const res = await fetch(uploadUrl, {
+        method: 'PUT', // Используем PUT вместо POST
         headers: {
           'apikey': supabaseAnonKey,
           'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': file.type,
         },
-        body: file,
+        body: formData,
       })
-      if (!res.ok) throw new Error('Upload failed')
-      return `${supabaseUrl}/storage/v1/object/public/avatars/${safeName}`
-    } catch (e) {
-      console.error('Avatar upload error:', e)
-      alert('Ошибка загрузки аватарки')
-      return ''
+      
+      console.log('📥 Response status:', res.status)
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: 'Unknown error' }))
+        console.error('❌ Upload error:', res.status, errorData)
+        throw new Error(errorData.message || `Upload failed: ${res.status}`)
+      }
+      
+      console.log('✅ Avatar uploaded:', publicUrl)
+      return publicUrl
+    } catch (e: any) {
+      console.error('❌ Avatar upload error:', e)
+      alert(`Ошибка загрузки аватарки: ${e.message || 'Неизвестная ошибка'}`)
+      return avatar // Возвращаем старый аватар если ошибка
     } finally {
       setUploadingAvatar(false)
     }
@@ -395,7 +417,7 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
     // Если загружен новый файл, загружаем его
     if (avatarFile) {
       const uploadedUrl = await uploadAvatar(avatarFile)
-      if (uploadedUrl) {
+      if (uploadedUrl && uploadedUrl !== avatar) {
         finalAvatar = uploadedUrl
       }
     }
@@ -431,7 +453,11 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
       saveData.challenges = completedChallenges
     }
     
-    await fetch(`${supabaseUrl}/rest/v1/user_profiles`, {
+    console.log('💾 Saving profile:', saveData)
+    console.log('🔑 Token:', accessToken ? 'Present' : 'Missing')
+    console.log('🌐 URL:', `${supabaseUrl}/rest/v1/user_profiles`)
+    
+    const res = await fetch(`${supabaseUrl}/rest/v1/user_profiles`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -442,6 +468,24 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
       body: JSON.stringify(saveData),
     })
     
+    const responseText = await res.text()
+    console.log('📥 Save response:', res.status, responseText)
+    
+    if (!res.ok) {
+      const errorData = JSON.parse(responseText || '{}')
+      console.error('❌ Save error:', errorData)
+      alert(`Ошибка сохранения: ${res.status}\n${errorData.message || errorData.hint || ''}`)
+      return
+    }
+    
+    const savedData = JSON.parse(responseText || '{}')
+    console.log('✅ Profile saved:', savedData)
+    
+    // Обновляем состояние из ответа сервера
+    if (savedData[0]?.username) setUsername(savedData[0].username)
+    if (savedData[0]?.avatar) setAvatar(savedData[0].avatar)
+    if (savedData[0]?.nickname) setNickname(savedData[0].nickname)
+    
     // Очистка
     if (avatarPreview) {
       URL.revokeObjectURL(avatarPreview)
@@ -449,7 +493,7 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
     setAvatarFile(null)
     setAvatarPreview('')
     
-    alert('Профиль сохранён!')
+    alert('Профиль сохранён! ✅')
   }
 
   if (loading) {
