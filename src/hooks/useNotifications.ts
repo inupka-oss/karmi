@@ -18,6 +18,7 @@ function getGuestId() {
 export function useNotifications() {
   const [subscriptions, setSubscriptions] = useState<string[]>([])
   const [newEpisodes, setNewEpisodes] = useState<{ animeId: string; title: string }[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
@@ -128,5 +129,42 @@ export function useNotifications() {
     }
   }, [subscriptions, checkNewEpisodes])
 
-  return { subscriptions, newEpisodes, toggleSubscription, clearNotifications: () => setNewEpisodes([]) }
+  // Загружаем количество непрочитанных уведомлений
+  useEffect(() => {
+    const loadUnreadCount = async () => {
+      const token = getAccessToken()
+      if (!token) return
+
+      try {
+        const res = await fetch(
+          `${supabaseUrl}/rest/v1/notifications?is_read=eq.false&select=id`,
+          {
+            headers: {
+              'apikey': supabaseAnonKey,
+              'Authorization': `Bearer ${token}`,
+            },
+          }
+        )
+        if (res.ok) {
+          const data = await res.json()
+          setUnreadCount(data.length)
+        }
+      } catch (e) {
+        console.error('Load unread count error:', e)
+      }
+    }
+
+    loadUnreadCount()
+    // Проверяем каждые 30 секунд
+    const interval = setInterval(loadUnreadCount, 30000)
+    return () => clearInterval(interval)
+  }, [supabaseUrl, supabaseAnonKey])
+
+  return { 
+    subscriptions, 
+    newEpisodes, 
+    toggleSubscription, 
+    clearNotifications: () => setNewEpisodes([]),
+    unreadCount,
+  }
 }

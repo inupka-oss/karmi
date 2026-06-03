@@ -8,6 +8,19 @@ interface Participant {
   avatar?: string
   isReady: boolean
   lastPing: number
+  joinedAt?: string
+}
+
+interface WatchPartyStats {
+  room_id: string
+  anime_title?: string
+  total_viewers: number
+  viewers: Array<{
+    nickname: string
+    avatar?: string
+    joined_at: string
+    watch_duration_seconds: number
+  }>
 }
 
 interface Friend {
@@ -42,6 +55,10 @@ export default function WatchParty({ episodeId, videoUrl, animeTitle, onClose }:
   const [nickname, setNickname] = useState('')
   const [showSetup, setShowSetup] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
+  const [showStats, setShowStats] = useState(false)
+  const [watchStats, setWatchStats] = useState<WatchPartyStats | null>(null)
+  const [statsLoading, setStatsLoading] = useState(false)
+  const joinTimeRef = useRef<Date | null>(null)
   
   const videoRef = useRef<HTMLVideoElement>(null)
   const channelRef = useRef<any>(null)
@@ -51,11 +68,13 @@ export default function WatchParty({ episodeId, videoUrl, animeTitle, onClose }:
 
   useEffect(() => {
     return () => {
+      // Сохраняем статистику при выходе
+      saveWatchStats()
       if (channelRef.current) {
         channelRef.current.unsubscribe()
       }
     }
-  }, [])
+  }, [roomId, userId])
 
   // Загрузка друзей
   const loadFriends = async () => {
@@ -119,13 +138,17 @@ export default function WatchParty({ episodeId, videoUrl, animeTitle, onClose }:
     setRoomId(room)
     setIsHost(asHost)
     setShowSetup(false)
+    joinTimeRef.current = new Date()
 
-    // Загружаем аватарку пользователя из профиля
+    // Загружаем аватарку и сохраняем статистику
     let userAvatar: string | undefined = undefined
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
+        setUserId(user.id)
         const { data: { session } } = await supabase.auth.getSession()
+        
+        // Загружаем аватарку
         const res = await fetch(`${supabaseUrl}/rest/v1/user_profiles?user_identifier=eq.${user.email}`, {
           headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${session?.access_token}` },
         })
@@ -135,9 +158,28 @@ export default function WatchParty({ episodeId, videoUrl, animeTitle, onClose }:
             userAvatar = data[0].avatar
           }
         }
+        
+        // Сохраняем статистику входа
+        await fetch(`${supabaseUrl}/rest/v1/watch_party_stats`, {
+          method: 'POST',
+          headers: {
+            'apikey': supabaseAnonKey,
+            'Authorization': `Bearer ${session?.access_token}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation',
+          },
+          body: JSON.stringify({
+            room_id: room,
+            user_id: user.id,
+            user_nickname: nickname,
+            user_avatar: userAvatar,
+            anime_title: animeTitle,
+            joined_at: new Date().toISOString(),
+          }),
+        })
       }
     } catch (e) {
-      console.error('Load avatar error:', e)
+      console.error('Join stats error:', e)
     }
 
     // Подключаемся к Realtime каналу
@@ -281,6 +323,73 @@ export default function WatchParty({ episodeId, videoUrl, animeTitle, onClose }:
     alert('Ссылка скопирована! Отправьте её друзьям.')
   }
 
+  // Сохранение статистики при выходе
+  const saveWatchStats = async () => {
+    if (!joinTimeRef.current || !userId) return
+    
+    const watchDuration = Math.floor((Date.now() - joinTimeRef.current.getTime()) / 1000)
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      await fetch(`${supabaseUrl}/rest/v1/watch_party_stats?room_id=eq.${roomId}&user_id=eq.${userId}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${session?.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          left_at: new Date().toISOString(),
+          watch_duration_seconds: watchDuration,
+        }),
+      })
+    } catch (e) {
+      console.error('Save stats error:', e)
+    }
+  }
+
+  // Загрузка статистики просмотра
+  const loadWatchStats = async () => {
+    setStatsLoading(true)
+    try {
+      const res = await fetch(
+        `${supabaseUrl}/rest/v1/watch_party_stats?room_id=eq.${roomId}&order=joined_at.asc`,
+        { headers: { 'apikey': supabaseAnonKey } }
+      )
+      if (res.ok) {
+        const data = await res.json()
+        const viewers = data.map((s: any) => ({
+          nickname: s.user_nickname,
+          avatar: s.user_avatar,
+          joined_at: s.joined_at,
+          watch_duration_seconds: s.watch_duration_seconds || 0,
+        }))
+        setWatchStats({
+          room_id: roomId,
+          anime_title: animeTitle,
+          total_viewers: data.length,
+          viewers,
+        })
+      }
+    } catch (e) {
+      console.error('Load stats error:', e)
+    } finally {
+      setStatsLoading(false)
+    }
+  }
+
+  // Форматирование времени просмотра
+  const formatWatchDuration = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    if (mins >= 60) {
+      const hrs = Math.floor(mins / 60)
+      const remainingMins = mins % 60
+      return `${hrs}ч ${remainingMins}м`
+    }
+    return `${mins}м ${secs}с`
+  }
+
   if (showSetup) {
     return (
       <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 overflow-y-auto">
@@ -356,6 +465,15 @@ export default function WatchParty({ episodeId, videoUrl, animeTitle, onClose }:
           </span>
         </div>
         <div className="flex items-center gap-2">
+          {isHost && (
+            <button
+              onClick={loadWatchStats}
+              className="bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg text-xs transition flex items-center gap-1"
+              title="Показать статистику"
+            >
+              📊 Статистика
+            </button>
+          )}
           {isHost && participants.length > 0 && (
             <span className="text-xs text-gray-400 hidden sm:block">
               Пригласи друзей в панели справа 👉
@@ -542,6 +660,79 @@ export default function WatchParty({ episodeId, videoUrl, animeTitle, onClose }:
           </div>
         </div>
       </div>
+
+      {/* Модальное окно статистики */}
+      {showStats && watchStats && (
+        <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4">
+          <div className="glass rounded-3xl p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-white">📊 Статистика просмотра</h3>
+              <button
+                onClick={() => setShowStats(false)}
+                className="text-gray-400 hover:text-white text-2xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            {statsLoading ? (
+              <div className="space-y-3">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 bg-white/5 rounded-xl animate-pulse">
+                    <div className="w-10 h-10 rounded-full bg-white/10" />
+                    <div className="flex-1 h-4 bg-white/10 rounded" />
+                    <div className="w-20 h-4 bg-white/10 rounded" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <>
+                <div className="mb-4 p-4 bg-neo-pink/10 border border-neo-pink/30 rounded-xl">
+                  <p className="text-gray-400 text-sm mb-1">Аниме</p>
+                  <p className="text-white font-semibold">{watchStats.anime_title || 'Не указано'}</p>
+                  <p className="text-gray-400 text-sm mt-3 mb-1">Всего зрителей</p>
+                  <p className="text-2xl font-bold text-neo-pink">{watchStats.total_viewers}</p>
+                </div>
+
+                <h4 className="text-white font-semibold mb-3">👥 Зрители</h4>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {watchStats.viewers.map((viewer, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-3 p-3 bg-white/5 rounded-xl"
+                    >
+                      {viewer.avatar ? (
+                        <img src={viewer.avatar} alt={viewer.nickname} className="w-10 h-10 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-neo-pink to-neo-red flex items-center justify-center text-white font-bold flex-shrink-0">
+                          {viewer.nickname.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white font-medium truncate">{viewer.nickname}</p>
+                        <p className="text-gray-400 text-xs">
+                          {new Date(viewer.joined_at).toLocaleDateString('ru-RU', {
+                            day: 'numeric',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-neo-pink font-semibold text-sm">
+                          {formatWatchDuration(viewer.watch_duration_seconds)}
+                        </p>
+                        <p className="text-gray-500 text-xs">просмотр</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

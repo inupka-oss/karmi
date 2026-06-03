@@ -12,7 +12,7 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [friendsCount, setFriendsCount] = useState(0)
   const { favorites } = useFavorites()
-  const { newEpisodes, clearNotifications } = useNotifications()
+  const { newEpisodes, clearNotifications, unreadCount } = useNotifications()
 
   useEffect(() => {
     const saved = localStorage.getItem('karmi-theme')
@@ -104,9 +104,9 @@ export default function Header() {
         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           <Link href="/notifications" className="relative p-2 rounded-xl bg-white/10 hover:bg-white/20 transition flex-shrink-0" onClick={() => clearNotifications()}>
             🔔
-            {newEpisodes.length > 0 && (
+            {unreadCount > 0 && (
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] sm:text-xs w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center rounded-full">
-                {newEpisodes.length}
+                {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
           </Link>
