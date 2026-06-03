@@ -43,10 +43,13 @@ const ACHIEVEMENTS: Achievement[] = [
 export default function ProfileClient({ email, accessToken }: { email: string; accessToken: string }) {
   const [nickname, setNickname] = useState(email.split('@')[0])
   const [avatar, setAvatar] = useState('')
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState('')
   const [bio, setBio] = useState('')
   const [stats, setStats] = useState<Stats | null>(null)
   const [achievements, setAchievements] = useState<Achievement[]>(ACHIEVEMENTS)
   const [loading, setLoading] = useState(true)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [activeTab, setActiveTab] = useState<'profile' | 'stats' | 'achievements'>('profile')
   const router = useRouter()
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -99,7 +102,63 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
     router.push('/login')
   }
 
+  const uploadAvatar = async (file: File): Promise<string> => {
+    setUploadingAvatar(true)
+    try {
+      const safeName = `${email.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}_${file.name}`
+      const res = await fetch(`${supabaseUrl}/storage/v1/object/avatars/${safeName}`, {
+        method: 'POST',
+        headers: {
+          'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': file.type,
+        },
+        body: file,
+      })
+      if (!res.ok) throw new Error('Upload failed')
+      return `${supabaseUrl}/storage/v1/object/public/avatars/${safeName}`
+    } catch (e) {
+      console.error('Avatar upload error:', e)
+      alert('Ошибка загрузки аватарки')
+      return ''
+    } finally {
+      setUploadingAvatar(false)
+    }
+  }
+
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    // Проверка размера (макс 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Файл слишком большой (макс 5MB)')
+      return
+    }
+    
+    // Проверка типа
+    if (!file.type.startsWith('image/')) {
+      alert('Выберите изображение')
+      return
+    }
+    
+    // Предпросмотр
+    const previewUrl = URL.createObjectURL(file)
+    setAvatarPreview(previewUrl)
+    setAvatarFile(file)
+  }
+
   const handleSave = async () => {
+    let finalAvatar = avatar
+    
+    // Если загружен новый файл, загружаем его
+    if (avatarFile) {
+      const uploadedUrl = await uploadAvatar(avatarFile)
+      if (uploadedUrl) {
+        finalAvatar = uploadedUrl
+      }
+    }
+    
     await fetch(`${supabaseUrl}/rest/v1/user_profiles`, {
       method: 'POST',
       headers: {
@@ -111,10 +170,18 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
       body: JSON.stringify({ 
         user_identifier: email, 
         nickname,
-        avatar,
+        avatar: finalAvatar,
         bio,
       }),
     })
+    
+    // Очистка
+    if (avatarPreview) {
+      URL.revokeObjectURL(avatarPreview)
+    }
+    setAvatarFile(null)
+    setAvatarPreview('')
+    
     alert('Профиль сохранён!')
   }
 
@@ -135,9 +202,14 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
         <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-neo-pink/30 via-purple-500/30 to-blue-500/30" />
         
         <div className="relative flex flex-col sm:flex-row items-center sm:items-end gap-4 mt-8">
-          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-neo-pink to-neo-red flex items-center justify-center text-4xl font-bold text-white shadow-lg">
-            {avatar ? (
-              <Image src={avatar} alt={nickname} fill className="rounded-full object-cover" />
+          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-neo-pink to-neo-red flex items-center justify-center text-4xl font-bold text-white shadow-lg relative overflow-hidden">
+            {avatarPreview || avatar ? (
+              <Image 
+                src={avatarPreview || avatar} 
+                alt={nickname} 
+                fill 
+                className="rounded-full object-cover" 
+              />
             ) : (
               nickname.charAt(0).toUpperCase()
             )}
@@ -236,14 +308,42 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
               />
             </div>
             <div>
-              <label className="text-sm text-gray-400 mb-1 block">Аватар (URL)</label>
-              <input
-                type="url"
-                value={avatar}
-                onChange={e => setAvatar(e.target.value)}
-                placeholder="https://..."
-                className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white"
-              />
+              <label className="text-sm text-gray-400 mb-1 block">Аватар</label>
+              <div className="space-y-2">
+                {/* Загрузка файлом */}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarFileChange}
+                  disabled={uploadingAvatar}
+                  className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white text-sm file:mr-2 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-neo-pink/20 file:text-neo-pink hover:file:bg-neo-pink/40 disabled:opacity-50"
+                />
+                {uploadingAvatar && (
+                  <p className="text-xs text-neo-pink">⏳ Загрузка...</p>
+                )}
+                {avatarFile && !uploadingAvatar && (
+                  <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/30 rounded-xl px-3 py-2">
+                    <span className="text-green-400 text-sm">✅ Файл выбран: {avatarFile.name}</span>
+                  </div>
+                )}
+                {/* Поле для URL (альтернатива) */}
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-white/10" />
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="px-2 bg-neo-dark text-gray-400">или через URL</span>
+                  </div>
+                </div>
+                <input
+                  type="url"
+                  value={avatar}
+                  onChange={e => setAvatar(e.target.value)}
+                  placeholder="https://..."
+                  disabled={!!avatarFile}
+                  className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white disabled:opacity-50"
+                />
+              </div>
             </div>
             <div className="flex gap-3 pt-4">
               <button onClick={handleSave} className="bg-neo-pink hover:bg-neo-pink/80 text-white px-6 py-2 rounded-xl">
