@@ -1,6 +1,8 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import AdminPanel from '@/components/AdminPanel'
+import AdminStats from '@/components/AdminStats'
+import CommentModeration from '@/components/CommentModeration'
 
 export const dynamic = 'force-dynamic'
 
@@ -42,5 +44,13 @@ export default async function DashboardPage() {
   })
   const user = await userRes.json()
 
-  return <AdminPanel userEmail={user.email} stats={{ totalAnime, totalEpisodes }} genres={genres} initialAnime={animeList} />
+  return (
+    <div className="space-y-8">
+      <AdminStats />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <CommentModeration />
+        <AdminPanel userEmail={user.email} stats={{ totalAnime, totalEpisodes }} genres={genres} initialAnime={animeList} />
+      </div>
+    </div>
+  )
 }

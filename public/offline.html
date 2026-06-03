@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Нет соединения | Karmi</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      padding: 20px;
+    }
+    .container {
+      text-align: center;
+      max-width: 400px;
+    }
+    .icon {
+      font-size: 80px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      font-size: 28px;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, #ff6b9d, #c44569);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    p {
+      color: #888;
+      margin-bottom: 30px;
+      line-height: 1.6;
+    }
+    button {
+      background: linear-gradient(135deg, #ff6b9d, #c44569);
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(255, 107, 157, 0.3);
+    }
+    .cached {
+      margin-top: 30px;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+    }
+    .cached h3 {
+      font-size: 16px;
+      margin-bottom: 10px;
+      color: #fff;
+    }
+    .cached ul {
+      list-style: none;
+      text-align: left;
+    }
+    .cached li {
+      padding: 8px 0;
+      color: #888;
+      font-size: 14px;
+    }
+    .cached li a {
+      color: #ff6b9d;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">📡</div>
+    <h1>Нет соединения</h1>
+    <p>Кажется, вы офлайн. Проверьте подключение к интернету или посмотрите ранее загруженные страницы.</p>
+    <button onclick="window.location.reload()">🔄 Попробовать снова</button>
+    
+    <div class="cached">
+      <h3>📚 Доступно офлайн:</h3>
+      <ul>
+        <li><a href="/">🏠 Главная страница</a></li>
+        <li><a href="/catalog">📖 Каталог аниме</a></li>
+        <li><a href="/favorites">❤️ Избранное</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    // Проверяем подключение
+    window.addEventListener('online', () => {
+      window.location.reload()
+    })
+  </script>
+</body>
+</html>

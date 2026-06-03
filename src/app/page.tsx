@@ -3,6 +3,9 @@ import AnimeGrid from '@/components/AnimeGrid'
 import SearchBar from '@/components/SearchBar'
 import RandomAnimeButton from '@/components/RandomAnimeButton'
 import RecentUpdatesSlider from '@/components/RecentUpdatesSlider'
+import HeroSlider from '@/components/HeroSlider'
+import ContinueWatching from '@/components/ContinueWatching'
+import Recommendations from '@/components/Recommendations'
 import Link from 'next/link'
 
 async function getGenres() {
@@ -43,6 +46,13 @@ export default async function HomePage({
     .select(`*, genres(name, slug)`)
     .order('rating', { ascending: false })
     .limit(10)
+
+  // Для Hero-слайдера (топ по рейтингу с баннерами или просто топ)
+  const { data: heroItems } = await supabase
+    .from('anime')
+    .select(`*, genres(name, slug)`)
+    .order('rating', { ascending: false })
+    .limit(5)
 
   // Онгоинги
   const { data: ongoing } = await supabase
@@ -85,6 +95,17 @@ export default async function HomePage({
       <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-4 sm:mb-6 text-glow-white">
         Kar<span className="text-neo-pink text-glow-pink">mi</span>
       </h1>
+
+      {/* Hero-слайдер */}
+      {heroItems && heroItems.length > 0 && (
+        <HeroSlider items={heroItems} />
+      )}
+
+      {/* Продолжить просмотр */}
+      <ContinueWatching />
+
+      {/* Рекомендации */}
+      <Recommendations />
 
       {/* Строка поиска и кнопка случайного аниме */}
       <div className="flex flex-wrap items-center gap-3 mb-4 sm:mb-6">

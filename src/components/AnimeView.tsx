@@ -8,6 +8,7 @@ import RelatedAnime from './RelatedAnime'
 import EpisodeList from './EpisodeList'
 import AnimeActions from './AnimeActions'
 import ScreenshotGallery from './ScreenshotGallery'
+import AIRecommendations from './AIRecommendations'
 import { useNotifications } from '@/hooks/useNotifications'
 import { useActiveViewers } from '@/hooks/useActiveViewers'
 
@@ -206,6 +207,7 @@ export default function AnimeView({
 
       <ScreenshotGallery animeId={anime.id} />
       <RelatedAnime animeId={anime.id} />
+      <AIRecommendations animeId={anime.id} />
       <CommentSection animeId={anime.id} />
     </div>
   )

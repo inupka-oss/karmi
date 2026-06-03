@@ -1,6 +1,9 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import ProfileClient from '@/components/ProfileClient'
+import Leaderboard from '@/components/Leaderboard'
+import Challenges from '@/components/Challenges'
+import CollectionCards from '@/components/CollectionCards'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,5 +32,16 @@ export default async function ProfilePage() {
   const payload = parseJwt(accessToken)
   const email = payload?.email || 'Пользователь'
 
-  return <ProfileClient email={email} accessToken={accessToken} />
+  return (
+    <div className="max-w-6xl mx-auto px-4 py-8">
+      <ProfileClient email={email} accessToken={accessToken} />
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8 mb-8">
+        <Challenges />
+        <Leaderboard />
+      </div>
+      
+      <CollectionCards userId={email} />
+    </div>
+  )
 }
