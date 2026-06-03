@@ -308,8 +308,8 @@ export default function CommentSection({ animeId }: { animeId: string }) {
     })
 
     try {
-      // Используем RPC функцию вместо прямого INSERT (обходит кэш схемы)
-      const response = await fetch(`${supabaseUrl}/rest/v1/rpc/add_comment`, {
+      // Используем RPC функцию (обходит кэш схемы REST API)
+      const response = await fetch(`${supabaseUrl}/rest/v1/rpc/submit_anime_comment`, {
         method: 'POST',
         headers: {
           'apikey': supabaseAnonKey,
@@ -353,7 +353,7 @@ export default function CommentSection({ animeId }: { animeId: string }) {
     }
 
     // Используем RPC функцию для ответа
-    await fetch(`${supabaseUrl}/rest/v1/rpc/add_comment`, {
+    await fetch(`${supabaseUrl}/rest/v1/rpc/submit_anime_comment`, {
       method: 'POST',
       headers: {
         'apikey': supabaseAnonKey,
