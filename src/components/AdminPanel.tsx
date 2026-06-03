@@ -214,7 +214,6 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
         return
       }
     }
-
     const accessToken = getAccessToken()
     const animeData = {
       title_ru: titleRu,
@@ -231,7 +230,6 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
       trailer_url: trailerUrl || null,
       day_of_week: dayOfWeek ?? null,
     }
-
     if (editingAnime) {
       const res = await fetch(`${supabaseUrl}/rest/v1/anime?id=eq.${editingAnime.id}`, {
         method: 'PATCH',
@@ -246,7 +244,6 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
       if (!res.ok) { toast.error('Ошибка обновления'); setUploading(false); return }
       const updatedAnime = (await res.json())[0]
       toast.success('Аниме обновлено!')
-
       await fetch(`${supabaseUrl}/rest/v1/anime_genres?anime_id=eq.${editingAnime.id}`, {
         method: 'DELETE',
         headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${accessToken}` },
@@ -264,7 +261,6 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
           })
         ))
       }
-
       setAnimeList(prev => prev.map(a => a.id === editingAnime.id ? { ...updatedAnime, genres: genres.filter(g => selectedGenres.includes(g.id)) } : a))
     } else {
       const res = await fetch(`${supabaseUrl}/rest/v1/anime`, {
@@ -279,7 +275,6 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
       if (!res.ok) { toast.error('Ошибка создания'); setUploading(false); return }
       const newAnime = await res.json()
       toast.success('Аниме добавлено!')
-
       if (selectedGenres.length > 0) {
         await Promise.all(selectedGenres.map(genreId =>
           fetch(`${supabaseUrl}/rest/v1/anime_genres`, {
@@ -293,10 +288,8 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
           })
         ))
       }
-
       setAnimeList(prev => [{ ...newAnime, genres: genres.filter(g => selectedGenres.includes(g.id)) }, ...prev])
     }
-
     setShowModal(false)
     resetForm()
     setUploading(false)
@@ -381,17 +374,13 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     }
   }
 
-  // Загрузка видео в S3 (Timeweb, Selectel, любой совместимый)
   const handleAddEpisode = async (animeId: string) => {
     let finalVideoUrl = episodeForm.video_url
-
     if (videoFile) {
       setUploadingVideo(true)
       try {
         const safeName = videoFile.name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._-]/g, '')
         const fileName = `${Date.now()}_${safeName}`
-
-        // 1. Получаем presigned URL от нашего API
         const presignedRes = await fetch('/api/s3-upload', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -402,8 +391,6 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
           throw new Error(error.error || 'Failed to get upload URL')
         }
         const { uploadUrl, publicUrl } = await presignedRes.json()
-
-        // 2. Загружаем файл напрямую в облако
         const uploadRes = await fetch(uploadUrl, {
           method: 'PUT',
           headers: { 'Content-Type': videoFile.type },
@@ -413,7 +400,6 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
           const errorText = await uploadRes.text()
           throw new Error(errorText || 'Upload failed')
         }
-
         finalVideoUrl = publicUrl
         toast.success('Видео загружено в облако')
         setUploadingVideo(false)
@@ -425,7 +411,6 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
       }
       return
     }
-
     if (finalVideoUrl) {
       await saveEpisode(animeId, finalVideoUrl)
     } else {
@@ -489,7 +474,6 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
       toast.error('Невалидный JSON массив')
       return
     }
-
     const accessToken = getAccessToken()
     let added = 0
     for (const ep of episodes) {
@@ -545,7 +529,6 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
       })
       if (!res.ok) throw new Error('Upload failed')
       const publicUrl = `${supabaseUrl}/storage/v1/object/public/screenshots/${screenshotFile.name}`
-
       await fetch(`${supabaseUrl}/rest/v1/screenshots`, {
         method: 'POST',
         headers: {
@@ -580,12 +563,10 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
     if (currentIndex === -1) return
     const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
     if (newIndex < 0 || newIndex >= screenshots.length) return
-
     const updatedScreenshots = [...screenshots]
     const temp = updatedScreenshots[currentIndex]
     updatedScreenshots[currentIndex] = updatedScreenshots[newIndex]
     updatedScreenshots[newIndex] = temp
-
     const accessToken = getAccessToken()
     await Promise.all([
       fetch(`${supabaseUrl}/rest/v1/screenshots?id=eq.${updatedScreenshots[currentIndex].id}`, {
@@ -607,17 +588,19 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
         body: JSON.stringify({ order_index: newIndex }),
       }),
     ])
-
     setScreenshots(updatedScreenshots)
   }
 
-  // Комментарии
+  // Комментарии (исправленные, без вызова SQL-функций)
   const loadComments = async (animeId: string) => {
     setLoadingComments(true)
     const accessToken = getAccessToken()
-    const res = await fetch(`${supabaseUrl}/rest/v1/comments?anime_id=eq.${animeId}&order=created_at.desc`, {
-      headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${accessToken}` },
-    })
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/comments?anime_id=eq.${animeId}&order=created_at.desc`,
+      {
+        headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${accessToken}` },
+      }
+    )
     if (res.ok) {
       const data = await res.json()
       setComments(data)
