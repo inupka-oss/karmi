@@ -299,27 +299,39 @@ export default function CommentSection({ animeId }: { animeId: string }) {
     const token = getAccessToken()
     const submitName = currentUser?.name || name || 'Аноним'
 
-    await fetch(`${supabaseUrl}/rest/v1/comments`, {
-      method: 'POST',
-      headers: {
-        'apikey': supabaseAnonKey,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=representation',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
-      body: JSON.stringify({
-        anime_id: animeId,
-        user_id: currentUser?.id,
-        user_name: submitName,
-        user_avatar: '',
-        content: text,
-        parent_id: null,
-        likes: 0,
-        dislikes: 0,
-      }),
-    })
-    setText('')
-    loadComments()
+    try {
+      const response = await fetch(`${supabaseUrl}/rest/v1/comments`, {
+        method: 'POST',
+        headers: {
+          'apikey': supabaseAnonKey,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+        body: JSON.stringify({
+          anime_id: animeId,
+          user_id: currentUser?.id,
+          user_name: submitName,
+          content: text,
+          parent_id: null,
+          likes: 0,
+          dislikes: 0,
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        console.error('Comment submit error:', error)
+        alert('Ошибка: ' + (error.message || 'Не удалось отправить комментарий'))
+        return
+      }
+
+      setText('')
+      loadComments()
+    } catch (error) {
+      console.error('Comment submit error:', error)
+      alert('Ошибка при отправке комментария')
+    }
   }
 
   const handleReply = async (parentComment: Comment, content: string) => {

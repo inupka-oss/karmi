@@ -10,9 +10,17 @@ interface Participant {
   lastPing: number
 }
 
+interface Friend {
+  id: string
+  nickname: string
+  avatar?: string
+  isOnline?: boolean
+}
+
 interface WatchPartyProps {
   episodeId: string
   videoUrl: string
+  animeTitle?: string
   onClose: () => void
 }
 
@@ -20,21 +28,26 @@ function generateRoomId(): string {
   return Math.random().toString(36).substring(2, 8).toUpperCase()
 }
 
-export default function WatchParty({ episodeId, videoUrl, onClose }: WatchPartyProps) {
+export default function WatchParty({ episodeId, videoUrl, animeTitle, onClose }: WatchPartyProps) {
   const [roomId, setRoomId] = useState<string>('')
   const [isHost, setIsHost] = useState(false)
   const [participants, setParticipants] = useState<Participant[]>([])
+  const [friends, setFriends] = useState<Friend[]>([])
+  const [showFriendsList, setShowFriendsList] = useState(false)
+  const [invitingFriend, setInvitingFriend] = useState<string | null>(null)
   const [currentTime, setCurrentTime] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
   const [chatMessages, setChatMessages] = useState<Array<{ user: string; message: string; timestamp: number }>>([])
   const [chatInput, setChatInput] = useState('')
   const [nickname, setNickname] = useState('')
   const [showSetup, setShowSetup] = useState(true)
+  const [userId, setUserId] = useState<string | null>(null)
   
   const videoRef = useRef<HTMLVideoElement>(null)
   const channelRef = useRef<any>(null)
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
   useEffect(() => {
     return () => {
@@ -43,6 +56,59 @@ export default function WatchParty({ episodeId, videoUrl, onClose }: WatchPartyP
       }
     }
   }, [])
+
+  // Загрузка друзей
+  const loadFriends = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      
+      setUserId(user.id)
+      
+      const { data } = await supabase
+        .from('user_friends_with_profiles')
+        .select('*')
+        .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`)
+        .eq('status', 'accepted')
+      
+      if (data) {
+        const friendsList = data.map((f: any) => ({
+          id: f.friend_id === user.id ? f.user_id : f.friend_id,
+          nickname: f.friend_nickname || 'Друг',
+          avatar: f.friend_avatar,
+          isOnline: false, // Можно добавить через Realtime
+        }))
+        setFriends(friendsList)
+      }
+    } catch (e) {
+      console.error('Load friends error:', e)
+    }
+  }
+
+  // Приглашение друга
+  const inviteFriend = async (friendId: string) => {
+    if (!roomId || !userId) return
+    
+    setInvitingFriend(friendId)
+    
+    try {
+      // Отправляем уведомление
+      await supabase.rpc('send_watch_party_invite', {
+        p_user_id: userId,
+        p_friend_id: friendId,
+        p_room_id: roomId,
+        p_anime_title: animeTitle || 'Аниме',
+      })
+      
+      alert('Приглашение отправлено!')
+    } catch (e) {
+      console.error('Invite error:', e)
+      alert('Ошибка при отправке приглашения')
+    } finally {
+      setInvitingFriend(null)
+      setShowFriendsList(false)
+    }
+  }
 
   const joinParty = async (room: string, asHost: boolean = false) => {
     if (!nickname.trim()) {
@@ -122,7 +188,10 @@ export default function WatchParty({ episodeId, videoUrl, onClose }: WatchPartyP
 
   const createParty = () => {
     const newRoomId = generateRoomId()
+    setRoomId(newRoomId)
     joinParty(newRoomId, true)
+    // Загружаем друзей после создания комнаты
+    setTimeout(() => loadFriends(), 500)
   }
 
   const handlePlayPause = () => {
@@ -268,12 +337,22 @@ export default function WatchParty({ episodeId, videoUrl, onClose }: WatchPartyP
             Комната: {roomId}
           </span>
           {isHost && (
-            <button
-              onClick={copyInviteLink}
-              className="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded-lg text-sm transition"
-            >
-              📋 Пригласить
-            </button>
+            <>
+              <button
+                onClick={copyInviteLink}
+                className="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded-lg text-sm transition"
+                title="Скопировать ссылку"
+              >
+                📋 Ссылка
+              </button>
+              <button
+                onClick={() => setShowFriendsList(!showFriendsList)}
+                className="bg-neo-pink/20 hover:bg-neo-pink/40 text-neo-pink px-3 py-1 rounded-lg text-sm transition"
+                title="Пригласить друзей"
+              >
+                👥 Друзья
+              </button>
+            </>
           )}
         </div>
         <button
@@ -283,6 +362,50 @@ export default function WatchParty({ episodeId, videoUrl, onClose }: WatchPartyP
           ✕
         </button>
       </div>
+
+      {/* Список друзей для приглашения */}
+      {showFriendsList && isHost && (
+        <div className="glass border-b border-white/10 p-4 max-h-48 overflow-y-auto">
+          <h3 className="text-white font-semibold mb-3">Пригласить друзей:</h3>
+          {friends.length === 0 ? (
+            <p className="text-gray-400 text-sm">У вас пока нет друзей. Добавьте друзей в профиле!</p>
+          ) : (
+            <div className="space-y-2">
+              {friends.map((friend) => (
+                <div
+                  key={friend.id}
+                  className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2"
+                >
+                  <div className="flex items-center gap-2">
+                    {friend.avatar ? (
+                      <img src={friend.avatar} alt={friend.nickname} className="w-8 h-8 rounded-full" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-neo-pink/20 flex items-center justify-center text-neo-pink">
+                        {friend.nickname[0].toUpperCase()}
+                      </div>
+                    )}
+                    <span className="text-white text-sm">{friend.nickname}</span>
+                    {friend.isOnline && (
+                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => inviteFriend(friend.id)}
+                    disabled={invitingFriend === friend.id}
+                    className={`px-3 py-1 rounded-lg text-xs font-medium transition ${
+                      invitingFriend === friend.id
+                        ? 'bg-gray-500 text-gray-300'
+                        : 'bg-neo-pink hover:bg-neo-pink/80 text-white'
+                    }`}
+                  >
+                    {invitingFriend === friend.id ? '⏳...' : 'Пригласить'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="flex-1 flex flex-col lg:flex-row">
         {/* Видео */}

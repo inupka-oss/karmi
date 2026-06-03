@@ -4,6 +4,7 @@ import ProfileClient from '@/components/ProfileClient'
 import Leaderboard from '@/components/Leaderboard'
 import Challenges from '@/components/Challenges'
 import CollectionCards from '@/components/CollectionCards'
+import FriendsList from '@/components/FriendsList'
 
 export const dynamic = 'force-dynamic'
 
@@ -38,10 +39,13 @@ export default async function ProfilePage() {
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8 mb-8">
         <Challenges />
-        <Leaderboard />
+        <FriendsList />
       </div>
       
-      <CollectionCards userId={email} />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <Leaderboard />
+        <CollectionCards userId={email} />
+      </div>
     </div>
   )
 }
