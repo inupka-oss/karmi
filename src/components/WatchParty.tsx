@@ -120,6 +120,25 @@ export default function WatchParty({ episodeId, videoUrl, animeTitle, onClose }:
     setIsHost(asHost)
     setShowSetup(false)
 
+    // Загружаем аватарку пользователя из профиля
+    let userAvatar: string | undefined = undefined
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const res = await fetch(`${supabaseUrl}/rest/v1/user_profiles?user_identifier=eq.${user.email}`, {
+          headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${supabase.auth.session()?.access_token}` },
+        })
+        if (res.ok) {
+          const data = await res.json()
+          if (data.length > 0 && data[0].avatar) {
+            userAvatar = data[0].avatar
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Load avatar error:', e)
+    }
+
     // Подключаемся к Realtime каналу
     const supabase = createClient(supabaseUrl, supabaseAnonKey)
     const channel = supabase.channel(`watchparty:${room}`)
@@ -158,10 +177,11 @@ export default function WatchParty({ episodeId, videoUrl, animeTitle, onClose }:
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
-          // Присоединяемся к presence
+          // Присоединяемся к presence с аватаркой
           await channel.track({
             id: nickname,
             nickname,
+            avatar: userAvatar,
             isReady: true,
             lastPing: Date.now(),
           })
@@ -405,9 +425,13 @@ export default function WatchParty({ episodeId, videoUrl, animeTitle, onClose }:
             <div className="space-y-2">
               {participants.map((p) => (
                 <div key={p.id} className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-neo-pink to-neo-red flex items-center justify-center text-white text-sm font-bold">
-                    {p.nickname.charAt(0).toUpperCase()}
-                  </div>
+                  {p.avatar ? (
+                    <img src={p.avatar} alt={p.nickname} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-neo-pink to-neo-red flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                      {p.nickname.charAt(0).toUpperCase()}
+                    </div>
+                  )}
                   <span className="text-white text-sm">{p.nickname}</span>
                   {p.id === nickname && (
                     <span className="text-xs text-gray-400">(вы)</span>

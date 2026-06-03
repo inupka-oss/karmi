@@ -6,6 +6,7 @@ interface Comment {
   anime_id: string
   user_id?: string
   user_name: string
+  user_avatar?: string
   content: string
   created_at: string
   parent_id?: string
@@ -46,9 +47,13 @@ function CommentItem({
       <div className="glass p-4 rounded-xl mb-3">
         <div className="flex items-start justify-between gap-3 mb-2">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-neo-pink to-neo-red flex items-center justify-center text-white text-sm font-bold">
-              {comment.user_name.charAt(0).toUpperCase()}
-            </div>
+            {comment.user_avatar ? (
+              <img src={comment.user_avatar} alt={comment.user_name} className="w-8 h-8 rounded-full object-cover" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-neo-pink to-neo-red flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                {comment.user_name.charAt(0).toUpperCase()}
+              </div>
+            )}
             <div>
               <span className="text-white font-medium block">
                 {comment.user_name}
@@ -196,15 +201,26 @@ export default function CommentSection({ animeId }: { animeId: string }) {
   // Загрузка комментариев
   const loadComments = async () => {
     try {
+      // Загружаем комментарии с джойном к профилям для аватарок
       const res = await fetch(
-        `${supabaseUrl}/rest/v1/comments?anime_id=eq.${animeId}&order=created_at.desc`,
+        `${supabaseUrl}/rest/v1/comments?anime_id=eq.${animeId}&select=*,user_profiles!inner(avatar)&order=created_at.desc`,
         { headers: { 'apikey': supabaseAnonKey } }
       )
-      if (!res.ok) {
-        console.error('Load comments error:', await res.text())
-        return
+      
+      // Если не получилось с джойном, пробуем без
+      let allComments: Comment[] = []
+      if (res.ok) {
+        allComments = await res.json()
+      } else {
+        const simpleRes = await fetch(
+          `${supabaseUrl}/rest/v1/comments?anime_id=eq.${animeId}&order=created_at.desc`,
+          { headers: { 'apikey': supabaseAnonKey } }
+        )
+        if (simpleRes.ok) {
+          allComments = await simpleRes.json()
+        }
       }
-      const allComments: Comment[] = await res.json()
+      
       const commentMap = new Map<string, Comment>()
       const rootComments: Comment[] = []
       allComments.forEach(c => {
@@ -262,11 +278,29 @@ export default function CommentSection({ animeId }: { animeId: string }) {
       if (token) {
         ;(headers as Record<string, string>)['Authorization'] = `Bearer ${token}`
       }
+      
+      // Получаем user_id из токена
+      let userId: string | undefined = undefined
+      if (token) {
+        try {
+          const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
+            headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${token}` },
+          })
+          if (userRes.ok) {
+            const userData = await userRes.json()
+            userId = userData.id
+          }
+        } catch (e) {
+          console.error('Get user ID error:', e)
+        }
+      }
+      
       const res = await fetch(`${supabaseUrl}/rest/v1/comments`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
           anime_id: animeId,
+          user_id: userId,
           user_name: displayName,
           content: text,
           parent_id: null,
@@ -303,11 +337,29 @@ export default function CommentSection({ animeId }: { animeId: string }) {
       if (token) {
         ;(headers as Record<string, string>)['Authorization'] = `Bearer ${token}`
       }
+      
+      // Получаем user_id
+      let userId: string | undefined = undefined
+      if (token) {
+        try {
+          const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
+            headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${token}` },
+          })
+          if (userRes.ok) {
+            const userData = await userRes.json()
+            userId = userData.id
+          }
+        } catch (e) {
+          console.error('Get user ID error:', e)
+        }
+      }
+      
       await fetch(`${supabaseUrl}/rest/v1/comments`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
           anime_id: animeId,
+          user_id: userId,
           user_name: displayName,
           content: content,
           parent_id: parentId,
