@@ -115,28 +115,30 @@ export default function CollectionCards({ userId }: { userId?: string }) {
   }
 
   return (
-    <div className="glass rounded-2xl p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+    <div className="glass rounded-2xl p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 sm:mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
           🎴 Коллекционные карточки
-          <span className="text-sm font-normal text-gray-400">
+          <span className="text-xs sm:text-sm font-normal text-gray-400">
             ({cards.length} шт.)
           </span>
         </h2>
         
-        {/* Фильтры по редкости */}
-        <div className="flex gap-2">
+        {/* Фильтры по редкости - скролл на мобильных */}
+        <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {Object.entries(rarityConfig).map(([key, config]) => (
             <button
               key={key}
               onClick={() => setFilter(key as any)}
-              className={`px-3 py-1 rounded-lg text-xs font-medium transition ${
+              className={`flex-shrink-0 px-2 sm:px-3 py-1.5 sm:py-1 rounded-lg text-xs font-medium transition whitespace-nowrap ${
                 filter === key
                   ? `${config.bg} ${config.border} border text-white`
                   : 'bg-white/5 text-gray-400 hover:text-white'
               }`}
             >
-              {rarityIcons[key as keyof typeof rarityIcons]} {config.label} ({getRarityCount(key)})
+              <span className="hidden sm:inline">{rarityIcons[key as keyof typeof rarityIcons]} {config.label}</span>
+              <span className="sm:hidden">{rarityIcons[key as keyof typeof rarityIcons]}</span>
+              <span className="ml-1 text-[10px]">({getRarityCount(key)})</span>
             </button>
           ))}
         </div>
@@ -160,14 +162,14 @@ export default function CollectionCards({ userId }: { userId?: string }) {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
             {filteredCards.map((card) => {
               const config = rarityConfig[card.rarity]
               return (
                 <button
                   key={card.id}
                   onClick={() => setSelectedCard(card)}
-                  className={`group relative aspect-[3/4] rounded-2xl overflow-hidden border-2 ${config.border} ${config.bg} hover:shadow-lg ${config.glow} transition-all duration-300 hover:scale-105`}
+                  className={`group relative aspect-[3/4] rounded-xl sm:rounded-2xl overflow-hidden border-2 ${config.border} ${config.bg} hover:shadow-lg ${config.glow} transition-all duration-300 hover:scale-105`}
                 >
                   {/* Постер аниме */}
                   <Image
@@ -181,14 +183,14 @@ export default function CollectionCards({ userId }: { userId?: string }) {
                   <div className={`absolute inset-0 bg-gradient-to-br ${config.color} opacity-20 group-hover:opacity-30 transition`} />
                   
                   {/* Иконка редкости */}
-                  <div className="absolute top-2 right-2 text-2xl">
+                  <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 text-xl sm:text-2xl">
                     {rarityIcons[card.rarity]}
                   </div>
                   
                   {/* Название */}
-                  <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black to-transparent">
-                    <p className="text-white text-sm font-semibold truncate">{card.anime_title}</p>
-                    <p className="text-xs text-gray-400">{config.label}</p>
+                  <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-3 bg-gradient-to-t from-black to-transparent">
+                    <p className="text-white text-xs sm:text-sm font-semibold truncate">{card.anime_title}</p>
+                    <p className="text-[10px] sm:text-xs text-gray-400">{config.label}</p>
                   </div>
                   
                   {/* Блик при наведении */}
@@ -205,12 +207,12 @@ export default function CollectionCards({ userId }: { userId?: string }) {
               onClick={() => setSelectedCard(null)}
             >
               <div 
-                className="relative max-w-md w-full glass rounded-3xl overflow-hidden"
+                className="relative max-w-sm w-full glass rounded-2xl overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
               >
                 <button
                   onClick={() => setSelectedCard(null)}
-                  className="absolute top-4 right-4 z-10 text-white/50 hover:text-white text-2xl"
+                  className="absolute top-3 right-3 z-10 text-white/50 hover:text-white text-2xl"
                 >
                   ✕
                 </button>
@@ -225,21 +227,21 @@ export default function CollectionCards({ userId }: { userId?: string }) {
                   <div className={`absolute inset-0 bg-gradient-to-br ${rarityConfig[selectedCard.rarity].color} opacity-30`} />
                 </div>
                 
-                <div className="p-6">
+                <div className="p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-3xl">{rarityIcons[selectedCard.rarity]}</span>
-                    <span className={`text-sm font-medium px-3 py-1 rounded-full ${rarityConfig[selectedCard.rarity].bg}`}>
+                    <span className="text-2xl">{rarityIcons[selectedCard.rarity]}</span>
+                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${rarityConfig[selectedCard.rarity].bg}`}>
                       {rarityConfig[selectedCard.rarity].label}
                     </span>
                   </div>
                   
-                  <h3 className="text-2xl font-bold text-white mb-2">{selectedCard.anime_title}</h3>
+                  <h3 className="text-lg font-bold text-white mb-2 line-clamp-2">{selectedCard.anime_title}</h3>
                   
-                  <p className="text-gray-400 text-sm mb-4">
+                  <p className="text-gray-400 text-xs mb-4">
                     Получено {new Date(selectedCard.obtained_at).toLocaleDateString('ru-RU')}
                   </p>
                   
-                  <div className="flex items-center gap-4 text-sm text-gray-400">
+                  <div className="flex items-center gap-3 text-xs text-gray-400">
                     <span>🎴 #{selectedCard.id.slice(0, 8)}</span>
                     <span>✨ Уникальный дизайн</span>
                   </div>
