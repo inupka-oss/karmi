@@ -32,7 +32,7 @@ export default async function TopPage({
   const supabase = await createServerSupabase()
 
   // Получаем жанры для фильтра
-  const { data: genres } = await supabase
+  const { data: genres, error: genresError } = await supabase
     .from('genres')
     .select('*')
     .order('name')
@@ -68,7 +68,12 @@ export default async function TopPage({
       query = query.order('rating', { ascending: false }).limit(100)
   }
 
-  const { data: anime } = await query
+  const { data: anime, error: animeError } = await query
+
+  // Логирование ошибок (в консоли сервера)
+  if (animeError) {
+    console.error('Error loading top anime:', animeError)
+  }
 
   return (
     <div className="min-h-screen px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-7xl mx-auto">

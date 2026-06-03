@@ -6,7 +6,6 @@ import Header from '@/components/Header'
 import ScrollToTopButton from '@/components/ScrollToTopButton'
 import ProgressBar from './ProgressBar'
 import Footer from '@/components/Footer'
-import BottomNav from '@/components/BottomNav'
 
 const rubik = Rubik({ subsets: ['cyrillic', 'latin'], variable: '--font-rubik' })
 
@@ -42,7 +41,6 @@ export default function RootLayout({
           {children}
         </main>
         <Footer />
-        <BottomNav />
         <ScrollToTopButton />
         <PWAInstall />
       </body>
