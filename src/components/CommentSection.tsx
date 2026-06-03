@@ -512,4 +512,8 @@ export default function CommentSection({ animeId }: { animeId: string }) {
       )}
     </div>
   )
+
+
+  
+
 }
