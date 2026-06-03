@@ -14,6 +14,8 @@ interface Comment {
   replies?: Comment[]
 }
 
+type ReactionType = 'like' | 'dislike'
+
 interface User {
   id: string
   name: string
@@ -29,8 +31,8 @@ function CommentItem({
 }: { 
   comment: Comment
   onReply: (parentId: string, content: string) => Promise<void>
-  onLike: (commentId: string) => Promise<void>
-  onDislike: (commentId: string) => Promise<void>
+  onLike: (commentId: string, type: ReactionType) => Promise<void>
+  onDislike: (commentId: string, type: ReactionType) => Promise<void>
   depth?: number
 }) {
   const [showReplyForm, setShowReplyForm] = useState(false)
@@ -72,13 +74,13 @@ function CommentItem({
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1 bg-white/5 rounded-lg px-2 py-1">
               <button
-                onClick={() => onLike(comment.id)}
+                onClick={() => onLike(comment.id, 'like')}
                 className="text-sm text-gray-400 hover:text-green-400 transition"
               >
                 👍 {comment.likes || 0}
               </button>
               <button
-                onClick={() => onDislike(comment.id)}
+                onClick={() => onDislike(comment.id, 'dislike')}
                 className="text-sm text-gray-400 hover:text-red-400 transition"
               >
                 👎 {comment.dislikes || 0}
@@ -411,8 +413,8 @@ export default function CommentSection({ animeId }: { animeId: string }) {
               key={c.id}
               comment={c}
               onReply={handleReply}
-              onLike={handleReaction}
-              onDislike={handleReaction}
+              onLike={(id) => handleReaction(id, 'like')}
+              onDislike={(id) => handleReaction(id, 'dislike')}
             />
           ))}
         </div>
