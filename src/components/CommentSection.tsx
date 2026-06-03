@@ -143,9 +143,47 @@ export default function CommentSection({ animeId }: { animeId: string }) {
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
   const [userName, setUserName] = useState('')
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
   
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+  // Получаем токен
+  const getAccessToken = () => {
+    const match = document.cookie.match(/sb-access-token=([^;]+)/)
+    return match ? match[1] : null
+  }
+
+  // Проверяем авторизацию и получаем имя пользователя
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = getAccessToken()
+      if (!token) {
+        setIsLoggedIn(false)
+        return
+      }
+      try {
+        const res = await fetch(`${supabaseUrl}/auth/v1/user`, {
+          headers: { 
+            'apikey': supabaseAnonKey, 
+            'Authorization': `Bearer ${token}` 
+          },
+        })
+        if (res.ok) {
+          const userData = await res.json()
+          setIsLoggedIn(true)
+          const name = userData.email?.split('@')[0] || 'Аноним'
+          setUserName(name)
+        } else {
+          setIsLoggedIn(false)
+        }
+      } catch (e) {
+        console.error('Auth check error:', e)
+        setIsLoggedIn(false)
+      }
+    }
+    checkAuth()
+  }, [supabaseUrl, supabaseAnonKey])
 
   // Загрузка комментариев
   const loadComments = async () => {
@@ -154,21 +192,16 @@ export default function CommentSection({ animeId }: { animeId: string }) {
         `${supabaseUrl}/rest/v1/comments?anime_id=eq.${animeId}&order=created_at.desc`,
         { headers: { 'apikey': supabaseAnonKey } }
       )
-      
       if (!res.ok) {
         console.error('Load comments error:', await res.text())
         return
       }
-
       const allComments: Comment[] = await res.json()
-
       const commentMap = new Map<string, Comment>()
       const rootComments: Comment[] = []
-
       allComments.forEach(c => {
         commentMap.set(c.id, { ...c, replies: [] })
       })
-
       allComments.forEach(c => {
         const comment = commentMap.get(c.id)!
         if (c.parent_id) {
@@ -178,7 +211,6 @@ export default function CommentSection({ animeId }: { animeId: string }) {
           rootComments.push(comment)
         }
       })
-
       commentMap.forEach(c => {
         if (c.replies) {
           c.replies.sort((a, b) => 
@@ -186,7 +218,6 @@ export default function CommentSection({ animeId }: { animeId: string }) {
           )
         }
       })
-
       setComments(rootComments)
     } catch (e) {
       console.error('Load comments error:', e)
@@ -197,37 +228,38 @@ export default function CommentSection({ animeId }: { animeId: string }) {
     loadComments()
   }, [animeId])
 
-  // Отправка комментария (без авторизации)
+  // Отправка комментария
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!text.trim()) return
-
     setLoading(true)
-
+    const token = getAccessToken()
     try {
+      const headers: HeadersInit = {
+        'apikey': supabaseAnonKey,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation',
+      }
+      if (token) {
+        ;(headers as Record<string, string>)['Authorization'] = `Bearer ${token}`
+      }
       const res = await fetch(`${supabaseUrl}/rest/v1/comments`, {
         method: 'POST',
-        headers: {
-          'apikey': supabaseAnonKey,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation',
-        },
+        headers,
         body: JSON.stringify({
           anime_id: animeId,
-          user_name: userName || 'Аноним',
+          user_name: isLoggedIn ? userName : (userName || 'Аноним'),
           content: text,
           parent_id: null,
           likes: 0,
           dislikes: 0,
         }),
       })
-
       if (!res.ok) {
         const error = await res.json()
         alert('Ошибка: ' + (error.message || 'Не удалось отправить'))
         return
       }
-
       setText('')
       await loadComments()
     } catch (error) {
@@ -239,16 +271,21 @@ export default function CommentSection({ animeId }: { animeId: string }) {
 
   // Ответ на комментарий
   const handleReply = async (parentId: string, content: string) => {
+    const token = getAccessToken()
     try {
+      const headers: HeadersInit = {
+        'apikey': supabaseAnonKey,
+        'Content-Type': 'application/json',
+      }
+      if (token) {
+        ;(headers as Record<string, string>)['Authorization'] = `Bearer ${token}`
+      }
       await fetch(`${supabaseUrl}/rest/v1/comments`, {
         method: 'POST',
-        headers: {
-          'apikey': supabaseAnonKey,
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           anime_id: animeId,
-          user_name: userName || 'Аноним',
+          user_name: isLoggedIn ? userName : (userName || 'Аноним'),
           content: content,
           parent_id: parentId,
           likes: 0,
@@ -263,17 +300,15 @@ export default function CommentSection({ animeId }: { animeId: string }) {
 
   // Реакции (только для авторизованных)
   const handleReaction = async (commentId: string, type: 'like' | 'dislike') => {
-    const token = document.cookie.match(/sb-access-token=([^;]+)/)?.[1]
+    const token = getAccessToken()
     if (!token) {
-      alert('Войдите чтобы оценивать комментарии')
+      alert('Войдите чтобы оценивать')
       return
     }
-
     const comment = comments.find(c => c.id === commentId) || 
                    comments.flatMap(c => c.replies || []).find(c => c.id === commentId)
     if (!comment) return
 
-    // Оптимистичное обновление UI
     setComments(prev => prev.map(c => {
       if (c.id === commentId) {
         return {
@@ -292,7 +327,6 @@ export default function CommentSection({ animeId }: { animeId: string }) {
       return c
     }))
 
-    // Обновление в базе
     try {
       const newLikes = type === 'like' ? (comment.likes || 0) + 1 : comment.likes
       const newDislikes = type === 'dislike' ? (comment.dislikes || 0) + 1 : comment.dislikes
@@ -319,13 +353,20 @@ export default function CommentSection({ animeId }: { animeId: string }) {
       </h2>
 
       <form onSubmit={handleSubmit} className="mb-6">
-        <input
-          type="text"
-          placeholder="Ваше имя (необязательно)"
-          value={userName}
-          onChange={(e) => setUserName(e.target.value)}
-          className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 mb-2 text-white"
-        />
+        {!isLoggedIn && (
+          <input
+            type="text"
+            placeholder="Ваше имя (необязательно)"
+            value={userName}
+            onChange={(e) => setUserName(e.target.value)}
+            className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 mb-2 text-white"
+          />
+        )}
+        {isLoggedIn && (
+          <p className="text-sm text-neo-pink mb-2">
+            Вы вошли как: <span className="text-white">{userName}</span>
+          </p>
+        )}
         <textarea
           placeholder="Оставьте комментарий..."
           value={text}
