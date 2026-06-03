@@ -268,5 +268,7 @@ export default function FriendsList({ userId }: FriendsListProps) {
         )}
       </div>
     </div>
-  )
-}
+
+)
+}  
+
