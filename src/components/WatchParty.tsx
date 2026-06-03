@@ -283,10 +283,10 @@ export default function WatchParty({ episodeId, videoUrl, animeTitle, onClose }:
 
   if (showSetup) {
     return (
-      <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
-        <div className="glass rounded-3xl p-8 max-w-md w-full">
-          <h2 className="text-3xl font-bold text-white mb-2 text-center">🎉 Watch Party</h2>
-          <p className="text-gray-400 text-center mb-6">Смотрите аниме вместе с друзьями!</p>
+      <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div className="glass rounded-3xl p-4 sm:p-8 max-w-md w-full max-h-[90vh] overflow-y-auto">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 text-center">🎉 Watch Party</h2>
+          <p className="text-gray-400 text-center mb-6 text-sm sm:text-base">Смотрите аниме вместе с друзьями!</p>
           
           <div className="space-y-4">
             <div>
@@ -296,40 +296,38 @@ export default function WatchParty({ episodeId, videoUrl, animeTitle, onClose }:
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
                 placeholder="Как вас называть?"
-                className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white"
+                className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white text-sm"
                 maxLength={20}
               />
             </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={createParty}
-                className="flex-1 bg-neo-pink hover:bg-neo-pink/80 text-white py-3 rounded-xl font-semibold transition"
-              >
-                🎬 Создать комнату
-              </button>
-            </div>
+            <button
+              onClick={createParty}
+              className="w-full bg-neo-pink hover:bg-neo-pink/80 text-white py-3 rounded-xl font-semibold transition text-sm sm:text-base"
+            >
+              🎬 Создать комнату
+            </button>
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-white/20" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-neo-dark text-gray-400">или</span>
+                <span className="px-2 bg-neo-dark text-gray-400 text-xs">или</span>
               </div>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <input
                 type="text"
                 placeholder="Код комнаты"
-                className="flex-1 bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white uppercase"
+                className="flex-1 bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white uppercase text-sm"
                 maxLength={6}
                 onChange={(e) => setRoomId(e.target.value.toUpperCase())}
               />
               <button
                 onClick={() => joinParty(roomId, false)}
-                className="bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-xl font-semibold transition"
+                className="bg-white/20 hover:bg-white/30 text-white px-4 sm:px-6 py-3 rounded-xl font-semibold transition text-sm sm:text-base whitespace-nowrap"
               >
                 Войти
               </button>
