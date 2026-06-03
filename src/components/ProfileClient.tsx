@@ -309,4 +309,6 @@ function StatCard({ icon, label, value, highlight }: { icon: string; label: stri
       <div className="text-sm text-gray-400">{label}</div>
     </div>
   )
+
+  
 }
