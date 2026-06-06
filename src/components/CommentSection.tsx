@@ -408,9 +408,9 @@ export default function CommentSection({ animeId }: { animeId: string }) {
             Вы вошли как: <span className="text-white font-semibold">{userName}</span>
           </p>
         )}
-        <input
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
           placeholder="Напишите комментарий..."
           className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-neo-purple focus:ring-1 focus:ring-neo-purple/50"
           rows={3}
