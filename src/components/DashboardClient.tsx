@@ -33,7 +33,7 @@ export default function DashboardClient({ animeList, genresList }: { animeList: 
         <h1 className="text-3xl font-bold">Админ-панель Карми</h1>
         <button onClick={handleLogout} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl">Выйти</button>
       </div>
-      <button onClick={() => setOpen(true)} className="bg-neo-pink hover:bg-neo-pink/80 text-white px-4 py-2 rounded-xl mb-6">Добавить аниме</button>
+      <button onClick={() => setOpen(true)} className="bg-neo-purple hover:bg-neo-purple-dark text-white px-4 py-2 rounded-xl mb-6 shadow-neon">Добавить аниме</button>
 
       <AddAnimeDialog open={open} onOpenChange={setOpen} genresList={genresList} />
 
@@ -43,7 +43,7 @@ export default function DashboardClient({ animeList, genresList }: { animeList: 
             <div>
               <h3 className="font-bold text-lg">{anime.title_ru}</h3>
               <div className="flex gap-2 flex-wrap mt-1">
-                {anime.genres?.map((g: any) => <span key={g.slug} className="text-xs bg-neo-pink/20 text-neo-pink px-2 py-0.5 rounded-full">{g.name}</span>)}
+                {anime.genres?.map((g: any) => <span key={g.slug} className="text-xs bg-neo-purple/20 text-neo-purple-light px-2 py-0.5 rounded-full">{g.name}</span>)}
               </div>
             </div>
             <div className="flex gap-2 mt-2 sm:mt-0">
@@ -131,14 +131,12 @@ function AddAnimeDialog({ open, onOpenChange, genresList }: { open: boolean, onO
               <div className="flex flex-wrap gap-2">
                 {genresList.map(genre => (
                   <button type="button" key={genre.id} onClick={() => handleGenreToggle(genre.id)}
-                    className={`px-2 py-1 rounded-full text-xs ${selectedGenres.includes(genre.id) ? 'bg-neo-pink text-white' : 'bg-white/10 text-white/70'}`}
+                    className={`px-2 py-1 rounded-full text-xs ${selectedGenres.includes(genre.id) ? 'bg-neo-purple text-white' : 'bg-white/10 text-white/70'}`}
                   >{genre.name}</button>
                 ))}
-              </div>
-            </div>
             <div className="flex justify-end gap-2 mt-4">
               <Dialog.Close className="bg-white/10 px-4 py-2 rounded-xl">Отмена</Dialog.Close>
-              <button type="submit" className="bg-neo-pink px-4 py-2 rounded-xl text-white">Добавить</button>
+              <button type="submit" className="bg-neo-purple hover:bg-neo-purple-dark text-white px-4 py-2 rounded-xl shadow-neon">Добавить</button>
             </div>
           </form>
         </Dialog.Content>

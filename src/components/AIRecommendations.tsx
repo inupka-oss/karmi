@@ -119,7 +119,7 @@ export default function AIRecommendations({ animeId }: { animeId: string }) {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold text-white flex items-center gap-2">
           🤖 AI Рекомендации
-          <span className="text-xs bg-neo-pink/20 text-neo-pink px-2 py-1 rounded-full">
+          <span className="text-xs bg-neo-purple/20 text-neo-purple-light px-2 py-1 rounded-full">
             На основе "{currentAnime?.title_ru}"
           </span>
         </h2>
@@ -130,7 +130,7 @@ export default function AIRecommendations({ animeId }: { animeId: string }) {
           <Link
             key={rec.id}
             href={`/anime/${rec.id}`}
-            className="group relative glass rounded-2xl overflow-hidden hover:ring-2 hover:ring-neo-pink/50 transition"
+            className="group relative glass rounded-2xl overflow-hidden hover:ring-2 hover:ring-neo-purple/50 transition"
           >
             <div className="aspect-[3/4] relative">
               <Image
@@ -160,15 +160,15 @@ export default function AIRecommendations({ animeId }: { animeId: string }) {
               <div className="space-y-1">
                 {rec.matchReasons.slice(0, 2).map((reason, i) => (
                   <p key={i} className="text-xs text-gray-400 flex items-start gap-1">
-                    <span className="text-neo-pink">•</span>
+                    <span className="text-neo-purple-light">•</span>
                     {reason}
                   </p>
                 ))}
               </div>
-            </div>
 
-            {/* Градиент при наведении */}
-            <div className="absolute inset-0 bg-gradient-to-t from-neo-pink/20 to-transparent opacity-0 group-hover:opacity-100 transition pointer-events-none" />
+              {/* Градиент при наведении */}
+              <div className="absolute inset-0 bg-gradient-to-t from-neo-purple/20 to-transparent opacity-0 group-hover:opacity-100 transition pointer-events-none" />
+            </div>
           </Link>
         ))}
       </div>

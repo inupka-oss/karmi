@@ -36,7 +36,7 @@ export default function ScreenshotGallery({ animeId }: { animeId: string }) {
         {screenshots.map((sc) => (
           <div
             key={sc.id}
-            className="flex-shrink-0 w-40 h-24 relative rounded-xl overflow-hidden cursor-pointer hover:ring-2 ring-neo-pink transition"
+            className="flex-shrink-0 w-40 h-24 relative rounded-xl overflow-hidden cursor-pointer hover:ring-2 ring-neo-purple transition"
             onClick={() => setSelected(sc.url)}
           >
             <Image src={sc.url} alt="Кадр" fill className="object-cover" sizes="160px" />

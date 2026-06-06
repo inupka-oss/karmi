@@ -35,7 +35,7 @@ export default function AnimeActions({
             href={trailerUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-neo-pink/20 hover:bg-neo-pink/40 text-neo-pink px-4 py-2 rounded-xl border border-neo-pink/50 font-semibold text-center text-sm transition"
+            className="bg-neo-purple/20 hover:bg-neo-purple/40 text-neo-purple-light px-4 py-2 rounded-xl border border-neo-purple/50 font-semibold text-center text-sm transition"
           >
             🎬 Смотреть трейлер
           </a>
@@ -44,7 +44,7 @@ export default function AnimeActions({
           <>
             <button
               onClick={() => onStartWatching(episodes[0])}
-              className="bg-neo-pink hover:bg-neo-pink/80 text-white px-4 py-2 rounded-xl font-semibold text-center text-sm transition"
+              className="bg-neo-purple hover:bg-neo-purple-dark text-white px-4 py-2 rounded-xl font-semibold text-center text-sm transition shadow-neon hover:shadow-neon-hover"
             >
               ▶ Начать с 1 серии
             </button>
@@ -58,7 +58,7 @@ export default function AnimeActions({
             )}
             <button
               onClick={() => setShowWatchParty(true)}
-              className="bg-purple-500/20 hover:bg-purple-500/40 text-purple-400 px-4 py-2 rounded-xl border border-purple-500/50 font-semibold text-center text-sm transition"
+              className="bg-neo-pink/20 hover:bg-neo-pink/40 text-neo-pink px-4 py-2 rounded-xl border border-neo-pink/50 font-semibold text-center text-sm transition"
             >
               🎉 Смотреть с друзьями
             </button>

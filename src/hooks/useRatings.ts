@@ -1,22 +1,9 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-
-function getAccessToken(): string | null {
-  const match = document.cookie.match(/sb-access-token=([^;]+)/)
-  return match ? match[1] : null
-}
-
-function getUserIdentifier() {
-  let id = localStorage.getItem('karmi-user-id')
-  if (!id) {
-    id = crypto.randomUUID()
-    localStorage.setItem('karmi-user-id', id)
-  }
-  return id
-}
+import { getAccessToken, getUserIdentifier } from '@/lib/auth'
 
 export function useRatings() {
-  const [ratings, setRatings] = useState<Record<string, number>>({}) // animeId -> rating
+  const [ratings, setRatings] = useState<Record<string, number>>({})
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 

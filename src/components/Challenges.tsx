@@ -104,12 +104,12 @@ export default function Challenges() {
           🎯 Челленджи
         </h2>
         <span className="text-sm text-gray-400">
-          {challenges.filter(c => c.completed).length}/{challenges.length} выполнено
+          {challenges.filter(c => c.completed).length}/{challenges.length}
         </span>
       </div>
 
       {/* Фильтры */}
-      <div className="flex gap-2 mb-6 overflow-x-auto">
+      <div className="flex gap-2 mb-6 overflow-x-auto scrollbar-hide">
         {[
           { id: 'all', label: 'Все' },
           { id: 'daily', label: '📅 Ежедневные' },
@@ -119,10 +119,10 @@ export default function Challenges() {
           <button
             key={filter.id}
             onClick={() => setActiveFilter(filter.id as any)}
-            className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition ${
+            className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-200 hover:scale-105 ${
               activeFilter === filter.id
-                ? 'bg-neo-pink text-white'
-                : 'bg-white/10 text-gray-400 hover:text-white'
+                ? 'bg-neo-purple text-white shadow-neon'
+                : 'bg-white/10 text-gray-400 hover:text-white hover:bg-white/15'
             }`}
           >
             {filter.label}
@@ -145,7 +145,7 @@ export default function Challenges() {
           Нет активных челленджей
         </p>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {filteredChallenges.map((challenge) => {
             const progress = getProgressPercent(challenge)
             const isCompleted = challenge.completed || progress >= 100
@@ -153,19 +153,19 @@ export default function Challenges() {
             return (
               <div
                 key={challenge.id}
-                className={`p-4 rounded-xl border transition ${
+                className={`p-4 rounded-xl border transition-all duration-200 hover:scale-[1.02] ${
                   isCompleted
-                    ? 'bg-green-500/10 border-green-500/30'
+                    ? 'bg-green-500/10 border-green-500/40'
                     : 'bg-white/5 border-white/10 hover:border-white/20'
                 }`}
               >
                 <div className="flex items-start gap-3">
-                  <div className="text-3xl">{challenge.icon}</div>
-                  <div className="flex-1">
+                  <div className="text-3xl flex-shrink-0">{challenge.icon}</div>
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
-                      <h3 className="font-semibold text-white">{challenge.name}</h3>
+                      <h3 className="font-semibold text-white truncate">{challenge.name}</h3>
                       {isCompleted && (
-                        <span className="text-green-400 text-sm">✓ Выполнено</span>
+                        <span className="text-green-400 text-sm font-medium ml-2">✓</span>
                       )}
                     </div>
                     <p className="text-sm text-gray-400 mb-3">{challenge.description}</p>
@@ -176,17 +176,17 @@ export default function Challenges() {
                         className={`h-full transition-all duration-500 ${
                           isCompleted
                             ? 'bg-gradient-to-r from-green-400 to-green-600'
-                            : 'bg-gradient-to-r from-neo-pink to-neo-red'
+                            : 'bg-gradient-to-r from-neo-purple to-neo-purple-light'
                         }`}
                         style={{ width: `${progress}%` }}
                       />
                     </div>
                     
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-400">
+                      <span className="text-gray-400 font-medium">
                         {challenge.progress} / {challenge.target}
                       </span>
-                      <span className="text-yellow-400">
+                      <span className="text-yellow-400 font-medium">
                         🎁 +{challenge.reward} XP
                       </span>
                     </div>

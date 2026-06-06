@@ -1,14 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-
-function getUserIdentifier() {
-  let id = localStorage.getItem('karmi-user-id')
-  if (!id) {
-    id = crypto.randomUUID()
-    localStorage.setItem('karmi-user-id', id)
-  }
-  return id
-}
+import { getUserIdentifier } from '@/lib/auth'
 
 export function useActiveViewers(animeId: string) {
   const [count, setCount] = useState(0)

@@ -65,7 +65,7 @@ export default function EpisodeList({
             key={ep.id}
             onClick={() => handleSelect(ep)}
             className={`p-3 rounded-xl text-left transition ${
-              activeEp?.id === ep.id ? 'bg-neo-pink text-white' : 'glass hover:bg-white/10'
+              activeEp?.id === ep.id ? 'bg-neo-purple text-white' : 'glass hover:bg-white/10'
             }`}
           >
             <div className="font-bold">Серия {ep.episode_number}</div>

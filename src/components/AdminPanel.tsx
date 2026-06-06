@@ -705,7 +705,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
         <div className="flex gap-2">
           <button
             onClick={openAddModal}
-            className="bg-neo-pink hover:bg-neo-pink/80 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base transition animate-pulse-subtle"
+            className="bg-neo-purple hover:bg-neo-purple-dark text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base transition shadow-neon animate-pulse-subtle"
           >
             Добавить аниме
           </button>
@@ -734,7 +734,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                 <h3 className="font-bold text-base sm:text-lg text-white">{anime.title_ru}</h3>
                 <div className="flex gap-1 sm:gap-2 flex-wrap mt-1">
                   {anime.genres?.map(g => (
-                    <span key={g.slug} className="text-xs bg-neo-pink/20 text-neo-pink px-2 py-0.5 rounded-full">{g.name}</span>
+                    <span key={g.slug} className="text-xs bg-neo-purple/20 text-neo-purple-light px-2 py-0.5 rounded-full">{g.name}</span>
                   ))}
                 </div>
               </div>
@@ -813,7 +813,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                     <button
                       onClick={() => handleAddEpisode(anime.id)}
                       disabled={uploadingVideo}
-                      className="bg-neo-pink hover:bg-neo-pink/80 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base"
+                      className="bg-neo-purple hover:bg-neo-purple-dark text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base shadow-neon"
                     >
                       {uploadingVideo ? 'Загрузка...' : 'Добавить'}
                     </button>
@@ -883,7 +883,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                   </div>
                   <div className="flex gap-2 items-center mt-2">
                     <input type="file" accept="image/*" onChange={e => setScreenshotFile(e.target.files?.[0] || null)} className="text-white text-xs" />
-                    <button onClick={() => handleAddScreenshot(anime.id)} disabled={uploadingScreenshot} className="bg-neo-pink text-white px-3 py-1 rounded-lg text-xs">
+                    <button onClick={() => handleAddScreenshot(anime.id)} disabled={uploadingScreenshot} className="bg-neo-purple hover:bg-neo-purple-dark text-white px-3 py-1 rounded-lg text-xs shadow-neon">
                       {uploadingScreenshot ? '...' : 'Загрузить'}
                     </button>
                   </div>
@@ -991,7 +991,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
                 <div className="flex flex-wrap gap-1 sm:gap-2">
                   {genres.map(genre => (
                     <button type="button" key={genre.id} onClick={() => toggleGenre(genre.id)}
-                      className={`px-2 py-1 rounded-full text-xs ${selectedGenres.includes(genre.id) ? 'bg-neo-pink text-white' : 'bg-white/10 text-white/70'}`}>
+                      className={`px-2 py-1 rounded-full text-xs ${selectedGenres.includes(genre.id) ? 'bg-neo-purple text-white' : 'bg-white/10 text-white/70'}`}>
                       {genre.name}
                     </button>
                   ))}
@@ -999,7 +999,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
               </div>
               <div className="flex justify-end gap-2 mt-4">
                 <button type="button" onClick={() => { setShowModal(false); resetForm() }} className="bg-white/10 hover:bg-white/20 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base">Отмена</button>
-                <button type="submit" disabled={uploading} className="bg-neo-pink hover:bg-neo-pink/80 text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base">
+                <button type="submit" disabled={uploading} className="bg-neo-purple hover:bg-neo-purple-dark text-white px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base shadow-neon">
                   {uploading ? 'Загрузка...' : editingAnime ? 'Сохранить' : 'Добавить'}
                 </button>
               </div>
@@ -1025,7 +1025,7 @@ export default function AdminPanel({ userEmail, genres, initialAnime, stats }: {
             />
             <div className="flex justify-end gap-2">
               <button onClick={() => setBatchModalOpen(false)} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl">Отмена</button>
-              <button onClick={handleBatchAdd} className="bg-neo-pink hover:bg-neo-pink/80 text-white px-4 py-2 rounded-xl">Добавить все</button>
+              <button onClick={handleBatchAdd} className="bg-neo-purple hover:bg-neo-purple-dark text-white px-4 py-2 rounded-xl shadow-neon">Добавить все</button>
             </div>
           </div>
         </div>

@@ -138,7 +138,7 @@ export default function CommentModeration() {
             onClick={() => setFilter('all')}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
               filter === 'all'
-                ? 'bg-neo-pink text-white'
+                ? 'bg-neo-purple text-white'
                 : 'bg-white/10 text-gray-400 hover:text-white'
             }`}
           >
@@ -214,7 +214,7 @@ export default function CommentModeration() {
                   </div>
                   <p className="text-gray-300 mb-2">{comment.content}</p>
                   <div className="text-xs text-gray-400">
-                    Аниме: <span className="text-neo-pink">{comment.anime_title}</span>
+                    Аниме: <span className="text-neo-purple-light">{comment.anime_title}</span>
                   </div>
                 </div>
 

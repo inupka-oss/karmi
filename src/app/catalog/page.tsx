@@ -123,7 +123,7 @@ export default function CatalogPage() {
           <option value="completed">Завершён</option>
           <option value="announced">Анонсирован</option>
         </select>
-        <button type="submit" className="bg-neo-pink hover:bg-neo-pink/80 text-white px-5 py-2 rounded-xl text-sm sm:text-base">Фильтровать</button>
+        <button type="submit" className="bg-neo-purple hover:bg-neo-purple-dark text-white px-5 py-2 rounded-xl text-sm sm:text-base transition-all duration-200 hover:scale-105 font-medium shadow-neon">Фильтровать</button>
       </form>
 
       <AnimeGrid anime={anime} />

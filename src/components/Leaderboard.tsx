@@ -88,10 +88,10 @@ export default function Leaderboard() {
           <button
             key={tab.id}
             onClick={() => setPeriod(tab.id)}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 hover:scale-105 ${
               period === tab.id
-                ? 'bg-neo-pink text-white'
-                : 'bg-white/10 text-gray-400 hover:text-white'
+                ? 'bg-neo-purple text-white shadow-neon'
+                : 'bg-white/10 text-gray-400 hover:text-white hover:bg-white/15'
             }`}
           >
             {tab.label}
@@ -115,19 +115,19 @@ export default function Leaderboard() {
           Пока нет данных
         </p>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {leaderboard.slice(0, 10).map((entry) => (
             <div
               key={entry.user_id}
-              className={`flex items-center gap-4 p-3 rounded-xl border transition hover:bg-white/5 ${getRankStyle(entry.rank)}`}
+              className={`flex items-center gap-3 sm:gap-4 p-3 rounded-xl border transition-all duration-200 hover:scale-[1.02] ${getRankStyle(entry.rank)}`}
             >
               {/* Ранг */}
-              <div className="w-8 h-8 flex items-center justify-center text-lg font-bold">
+              <div className="w-8 h-8 flex items-center justify-center text-lg font-bold flex-shrink-0">
                 {getRankIcon(entry.rank)}
               </div>
 
               {/* Аватар */}
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-neo-pink to-neo-red flex items-center justify-center text-white font-bold flex-shrink-0 overflow-hidden">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-neo-pink to-neo-red flex items-center justify-center text-white font-bold flex-shrink-0 overflow-hidden ring-2 ring-white/10">
                 {entry.avatar ? (
                   <img src={entry.avatar} alt={entry.nickname} className="w-full h-full object-cover" />
                 ) : (
@@ -137,25 +137,25 @@ export default function Leaderboard() {
 
               {/* Информация */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-semibold text-white truncate">{entry.nickname}</span>
-                  <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full">
+                  <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full font-medium">
                     ур. {entry.level}
                   </span>
-                  {entry.badges?.slice(0, 3).map((badge, idx) => (
-                    <span key={idx} className="text-xs">{badge}</span>
+                  {entry.badges?.slice(0, 2).map((badge, idx) => (
+                    <span key={idx} className="text-xs opacity-70">{badge}</span>
                   ))}
                 </div>
-                <div className="text-xs text-gray-400">
-                  {entry.animeWatched} аниме • {entry.xp} XP
+                <div className="text-xs text-gray-400 mt-1">
+                  {entry.animeWatched} аниме • <span className="text-neo-purple-light font-medium">{entry.xp} XP</span>
                 </div>
               </div>
 
               {/* XP бар */}
-              <div className="hidden sm:block w-24">
+                <div className="hidden sm:block w-24 flex-shrink-0">
                 <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                   <div 
-                    className="h-full bg-gradient-to-r from-neo-pink to-neo-red"
+                    className="h-full bg-gradient-to-r from-neo-purple to-neo-purple-light transition-all duration-500"
                     style={{ width: `${Math.min((entry.xp % 1000) / 1000 * 100, 100)}%` }}
                   />
                 </div>

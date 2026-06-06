@@ -1,4 +1,4 @@
-const CACHE_NAME = 'karmi-v1'
+const CACHE_NAME = 'karmi-v2'
 const OFFLINE_URL = '/offline.html'
 
 const STATIC_ASSETS = [
@@ -6,6 +6,14 @@ const STATIC_ASSETS = [
   '/offline.html',
   '/manifest.json',
 ]
+
+// Кэш для изображений с длительным сроком хранения
+const IMAGE_CACHE_NAME = 'karmi-images-v1'
+const IMAGE_CACHE_MAX_SIZE = 50
+
+// Кэш для API запросов
+const API_CACHE_NAME = 'karmi-api-v1'
+const API_CACHE_MAX_AGE = 5 * 60 * 1000 // 5 минут
 
 // Установка service worker
 self.addEventListener('install', (event) => {
@@ -20,12 +28,21 @@ self.addEventListener('install', (event) => {
 // Активация service worker
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
+    caches.keys().then(async (cacheNames) => {
+      const validCaches = [CACHE_NAME, IMAGE_CACHE_NAME, API_CACHE_NAME]
+      
+      await Promise.all(
         cacheNames
-          .filter((name) => name !== CACHE_NAME)
+          .filter((name) => !validCaches.includes(name))
           .map((name) => caches.delete(name))
       )
+      
+      // Очистка старого кэша изображений
+      const imageCache = await caches.open(IMAGE_CACHE_NAME)
+      const imageKeys = await imageCache.keys()
+      if (imageKeys.length > IMAGE_CACHE_MAX_SIZE) {
+        await Promise.all(imageKeys.slice(0, imageKeys.length - IMAGE_CACHE_MAX_SIZE).map(key => imageCache.delete(key)))
+      }
     })
   )
   self.clients.claim()
@@ -33,25 +50,63 @@ self.addEventListener('activate', (event) => {
 
 // Перехват запросов
 self.addEventListener('fetch', (event) => {
-  // Игнорируем не-GET запросы и API запросы
+  // Игнорируем не-GET запросы
   if (event.request.method !== 'GET') return
   
-  // Игнорируем API запросы к Supabase и другим сервисам
   const url = new URL(event.request.url)
-  if (url.hostname.includes('supabase') || 
+  
+  // Игнорируем localhost и внешние сервисы
+  if (url.hostname.includes('localhost') || 
+      url.hostname.includes('supabase') ||
       url.hostname.includes('pinata') ||
-      url.hostname.includes('localhost')) {
+      url.hostname.includes('cloudinary')) {
     return
   }
 
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse
-      }
+  // Стратегия для изображений - cache first
+  if (event.request.destination === 'image') {
+    event.respondWith(
+      caches.open(IMAGE_CACHE_NAME).then(async (cache) => {
+        const cached = await cache.match(event.request)
+        if (cached) return cached
+        
+        try {
+          const response = await fetch(event.request)
+          if (response.ok) {
+            cache.put(event.request, response.clone())
+          }
+          return response
+        } catch {
+          return cached || new Response('', { status: 404 })
+        }
+      })
+    )
+    return
+  }
 
-      return fetch(event.request).then((networkResponse) => {
-        // Кэшируем успешные ответы
+  // Стратегия для API - stale while revalidate
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(
+      caches.open(API_CACHE_NAME).then(async (cache) => {
+        const cached = await cache.match(event.request)
+        
+        const fetchPromise = fetch(event.request).then((response) => {
+          if (response.ok) {
+            cache.put(event.request, response.clone())
+          }
+          return response
+        })
+        
+        return cached || fetchPromise
+      })
+    )
+    return
+  }
+
+  // Стратегия для страниц - network first с fallback
+  event.respondWith(
+    fetch(event.request)
+      .then((networkResponse) => {
         if (networkResponse && networkResponse.status === 200) {
           const responseToCache = networkResponse.clone()
           caches.open(CACHE_NAME).then((cache) => {
@@ -59,14 +114,16 @@ self.addEventListener('fetch', (event) => {
           })
         }
         return networkResponse
-      }).catch(() => {
-        // Если офлайн и запрашивают страницу - показываем offline
+      })
+      .catch(() => {
+        const cached = caches.match(event.request)
+        if (cached) return cached
+        
         if (event.request.mode === 'navigate') {
           return caches.match(OFFLINE_URL)
         }
         return new Response('Offline', { status: 503 })
       })
-    })
   )
 })
 

@@ -54,7 +54,7 @@ export default function HeroSlider({ items }: { items: AnimeItem[] }) {
 
   return (
     <div 
-      className="relative w-full h-[500px] sm:h-[600px] lg:h-[700px] overflow-hidden rounded-3xl mb-12"
+      className="relative w-full h-[400px] sm:h-[500px] lg:h-[550px] overflow-hidden rounded-3xl mb-12 group"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
@@ -88,8 +88,8 @@ export default function HeroSlider({ items }: { items: AnimeItem[] }) {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
               <div className="flex flex-col md:flex-row items-center gap-8">
                 {/* Постер */}
-                <div className="flex-shrink-0 w-48 sm:w-64 lg:w-80">
-                  <div className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl shadow-neo-pink/20">
+                <div className="flex-shrink-0 w-40 sm:w-56 lg:w-72">
+                  <div className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl shadow-neo-purple/30 ring-1 ring-white/10">
                     <Image
                       src={item.poster_url}
                       alt={item.title_ru}
@@ -102,48 +102,48 @@ export default function HeroSlider({ items }: { items: AnimeItem[] }) {
 
                 {/* Информация */}
                 <div className="flex-1 text-center md:text-left">
-                  <h1 className="text-3xl sm:text-4xl lg:text-6xl font-bold text-white mb-2 text-glow-white">
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2 text-glow-white">
                     {item.title_ru}
                   </h1>
                   {item.title_en && (
-                    <p className="text-lg sm:text-xl text-gray-300 mb-4">{item.title_en}</p>
+                    <p className="text-base sm:text-lg text-gray-300 mb-3">{item.title_en}</p>
                   )}
                   
-                  <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-4">
+                  <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-3">
                     {item.genres?.slice(0, 4).map((g: any) => (
                       <span 
                         key={g.slug} 
-                        className="bg-white/20 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs sm:text-sm"
+                        className="bg-neo-purple/20 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs sm:text-sm font-medium"
                       >
                         {g.name}
                       </span>
                     ))}
                   </div>
 
-                  <div className="flex items-center justify-center md:justify-start gap-4 mb-4">
+                  <div className="flex items-center justify-center md:justify-start gap-4 mb-3">
                     <div className="flex items-center gap-2">
-                      <span className="text-yellow-400 text-xl">⭐</span>
-                      <span className="text-white font-bold text-xl">{item.rating?.toFixed(1) || 'N/A'}</span>
+                      <span className="text-yellow-400 text-lg">⭐</span>
+                      <span className="text-white font-bold text-lg">{item.rating?.toFixed(1) || 'N/A'}</span>
                     </div>
                     {item.year && (
-                      <span className="text-gray-400">{item.year}</span>
+                      <span className="text-gray-400 text-sm">{item.year}</span>
                     )}
                   </div>
 
-                  <p className="text-gray-300 text-sm sm:text-base lg:text-lg mb-6 line-clamp-3 max-w-2xl">
+                  <p className="text-gray-300 text-sm sm:text-base mb-5 line-clamp-3 max-w-2xl">
                     {item.description}
                   </p>
 
                   <div className="flex flex-wrap justify-center md:justify-start gap-3">
                     <Link
                       href={`/anime/${item.id}`}
-                      className="bg-neo-pink hover:bg-neo-pink/80 text-white px-6 sm:px-8 py-3 rounded-xl font-semibold transition transform hover:scale-105"
+                      className="bg-neo-purple hover:bg-neo-purple-dark text-white px-6 sm:px-8 py-2.5 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 text-sm sm:text-base shadow-neon hover:shadow-neon-hover"
                     >
                       ▶ Смотреть
                     </Link>
                     <Link
                       href={`/anime/${item.id}`}
-                      className="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-6 sm:px-8 py-3 rounded-xl font-semibold transition"
+                      className="bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white px-6 sm:px-8 py-2.5 rounded-xl font-semibold transition-all duration-200 text-sm sm:text-base"
                     >
                       ℹ Подробнее
                     </Link>
@@ -160,19 +160,19 @@ export default function HeroSlider({ items }: { items: AnimeItem[] }) {
         <>
           <button
             onClick={goToPrevious}
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white w-12 h-12 rounded-full flex items-center justify-center transition opacity-0 group-hover:opacity-100"
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-200 opacity-60 hover:opacity-100 hover:scale-105 ring-1 ring-neo-purple/30"
             aria-label="Предыдущий"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
           <button
             onClick={goToNext}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white w-12 h-12 rounded-full flex items-center justify-center transition opacity-0 group-hover:opacity-100"
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-200 opacity-60 hover:opacity-100 hover:scale-105 ring-1 ring-neo-purple/30"
             aria-label="Следующий"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
@@ -188,8 +188,8 @@ export default function HeroSlider({ items }: { items: AnimeItem[] }) {
               onClick={() => goToSlide(index)}
               className={`transition-all duration-300 rounded-full ${
                 index === currentIndex
-                  ? 'w-8 h-3 bg-neo-pink'
-                  : 'w-3 h-3 bg-white/50 hover:bg-white/80'
+                  ? 'w-8 h-3 bg-neo-purple shadow-neon'
+                  : 'w-3 h-3 bg-white/40 hover:bg-white/70'
               }`}
               aria-label={`Слайд ${index + 1}`}
             />
@@ -199,9 +199,9 @@ export default function HeroSlider({ items }: { items: AnimeItem[] }) {
 
       {/* Прогресс бар */}
       {items.length > 1 && (
-        <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20 z-20">
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10 z-20">
           <div
-            className="h-full bg-neo-pink transition-all duration-300"
+            className="h-full bg-gradient-to-r from-neo-purple to-neo-pink transition-all duration-300"
             style={{ width: `${((currentIndex + 1) / items.length) * 100}%` }}
           />
         </div>

@@ -3,24 +3,9 @@
  * Автоматическая проверка и выдача достижений
  */
 
-interface Achievement {
-  id: string
-  name: string
-  description: string
-  icon: string
-  condition: (stats: UserStats) => boolean
-}
-
-interface UserStats {
-  animeWatched: number
-  episodesWatched: number
-  hoursWatched: number
-  commentsPosted: number
-  favoritesCount: number
-  level: number
-  xp?: number
-  lastActive?: Date
-}
+import { useState, useEffect } from 'react'
+import type { Achievement, UserStats } from '@/types/user'
+import { getAccessToken } from '@/lib/auth'
 
 export const ACHIEVEMENTS: Achievement[] = [
   {
@@ -118,15 +103,15 @@ export async function checkAchievements(
   stats: UserStats
 ): Promise<string[]> {
   const unlockedAchievements: string[] = []
+  const token = getAccessToken()
 
   try {
-    // Получаем уже полученные достижения
     const response = await fetch(
       `${supabaseUrl}/rest/v1/user_achievements?user_id=eq.${userId}&select=achievement_id`,
       {
         headers: {
           'apikey': supabaseAnonKey,
-          'Authorization': `Bearer ${getAccessToken()}`,
+          Authorization: `Bearer ${token}`,
         },
       }
     )
@@ -134,15 +119,13 @@ export async function checkAchievements(
     const existing = await response.json()
     const existingIds = new Set(existing.map((a: any) => a.achievement_id))
 
-    // Проверяем каждое достижение
     for (const achievement of ACHIEVEMENTS) {
       if (!existingIds.has(achievement.id) && achievement.condition(stats)) {
-        // Разблокируем достижение
         await fetch(`${supabaseUrl}/rest/v1/user_achievements`, {
           method: 'POST',
           headers: {
             'apikey': supabaseAnonKey,
-            'Authorization': `Bearer ${getAccessToken()}`,
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
             'Prefer': 'return=representation',
           },
@@ -362,11 +345,7 @@ function getChallengeData(challengeId: string) {
   return challenges[challengeId]
 }
 
-function getAccessToken(): string | null {
-  if (typeof document === 'undefined') return null
-  const match = document.cookie.match(/sb-access-token=([^;]+)/)
-  return match ? match[1] : null
-}
+
 
 /**
  * Хук для отслеживания достижений
@@ -410,5 +389,4 @@ export function useAchievements(userId: string) {
   return { achievements, unlockedIds }
 }
 
-// Экспортируем хук
-import { useState, useEffect } from 'react'
+

@@ -1,97 +1,57 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 
-function getAccessToken(): string | null {
-  const match = document.cookie.match(/sb-access-token=([^;]+)/)
-  return match ? match[1] : null
-}
+const STORAGE_KEY = 'karmi-favorites'
 
 export function useFavorites() {
   const [favorites, setFavorites] = useState<string[]>([])
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const [isLoaded, setIsLoaded] = useState(false)
 
-  // Загружаем избранное при монтировании
   useEffect(() => {
-    const token = getAccessToken()
-    if (token) {
-      // Авторизован – берём из облака
-      const loadCloudFavorites = async () => {
-        try {
-          // Получаем user_id из токена (или можно из /auth/v1/user)
-          const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
-            headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${token}` },
-          })
-          if (!userRes.ok) return
-          const user = await userRes.json()
-          const userId = user.id
-
-          const res = await fetch(`${supabaseUrl}/rest/v1/user_profiles?user_identifier=eq.${userId}`, {
-            headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${token}` },
-          })
-          if (res.ok) {
-            const data = await res.json()
-            if (data.length > 0 && data[0].favorites) {
-              setFavorites(data[0].favorites)
-            }
-          }
-        } catch {}
-      }
-      loadCloudFavorites()
-    } else {
-      // Гость – localStorage
-      const stored = localStorage.getItem('karmi-favorites')
-      if (stored) {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored) {
+      try {
         setFavorites(JSON.parse(stored))
+      } catch {
+        setFavorites([])
       }
     }
-  }, [supabaseUrl, supabaseAnonKey])
+    setIsLoaded(true)
+  }, [])
 
-  // Функция переключения
-  const toggleFavorite = useCallback(async (animeId: string) => {
-    const token = getAccessToken()
-    let newFavs: string[]
-
-    setFavorites(prev => {
-      newFavs = prev.includes(animeId)
-        ? prev.filter(id => id !== animeId)
-        : [...prev, animeId]
-
-      if (token) {
-        // Сохраняем в облако
-        const saveToCloud = async () => {
-          // Получаем user_id
-          const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
-            headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${token}` },
-          })
-          if (!userRes.ok) return
-          const user = await userRes.json()
-          const userId = user.id
-
-          await fetch(`${supabaseUrl}/rest/v1/user_profiles`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'apikey': supabaseAnonKey,
-              'Authorization': `Bearer ${token}`,
-              'Prefer': 'resolution=merge-duplicates',
-            },
-            body: JSON.stringify({
-              user_identifier: userId,
-              favorites: newFavs,
-            }),
-          })
-        }
-        saveToCloud()
-      } else {
-        // Гость – localStorage
-        localStorage.setItem('karmi-favorites', JSON.stringify(newFavs))
-      }
-      return newFavs
+  const addFavorite = useCallback((animeId: string) => {
+    setFavorites((prev) => {
+      if (prev.includes(animeId)) return prev
+      const updated = [...prev, animeId]
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+      return updated
     })
-  }, [supabaseUrl, supabaseAnonKey])
+  }, [])
 
-  const isFavorite = useCallback((animeId: string) => favorites.includes(animeId), [favorites])
+  const removeFavorite = useCallback((animeId: string) => {
+    setFavorites((prev) => {
+      const updated = prev.filter((id) => id !== animeId)
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+      return updated
+    })
+  }, [])
 
-  return { favorites, toggleFavorite, isFavorite }
+  const toggleFavorite = useCallback(
+    (animeId: string) => {
+      setFavorites((prev) => {
+        const exists = prev.includes(animeId)
+        const updated = exists ? prev.filter((id) => id !== animeId) : [...prev, animeId]
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+        return updated
+      })
+    },
+    []
+  )
+
+  const isFavorite = useMemo(
+    () => (animeId: string) => favorites.includes(animeId),
+    [favorites]
+  )
+
+  return { favorites, addFavorite, removeFavorite, toggleFavorite, isFavorite, isLoaded }
 }

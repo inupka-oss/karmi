@@ -1,23 +1,9 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import type { Comment, ReactionType } from '@/types/comments'
+import { getAccessToken, getCurrentUser } from '@/lib/auth'
 
-interface Comment {
-  id: string
-  anime_id: string
-  user_id?: string
-  user_name: string
-  user_avatar?: string
-  content: string
-  created_at: string
-  parent_id?: string
-  likes: number
-  dislikes: number
-  replies?: Comment[]
-}
-
-type ReactionType = 'like' | 'dislike'
-
-function CommentItem({ 
+const CommentItem = ({ 
   comment, 
   onReply, 
   onReaction,
@@ -27,7 +13,7 @@ function CommentItem({
   onReply: (parentId: string, content: string) => Promise<void>
   onReaction: (commentId: string, type: ReactionType) => Promise<void>
   depth?: number
-}) {
+}) => {
   const [showReplyForm, setShowReplyForm] = useState(false)
   const [replyText, setReplyText] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -50,7 +36,7 @@ function CommentItem({
             {comment.user_avatar ? (
               <img src={comment.user_avatar} alt={comment.user_name} className="w-8 h-8 rounded-full object-cover" />
             ) : (
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-neo-pink to-neo-red flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-neo-purple to-neo-purple-light flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
                 {comment.user_name.charAt(0).toUpperCase()}
               </div>
             )}
@@ -86,7 +72,7 @@ function CommentItem({
             {depth < 3 && (
               <button
                 onClick={() => setShowReplyForm(!showReplyForm)}
-                className="text-xs text-neo-pink hover:text-neo-pink/80 transition"
+                className="text-xs text-neo-purple-light hover:text-neo-purple transition"
               >
                 Ответить
               </button>
@@ -117,7 +103,7 @@ function CommentItem({
               <button
                 type="submit"
                 disabled={submitting}
-                className="bg-neo-pink hover:bg-neo-pink/80 disabled:bg-gray-500 text-white px-4 py-1 rounded-lg text-sm"
+                className="bg-neo-purple hover:bg-neo-purple-dark disabled:bg-gray-500 text-white px-4 py-1 rounded-lg text-sm shadow-neon"
               >
                 {submitting ? '...' : 'Ответить'}
               </button>
@@ -143,6 +129,8 @@ function CommentItem({
   )
 }
 
+const MemoizedCommentItem = Object.assign(CommentItem, { displayName: 'CommentItem' })
+
 export default function CommentSection({ animeId }: { animeId: string }) {
   const [comments, setComments] = useState<Comment[]>([])
   const [text, setText] = useState('')
@@ -154,45 +142,21 @@ export default function CommentSection({ animeId }: { animeId: string }) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-  // Получаем токен
-  const getAccessToken = () => {
-    const match = document.cookie.match(/sb-access-token=([^;]+)/)
-    return match ? match[1] : null
-  }
-
   // Проверяем авторизацию и получаем имя пользователя
   useEffect(() => {
     const checkAuth = async () => {
       setAuthLoading(true)
-      const token = getAccessToken()
-      if (!token) {
-        setIsLoggedIn(false)
-        setUserName('')
-        setAuthLoading(false)
-        return
-      }
-      try {
-        const res = await fetch(`${supabaseUrl}/auth/v1/user`, {
-          headers: { 
-            'apikey': supabaseAnonKey, 
-            'Authorization': `Bearer ${token}` 
-          },
-        })
-        if (res.ok) {
-          const userData = await res.json()
-          setIsLoggedIn(true)
-          const name = userData.email?.split('@')[0] || 'Аноним'
-          setUserName(name)
-          console.log('User logged in:', name)
-        } else {
-          setIsLoggedIn(false)
-          setUserName('')
-        }
-      } catch (e) {
-        console.error('Auth check error:', e)
+      const user = await getCurrentUser(supabaseUrl, supabaseAnonKey)
+      
+      if (user) {
+        setIsLoggedIn(true)
+        const name = user.email?.split('@')[0] || 'Пользователь'
+        setUserName(name)
+      } else {
         setIsLoggedIn(false)
         setUserName('')
       }
+      
       setAuthLoading(false)
     }
     checkAuth()
@@ -440,22 +404,22 @@ export default function CommentSection({ animeId }: { animeId: string }) {
           />
         )}
         {isLoggedIn && userName && (
-          <p className="text-sm text-neo-pink mb-2">
+          <p className="text-sm text-neo-purple-light mb-2">
             Вы вошли как: <span className="text-white font-semibold">{userName}</span>
           </p>
         )}
-        <textarea
-          placeholder="Оставьте комментарий..."
-          value={text}
-          onChange={(e) => setText(e.target.value)}
+        <input
+          value={newComment}
+          onChange={(e) => setNewComment(e.target.value)}
+          placeholder="Напишите комментарий..."
+          className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-neo-purple focus:ring-1 focus:ring-neo-purple/50"
           rows={3}
-          className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white resize-none"
-          required
         />
         <button 
+          onClick={handleSubmit}
           type="submit" 
           disabled={loading}
-          className="mt-3 bg-neo-pink hover:bg-neo-pink/80 disabled:bg-gray-500 text-white px-6 py-2 rounded-xl transition"
+          className="mt-3 bg-neo-purple hover:bg-neo-purple-dark disabled:bg-gray-500 text-white px-6 py-2 rounded-xl transition shadow-neon"
         >
           {loading ? 'Отправка...' : 'Отправить'}
         </button>
@@ -468,7 +432,7 @@ export default function CommentSection({ animeId }: { animeId: string }) {
       ) : (
         <div>
           {comments.map((c) => (
-            <CommentItem
+            <MemoizedCommentItem
               key={c.id}
               comment={c}
               onReply={handleReply}

@@ -57,7 +57,6 @@ export default function AnimeView({
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   const [shareUrl, setShareUrl] = useState('')
 
-  const { subscriptions, toggleSubscription } = useNotifications()
   const activeViewers = useActiveViewers(anime.id)
 
   useEffect(() => {
@@ -140,23 +139,13 @@ export default function AnimeView({
               </a>
             </div>
           )}
-          <button
-            onClick={() => toggleSubscription(anime.id)}
-            className={`mt-3 w-full px-4 py-2 rounded-xl text-sm font-semibold transition ${
-              subscriptions.includes(anime.id)
-                ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50 hover:bg-yellow-500/30'
-                : 'bg-white/10 text-white border border-white/20 hover:bg-white/20'
-            }`}
-          >
-            {subscriptions.includes(anime.id) ? '🔔 Вы подписаны' : '🔔 Подписаться на новые серии'}
-          </button>
         </div>
         <div className="flex-1">
           <h1 className="text-4xl font-bold text-white dark:text-white">{anime.title_ru}</h1>
           {anime.title_en && <h2 className="text-xl text-gray-400 dark:text-gray-300 mt-1">{anime.title_en}</h2>}
           <div className="flex flex-wrap gap-2 mt-3">
             {genres.map((g: any) => (
-              <span key={g.slug} className="bg-neo-pink/20 text-neo-pink dark:text-neo-pink px-3 py-1 rounded-full text-sm">
+              <span key={g.slug} className="bg-neo-purple/20 text-neo-purple-light px-3 py-1 rounded-full text-sm font-medium">
                 {g.name}
               </span>
             ))}

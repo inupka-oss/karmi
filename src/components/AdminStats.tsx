@@ -119,7 +119,7 @@ export default function AdminStats() {
           icon="🎬" 
           label="Всего аниме" 
           value={stats.totalAnime.toLocaleString()} 
-          gradient="from-neo-pink to-neo-red"
+          gradient="from-neo-purple to-neo-purple-light"
         />
         <StatCard 
           icon="📺" 

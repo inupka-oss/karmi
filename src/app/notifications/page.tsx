@@ -169,7 +169,7 @@ export default function NotificationsPage() {
         {unreadCount > 0 && (
           <button
             onClick={markAllAsRead}
-            className="text-sm text-neo-pink hover:text-neo-pink/80"
+            className="text-sm text-neo-purple-light hover:text-neo-purple"
           >
             Прочитать все ({unreadCount})
           </button>
@@ -184,7 +184,7 @@ export default function NotificationsPage() {
             <div
               key={notification.id}
               className={`glass p-4 rounded-xl flex items-start gap-3 transition ${
-                !notification.is_read ? 'bg-neo-pink/10 border-neo-pink/30' : ''
+                !notification.is_read ? 'bg-neo-purple/10 border-neo-purple/30' : ''
               }`}
               onClick={() => markAsRead(notification.id)}
             >
@@ -211,7 +211,7 @@ export default function NotificationsPage() {
                 {notification.type !== 'friend_request' && (
                   <Link
                     href={getNotificationLink(notification)}
-                    className="text-xs bg-neo-pink/20 hover:bg-neo-pink/40 text-neo-pink px-3 py-1 rounded-lg transition"
+                    className="text-xs bg-neo-purple/20 hover:bg-neo-purple/40 text-neo-purple-light px-3 py-1 rounded-lg transition"
                     onClick={(e) => e.stopPropagation()}
                   >
                     Открыть →

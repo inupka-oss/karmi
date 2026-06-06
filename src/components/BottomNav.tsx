@@ -19,8 +19,16 @@ export default function BottomNav() {
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY
+      
+      // Показываем всегда на верхней позиции
+      if (currentScrollY < 50) {
+        setIsVisible(true)
+        setLastScrollY(currentScrollY)
+        return
+      }
+      
       // Скрываем при скролле вниз, показываем при скролле вверх
-      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+      if (currentScrollY > lastScrollY) {
         setIsVisible(false)
       } else {
         setIsVisible(true)
@@ -32,13 +40,13 @@ export default function BottomNav() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [lastScrollY])
 
-  // Показываем только на мобильных
   return (
     <>
       <nav
-        className={`fixed bottom-0 left-0 right-0 z-50 md:hidden glass border-t border-white/10 transition-transform duration-300 ${
+        className={`fixed bottom-0 left-0 right-0 z-50 md:hidden glass border-t border-white/10 transition-transform duration-300 ease-out ${
           isVisible ? 'translate-y-0' : 'translate-y-full'
         }`}
+        style={{ willChange: 'transform' }}
       >
         <div className="flex justify-around items-center py-2 safe-area-pb">
           {navItems.map((item) => {
@@ -47,14 +55,14 @@ export default function BottomNav() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition ${
+                className={`flex flex-col items-center justify-center gap-1 px-3 py-2 min-w-[64px] rounded-xl transition-all duration-200 ${
                   isActive
-                    ? 'text-neo-pink bg-neo-pink/10'
-                    : 'text-gray-400 hover:text-white'
+                    ? 'text-neo-purple-light bg-neo-purple/20 scale-105'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5'
                 }`}
               >
                 <span className="text-xl">{item.icon}</span>
-                <span className="text-xs font-medium">{item.label}</span>
+                <span className="text-[11px] font-medium">{item.label}</span>
               </Link>
             )
           })}

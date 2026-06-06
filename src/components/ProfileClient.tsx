@@ -272,35 +272,36 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
       if (c.completed) return c
       
       let newProgress = c.progress
-      let completed = c.completed
       
       // Ежедневные
-      if (c.id === 'daily_login' && stats.daysVisited >= 1) { newProgress = 1; completed = true }
-      if (c.id === 'daily_3ep' && stats.episodesWatched >= 3) { newProgress = 3; completed = true }
-      if (c.id === 'daily_comment' && stats.commentsPosted >= 1) { newProgress = 1; completed = true }
-      if (c.id === 'daily_like') { newProgress = Math.min(stats.episodesWatched, 5); completed = newProgress >= 5 }
-      if (c.id === 'daily_favorite' && stats.favoritesCount >= 1) { newProgress = 1; completed = true }
+      if (c.id === 'daily_login') { newProgress = 1 }
+      if (c.id === 'daily_3ep' && stats.episodesWatched >= 3) { newProgress = 3 }
+      if (c.id === 'daily_comment' && stats.commentsPosted >= 1) { newProgress = 1 }
+      if (c.id === 'daily_like') { newProgress = Math.min(stats.episodesWatched, 5) }
+      if (c.id === 'daily_favorite' && stats.favoritesCount >= 1) { newProgress = 1 }
       
       // Еженедельные
-      if (c.id === 'weekly_7days' && stats.daysVisited >= 7) { newProgress = 7; completed = true }
-      if (c.id === 'weekly_10ep' && stats.episodesWatched >= 10) { newProgress = 10; completed = true }
-      if (c.id === 'weekly_5comments' && stats.commentsPosted >= 10) { newProgress = 10; completed = true }
-      if (c.id === 'weekly_review' && stats.reviewsWritten >= 1) { newProgress = 1; completed = true }
+      if (c.id === 'weekly_7days') { newProgress = Math.min(stats.episodesWatched, 7) }
+      if (c.id === 'weekly_10ep' && stats.episodesWatched >= 10) { newProgress = 10 }
+      if (c.id === 'weekly_5comments' && stats.commentsPosted >= 10) { newProgress = 10 }
+      if (c.id === 'weekly_review') { newProgress = 1 }
       
       // Аниме
-      if (c.id === 'anime_first' && stats.animeWatched >= 1) { newProgress = 1; completed = true }
-      if (c.id === 'anime_5series' && stats.animeWatched >= 5) { newProgress = 5; completed = true }
-      if (c.id === 'anime_marathon' && stats.episodesWatched >= 10) { newProgress = 10; completed = true }
+      if (c.id === 'anime_first' && stats.animeWatched >= 1) { newProgress = 1 }
+      if (c.id === 'anime_5series' && stats.animeWatched >= 5) { newProgress = 5 }
+      if (c.id === 'anime_marathon' && stats.episodesWatched >= 10) { newProgress = 10 }
       
       // Социальные
-      if (c.id === 'social_friend') { newProgress = Math.min(stats.favoritesCount, 1); completed = newProgress >= 1 }
-      if (c.id === 'social_5friends') { newProgress = Math.min(stats.favoritesCount, 5); completed = newProgress >= 5 }
-      if (c.id === 'social_comment10' && stats.commentsPosted >= 20) { newProgress = 20; completed = true }
+      if (c.id === 'social_friend') { newProgress = Math.min(stats.favoritesCount, 1) }
+      if (c.id === 'social_5friends') { newProgress = Math.min(stats.favoritesCount, 5) }
+      if (c.id === 'social_comment10' && stats.commentsPosted >= 20) { newProgress = 20 }
       
       // Особые
-      if (c.id === 'special_level10' && stats.level >= 10) { newProgress = 1; completed = true }
-      if (c.id === 'special_level50' && stats.level >= 50) { newProgress = 1; completed = true }
-      if (c.id === 'special_streak30' && stats.daysVisited >= 30) { newProgress = 30; completed = true }
+      if (c.id === 'special_level10' && stats.level >= 10) { newProgress = 1 }
+      if (c.id === 'special_level50' && stats.level >= 50) { newProgress = 1 }
+      if (c.id === 'special_streak30') { newProgress = Math.min(stats.episodesWatched, 30) }
+      
+      const completed = newProgress >= c.target
       
       return { ...c, progress: newProgress, completed }
     }))
@@ -510,22 +511,27 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
     <div className="max-w-4xl mx-auto mt-10 px-4 pb-20">
       {/* Header профиля */}
       <div className="glass rounded-3xl p-6 mb-6 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-neo-pink/30 via-purple-500/30 to-blue-500/30" />
+        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-neo-purple/30 via-purple-500/30 to-blue-500/30" />
         
         <div className="relative flex flex-col sm:flex-row items-center sm:items-end gap-4 mt-8">
-          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-neo-pink to-neo-red flex items-center justify-center text-4xl font-bold text-white shadow-lg overflow-hidden flex-shrink-0" style={{width: '96px', height: '96px', minWidth: '96px', minHeight: '96px'}}>
+          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-neo-purple to-neo-purple-light flex items-center justify-center text-4xl font-bold text-white shadow-lg overflow-hidden flex-shrink-0" style={{ boxShadow: '0 0 30px rgba(139, 92, 246, 0.4)' }}>
             {avatarPreview || avatar ? (
               <img 
                 src={avatarPreview || avatar} 
                 alt={nickname} 
                 className="w-full h-full object-cover" 
-                style={{width: '100%', height: '100%', objectFit: 'cover', display: 'block'}} 
               />
             ) : (
               nickname.charAt(0).toUpperCase()
             )}
           </div>
-          
+          <div className="text-center sm:text-left">
+            <h1 className="text-3xl font-bold text-white">{nickname}</h1>
+            {username && (
+              <span className="text-neo-purple-light text-lg">@{username}</span>
+            )}
+          </div>
+
           <div className="text-center sm:text-left flex-1">
             <div className="flex items-center gap-2 justify-center sm:justify-start">
               <h1 className="text-3xl font-bold text-white">{nickname}</h1>
@@ -547,7 +553,7 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
             </div>
           )}
         </div>
-
+            
         {/* Прогресс бар уровня */}
         {stats && (
           <div className="mt-4">
@@ -557,21 +563,45 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
             </div>
             <div className="h-2 bg-white/10 rounded-full overflow-hidden">
               <div 
-                className="h-full bg-gradient-to-r from-neo-pink to-neo-red transition-all duration-500"
+                className="h-full bg-gradient-to-r from-neo-purple to-neo-purple-light transition-all duration-500"
                 style={{ width: `${(stats.xp / stats.xpToNextLevel) * 100}%` }}
               />
             </div>
           </div>
         )}
       </div>
-
+      
       {/* Табы */}
       <div className="flex gap-2 mb-6 overflow-x-auto">
         <button
           onClick={() => setActiveTab('profile')}
           className={`px-4 py-2 rounded-xl font-medium whitespace-nowrap transition ${
             activeTab === 'profile'
-              ? 'bg-neo-pink text-white'
+              ? 'bg-neo-purple text-white shadow-neon'
+              : 'bg-white/10 text-gray-400 hover:text-white'
+          }`}
+        />
+        <button
+          onClick={() => setActiveTab('stats')}
+          className={`px-4 py-2 rounded-xl font-medium whitespace-nowrap transition ${
+            activeTab === 'stats'
+              ? 'bg-neo-purple text-white shadow-neon'
+              : 'bg-white/10 text-gray-400 hover:text-white'
+          }`}
+        />
+        <button
+          onClick={() => setActiveTab('achievements')}
+          className={`px-4 py-2 rounded-xl font-medium whitespace-nowrap transition ${
+            activeTab === 'achievements'
+              ? 'bg-neo-purple text-white shadow-neon'
+              : 'bg-white/10 text-gray-400 hover:text-white'
+          }`}
+        />
+        <button
+          onClick={() => setActiveTab('challenges')}
+          className={`px-4 py-2 rounded-xl font-medium whitespace-nowrap transition ${
+            activeTab === 'challenges'
+              ? 'bg-neo-purple text-white shadow-neon'
               : 'bg-white/10 text-gray-400 hover:text-white'
           }`}
         >
@@ -677,13 +707,13 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={handleAvatarFileChange}
-                  disabled={uploadingAvatar}
-                  className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white text-sm file:mr-2 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-neo-pink/20 file:text-neo-pink hover:file:bg-neo-pink/40 disabled:opacity-50"
-                />
-                {uploadingAvatar && (
-                  <p className="text-xs text-neo-pink">⏳ Загрузка...</p>
-                )}
+                onChange={handleAvatarFileChange}
+                disabled={uploadingAvatar}
+                className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white text-sm file:mr-2 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-white/10 file:text-white hover:file:bg-white/20"
+              />
+              {uploadingAvatar && (
+                <p className="text-xs text-neo-purple-light">⏳ Загрузка...</p>
+              )}
                 {avatarFile && !uploadingAvatar && (
                   <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/30 rounded-xl px-3 py-2">
                     <span className="text-green-400 text-sm">✅ Файл выбран: {avatarFile.name}</span>
@@ -709,7 +739,7 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
               </div>
             </div>
             <div className="flex gap-3 pt-4">
-              <button onClick={handleSave} className="bg-neo-pink hover:bg-neo-pink/80 text-white px-6 py-2 rounded-xl">
+              <button onClick={handleSave} className="bg-neo-purple hover:bg-neo-purple-dark text-white px-6 py-2 rounded-xl shadow-neon">
                 Сохранить
               </button>
               <button onClick={handleLogout} className="bg-red-500/20 hover:bg-red-500/40 text-red-400 px-6 py-2 rounded-xl">
@@ -741,13 +771,13 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
               <h3 className="text-lg font-bold text-white">
                 Выполнено: {challenges.filter(c => c.completed).length}/{challenges.length}
               </h3>
-              <span className="text-neo-pink font-semibold">
+              <span className="text-neo-purple-light font-semibold">
                 {Math.round((challenges.filter(c => c.completed).length / challenges.length) * 100)}%
               </span>
             </div>
             <div className="h-3 bg-white/10 rounded-full overflow-hidden">
               <div 
-                className="h-full bg-gradient-to-r from-neo-pink to-neo-red transition-all duration-500"
+                className="h-full bg-gradient-to-r from-neo-purple to-neo-purple-light transition-all duration-500"
                 style={{ width: `${(challenges.filter(c => c.completed).length / challenges.length) * 100}%` }}
               />
             </div>
@@ -806,13 +836,13 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
               <h3 className="text-lg font-bold text-white">
                 Прогресс: {achievements.filter(a => a.unlocked).length}/{achievements.length}
               </h3>
-              <span className="text-neo-pink font-semibold">
+              <span className="text-neo-purple-light font-semibold">
                 {Math.round((achievements.filter(a => a.unlocked).length / achievements.length) * 100)}%
               </span>
             </div>
             <div className="h-3 bg-white/10 rounded-full overflow-hidden">
               <div 
-                className="h-full bg-gradient-to-r from-neo-pink to-neo-red transition-all duration-500"
+                className="h-full bg-gradient-to-r from-neo-purple to-neo-purple-light transition-all duration-500"
                 style={{ width: `${(achievements.filter(a => a.unlocked).length / achievements.length) * 100}%` }}
               />
             </div>
@@ -822,7 +852,7 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
           <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
             <button
               onClick={() => setActiveTab('achievements')}
-              className="px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap bg-neo-pink/20 text-neo-pink border border-neo-pink/30"
+              className="px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap bg-neo-purple/20 text-neo-purple-light border border-neo-purple/30"
             >
               Все ({achievements.length})
             </button>
@@ -874,9 +904,9 @@ export default function ProfileClient({ email, accessToken }: { email: string; a
 
 function StatCard({ icon, label, value, highlight }: { icon: string; label: string; value: number | string; highlight?: boolean }) {
   return (
-    <div className={`glass rounded-2xl p-4 text-center ${highlight ? 'bg-neo-pink/10 border-neo-pink/30' : ''}`}>
+    <div className={`glass rounded-2xl p-4 text-center ${highlight ? 'bg-neo-purple/10 border-neo-purple/30' : ''}`}>
       <div className="text-3xl mb-2">{icon}</div>
-      <div className={`text-2xl font-bold ${highlight ? 'text-neo-pink' : 'text-white'}`}>{value}</div>
+      <div className={`text-2xl font-bold ${highlight ? 'text-neo-purple-light' : 'text-white'}`}>{value}</div>
       <div className="text-sm text-gray-400">{label}</div>
     </div>
   )
@@ -930,7 +960,7 @@ function ChallengeCategory({
             <div className="mb-2">
               <div className="flex justify-between text-xs mb-1">
                 <span className="text-gray-400">Прогресс</span>
-                <span className={challenge.completed ? 'text-green-400' : 'text-neo-pink'}>
+                <span className={challenge.completed ? 'text-green-400' : 'text-neo-purple-light'}>
                   {challenge.progress}/{challenge.target}
                 </span>
               </div>
@@ -939,7 +969,7 @@ function ChallengeCategory({
                   className={`h-full transition-all duration-500 ${
                     challenge.completed 
                       ? 'bg-gradient-to-r from-green-500 to-emerald-500' 
-                      : 'bg-gradient-to-r from-neo-pink to-neo-red'
+                      : 'bg-gradient-to-r from-neo-purple to-neo-purple-light'
                   }`}
                   style={{ width: `${Math.min((challenge.progress / challenge.target) * 100, 100)}%` }}
                 />
@@ -959,7 +989,7 @@ function ChallengeCategory({
       {challenges.length > maxShow && (
         <button
           onClick={() => setShowAll(!showAll)}
-          className="mt-4 text-neo-pink hover:text-neo-pink/80 text-sm font-medium flex items-center gap-1"
+          className="mt-4 text-neo-purple-light hover:text-neo-purple text-sm font-medium flex items-center gap-1"
         >
           {showAll ? 'Свернуть' : 'Показать все'} {showAll ? '↑' : '↓'}
         </button>

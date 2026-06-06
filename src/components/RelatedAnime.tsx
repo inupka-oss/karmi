@@ -53,14 +53,26 @@ export default function RelatedAnime({ animeId }: { animeId: string }) {
       <h2 className="text-2xl font-bold text-white mb-4">Связанное</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
         {related.map(item => (
-          <Link href={`/anime/${item.id}`} key={item.id} className="glass rounded-xl overflow-hidden hover:scale-105 transition-transform">
-            <div className="aspect-[3/4] relative">
-              <img src={item.poster_url || '/placeholder.jpg'} alt={item.title_ru} className="object-cover w-full h-full" />
-              <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-1 text-center text-xs text-white">
+          <Link 
+            href={`/anime/${item.id}`} 
+            key={item.id} 
+            className="group glass rounded-xl overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-neon"
+          >
+            <div className="aspect-[3/4] relative overflow-hidden">
+              <img 
+                src={item.poster_url || '/placeholder.jpg'} 
+                alt={item.title_ru} 
+                className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105" 
+              />
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-black/40 p-2 text-center text-xs text-white font-medium">
                 {typeLabels[item.relation_type] || item.relation_type}
               </div>
             </div>
-            <div className="p-2 text-white text-sm font-medium truncate">{item.title_ru}</div>
+            <div className="p-2">
+              <div className="text-white text-sm font-medium truncate" title={item.title_ru}>
+                {item.title_ru}
+              </div>
+            </div>
           </Link>
         ))}
       </div>

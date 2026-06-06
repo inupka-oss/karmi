@@ -29,10 +29,10 @@ const rarityConfig = {
   },
   epic: { 
     label: 'Эпическая', 
-    color: 'from-purple-500 to-purple-600', 
-    bg: 'bg-purple-500/20',
-    border: 'border-purple-500/50',
-    glow: 'shadow-purple-500/20',
+    color: 'from-neo-purple to-neo-purple-light', 
+    bg: 'bg-neo-purple/20',
+    border: 'border-neo-purple/50',
+    glow: 'shadow-neo-purple/20',
   },
   legendary: { 
     label: 'Легендарная', 

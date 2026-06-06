@@ -154,7 +154,7 @@ export default function Recommendations() {
                 <h3 className="font-bold text-white truncate">{item.title_ru}</h3>
                 <div className="flex flex-wrap gap-1 mt-1">
                   {item.genres?.slice(0, 2).map((g: any) => (
-                    <span key={g.slug} className="text-xs bg-neo-pink/20 text-neo-pink px-2 py-0.5 rounded-full">
+                    <span key={g.slug} className="text-xs bg-neo-purple/20 text-neo-purple-light px-2 py-0.5 rounded-full">
                       {g.name}
                     </span>
                   ))}

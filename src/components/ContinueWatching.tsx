@@ -143,50 +143,48 @@ export default function ContinueWatching() {
             <Link
               key={item.episodeId}
               href={`/anime/${item.animeId}`}
-              className="glass rounded-2xl p-4 flex flex-col sm:flex-row gap-4 hover:bg-white/10 transition group"
+              className="glass rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row gap-4 sm:gap-6 hover:bg-white/10 transition-all duration-300 group hover:scale-[1.01] hover:shadow-neon"
             >
               {/* Постер */}
-              <div className="flex-shrink-0 w-24 sm:w-32 relative aspect-[3/4] rounded-xl overflow-hidden">
+              <div className="flex-shrink-0 w-24 sm:w-32 relative aspect-[3/4] rounded-xl overflow-hidden ring-1 ring-white/10 group-hover:ring-neo-purple/50 transition-all">
                 <Image
                   src={item.posterUrl || '/placeholder.jpg'}
                   alt={item.animeTitle || ''}
                   fill
-                  className="object-cover group-hover:scale-110 transition duration-500"
+                  className="object-cover group-hover:scale-105 transition duration-500"
                 />
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                  <span className="text-white text-2xl">▶</span>
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+                  <span className="text-white text-3xl drop-shadow-lg">▶</span>
                 </div>
               </div>
 
               {/* Информация */}
-              <div className="flex-1 flex flex-col justify-center">
-                <h3 className="text-lg sm:text-xl font-bold text-white mb-1 group-hover:text-neo-pink transition">
+              <div className="flex-1 flex flex-col justify-center min-w-0">
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-1 group-hover:text-neo-purple-light transition-colors truncate">
                   {item.animeTitle}
                 </h3>
-                <p className="text-gray-400 text-sm mb-3">
-                  Серия {item.episodeNumber}
+                <p className="text-gray-400 text-sm mb-3 flex items-center flex-wrap gap-2">
+                  <span className="font-medium">Серия {item.episodeNumber}</span>
                   {minutesLeft > 0 && (
-                    <span className="ml-2 text-neo-pink">
-                      • Осталось {minutesLeft} мин
-                    </span>
+                    <span className="text-neo-purple-light font-medium">• Осталось ~{minutesLeft} мин</span>
                   )}
                 </p>
 
                 {/* Прогресс бар */}
-                <div className="relative h-2 bg-white/20 rounded-full overflow-hidden">
+                <div className="relative h-2.5 bg-white/15 rounded-full overflow-hidden ring-1 ring-white/10">
                   <div
-                    className="absolute top-0 left-0 h-full bg-gradient-to-r from-neo-pink to-neo-red rounded-full transition-all duration-500"
+                    className="absolute top-0 left-0 h-full bg-gradient-to-r from-neo-purple to-neo-purple-light rounded-full transition-all duration-500 shadow-neon"
                     style={{ width: `${percent}%` }}
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 mt-1.5 font-medium">
                   Прогресс: {Math.round(percent)}%
                 </p>
               </div>
 
               {/* Кнопка продолжить */}
-              <div className="flex items-center justify-center sm:justify-end">
-                <button className="bg-neo-pink hover:bg-neo-pink/80 text-white px-6 py-3 rounded-xl font-semibold transition transform hover:scale-105">
+              <div className="flex items-center justify-center sm:justify-end flex-shrink-0">
+                <button className="bg-neo-purple hover:bg-neo-purple-dark text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-neon whitespace-nowrap">
                   Продолжить
                 </button>
               </div>

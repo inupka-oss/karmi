@@ -1,4 +1,5 @@
 import { createServerSupabase } from '@/lib/supabase/server'
+import type { Anime, Genre } from '@/types/anime'
 import AnimeGrid from '@/components/AnimeGrid'
 import SearchBar from '@/components/SearchBar'
 import RandomAnimeButton from '@/components/RandomAnimeButton'
@@ -7,24 +8,38 @@ import ContinueWatching from '@/components/ContinueWatching'
 import Recommendations from '@/components/Recommendations'
 import Link from 'next/link'
 
-async function getGenres() {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/genres?select=*`, {
-    headers: {
-      'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      'Content-Type': 'application/json',
-    },
-    cache: 'no-store',
-  })
-  if (!res.ok) return []
-  return res.json()
+const PAGE_SIZE = 20
+
+async function getGenres(): Promise<Genre[]> {
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/genres?select=*`,
+      {
+        headers: {
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store',
+      }
+    )
+    if (!res.ok) return []
+    return res.json()
+  } catch {
+    return []
+  }
 }
 
-const PAGE_SIZE = 20
+interface SearchParams {
+  q?: string
+  genre?: string
+  year?: string
+  page?: string
+}
 
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams?: Promise<{ q?: string; genre?: string; year?: string; page?: string }>
+  searchParams?: Promise<SearchParams>
 }) {
   const sp = await searchParams
   const currentPage = parseInt(sp?.page || '1') || 1
@@ -73,7 +88,7 @@ export default async function HomePage({
   const genres = await getGenres()
   const totalPages = Math.ceil((count || 0) / PAGE_SIZE)
 
-  const buildPageUrl = (page: number) => {
+  const buildPageUrl = (page: number): string => {
     const params = new URLSearchParams()
     if (sp?.q) params.set('q', sp.q)
     if (sp?.genre) params.set('genre', sp.genre)
@@ -84,8 +99,8 @@ export default async function HomePage({
 
   return (
     <div className="min-h-screen px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-7xl mx-auto">
-      <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-4 sm:mb-6 text-glow-white">
-        Kar<span className="text-neo-pink text-glow-pink">mi</span>
+      <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-6 sm:mb-8 text-glow-white">
+        Kar<span className="text-neo-purple text-glow-purple">mi</span>
       </h1>
 
       {/* Продолжить просмотр */}
@@ -94,58 +109,90 @@ export default async function HomePage({
       {/* Рекомендации */}
       <Recommendations />
 
-      {/* Строка поиска и кнопка случайного аниме */}
-      <div className="flex flex-wrap items-center gap-3 mb-4 sm:mb-6">
+      {/* Поиск и случайное аниме */}
+      <div className="flex flex-wrap items-center gap-3 mb-6 sm:mb-8">
         <SearchBar />
         <RandomAnimeButton />
       </div>
 
-      <form className="flex flex-wrap items-center gap-3 mb-6">
-        <select name="genre" defaultValue={sp?.genre || ''} className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white text-sm sm:text-base w-full sm:w-auto">
+      {/* Фильтры */}
+      <form className="flex flex-wrap items-center gap-3 mb-8">
+        <select 
+          name="genre" 
+          defaultValue={sp?.genre || ''} 
+          className="bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-white text-sm sm:text-base w-full sm:w-auto focus:outline-none focus:border-neo-pink focus:ring-1 focus:ring-neo-pink/50 transition-all"
+        >
           <option value="">Все жанры</option>
           {genres.map((g: any) => (
             <option key={g.slug} value={g.slug}>{g.name}</option>
           ))}
         </select>
-        <input type="number" name="year" placeholder="Год" defaultValue={sp?.year || ''} className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white text-sm sm:text-base w-full sm:w-24" />
-        <button type="submit" className="bg-neo-pink hover:bg-neo-pink/80 text-white px-5 py-2 rounded-xl text-sm sm:text-base">Фильтровать</button>
+        <input 
+          type="number" 
+          name="year" 
+          placeholder="Год" 
+          defaultValue={sp?.year || ''} 
+          className="bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-white text-sm sm:text-base w-full sm:w-28 focus:outline-none focus:border-neo-pink focus:ring-1 focus:ring-neo-pink/50 transition-all" 
+        />
+        <button 
+          type="submit" 
+          className="bg-neo-purple hover:bg-neo-purple-dark text-white px-6 py-2.5 rounded-xl text-sm sm:text-base transition-all duration-200 hover:scale-105 font-medium shadow-neon hover:shadow-neon-hover"
+        >
+          Фильтровать
+        </button>
       </form>
 
       {uniqueRecent.length > 0 && (
-        <section className="mb-10">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">🔥 Последние обновления</h2>
+        <section className="mb-12">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-6 flex items-center gap-2">
+            <span>🔥</span> Последние обновления
+          </h2>
           <RecentUpdatesSlider items={uniqueRecent} />
         </section>
       )}
 
       {popular && popular.length > 0 && (
-        <section className="mb-10">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">⭐ Популярное</h2>
+        <section className="mb-12">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-6 flex items-center gap-2">
+            <span>⭐</span> Популярное
+          </h2>
           <AnimeGrid anime={popular} />
         </section>
       )}
 
       {ongoing && ongoing.length > 0 && (
-        <section className="mb-10">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">📺 Сейчас выходит</h2>
+        <section className="mb-12">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-6 flex items-center gap-2">
+            <span>📺</span> Сейчас выходит
+          </h2>
           <AnimeGrid anime={ongoing} />
         </section>
       )}
 
       {searchResults && searchResults.length > 0 && (sp?.q || sp?.genre || sp?.year) && (
-        <section className="mb-10">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">🔍 Результаты поиска</h2>
+        <section className="mb-12">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-6 flex items-center gap-2">
+            <span>🔍</span> Результаты поиска
+          </h2>
           <AnimeGrid anime={searchResults} />
           {totalPages > 1 && (
             <div className="flex justify-center items-center gap-4 mt-8">
               {currentPage > 1 && (
-                <Link href={buildPageUrl(currentPage - 1)} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-sm sm:text-base transition">
+                <Link 
+                  href={buildPageUrl(currentPage - 1)} 
+                  className="bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-xl text-sm sm:text-base transition-all duration-200 hover:scale-105 font-medium"
+                >
                   ← Назад
                 </Link>
               )}
-              <span className="text-white text-sm sm:text-base">Страница {currentPage} из {totalPages}</span>
+              <span className="text-gray-300 text-sm sm:text-base font-medium">
+                Страница {currentPage} из {totalPages}
+              </span>
               {currentPage < totalPages && (
-                <Link href={buildPageUrl(currentPage + 1)} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-sm sm:text-base transition">
+                <Link 
+                  href={buildPageUrl(currentPage + 1)} 
+                  className="bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-xl text-sm sm:text-base transition-all duration-200 hover:scale-105 font-medium"
+                >
                   Вперед →
                 </Link>
               )}

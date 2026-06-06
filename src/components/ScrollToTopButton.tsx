@@ -8,7 +8,7 @@ export default function ScrollToTopButton() {
     const onScroll = () => {
       setVisible(window.scrollY > 300)
     }
-    window.addEventListener('scroll', onScroll)
+    window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
@@ -21,8 +21,9 @@ export default function ScrollToTopButton() {
   return (
     <button
       onClick={scrollToTop}
-      className="fixed bottom-6 right-6 z-50 bg-neo-pink text-white w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold border-2 border-white/20 shadow-[4px_4px_0_rgba(0,0,0,0.3)] hover:shadow-[6px_6px_0_rgba(0,0,0,0.4)] hover:scale-95 transition-all animate-fade-in"
+      className="fixed bottom-6 right-6 z-50 bg-neo-purple/90 backdrop-blur-sm text-white w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold border border-white/20 shadow-lg hover:bg-neo-purple hover:scale-105 transition-all duration-200 animate-fade-in min-w-[48px] min-h-[48px]"
       title="Наверх"
+      aria-label="Прокрутить наверх"
     >
       ↑
     </button>
