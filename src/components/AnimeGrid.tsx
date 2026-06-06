@@ -24,7 +24,7 @@ const AnimeCard = memo(({ item }: AnimeCardProps) => {
   return (
     <Link href={`/anime/${item.id}`} className="block group">
       <div
-        className="relative glass rounded-2xl overflow-hidden transition-all duration-300 card-glow hover:scale-[1.02] hover:-translate-y-1"
+        className="relative glass rounded-2xl overflow-hidden transition-all duration-300 card-glow hover:scale-[1.02] hover:-translate-y-1 bg-neo-dark/50"
         role="article"
         aria-label={item.title_ru}
       >
