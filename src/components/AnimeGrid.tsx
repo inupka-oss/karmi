@@ -24,7 +24,7 @@ const AnimeCard = memo(({ item }: AnimeCardProps) => {
   return (
     <Link href={`/anime/${item.id}`} className="block group">
       <div
-        className="relative glass rounded-2xl overflow-hidden transition-all duration-300 card-glow hover:scale-[1.02] hover:-translate-y-1 bg-neo-dark/50"
+        className="relative glass rounded-2xl overflow-hidden transition-all duration-300 card-glow hover:scale-[1.02] hover:-translate-y-1"
         role="article"
         aria-label={item.title_ru}
       >
@@ -94,7 +94,7 @@ export default function AnimeGrid({ anime }: AnimeGridProps) {
       aria-label="Список аниме"
     >
       {anime.map((item, index) => (
-        <div key={item.id} className="animate-stagger-fade-in" style={{ animationDelay: `${Math.min(index * 0.05, 0.5)}s` }}>
+        <div key={item.id}>
           <AnimeCard item={item} />
         </div>
       ))}
