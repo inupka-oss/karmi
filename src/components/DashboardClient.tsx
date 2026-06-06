@@ -134,6 +134,8 @@ function AddAnimeDialog({ open, onOpenChange, genresList }: { open: boolean, onO
                     className={`px-2 py-1 rounded-full text-xs ${selectedGenres.includes(genre.id) ? 'bg-neo-purple text-white' : 'bg-white/10 text-white/70'}`}
                   >{genre.name}</button>
                 ))}
+              </div>
+            </div>
             <div className="flex justify-end gap-2 mt-4">
               <Dialog.Close className="bg-white/10 px-4 py-2 rounded-xl">Отмена</Dialog.Close>
               <button type="submit" className="bg-neo-purple hover:bg-neo-purple-dark text-white px-4 py-2 rounded-xl shadow-neon">Добавить</button>
