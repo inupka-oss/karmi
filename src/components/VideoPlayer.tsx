@@ -340,8 +340,17 @@ export default function VideoPlayer({
         {isBuffering && <div className="absolute inset-0 flex items-center justify-center bg-black/30 z-20"><div className="w-10 h-10 border-4 border-neo-pink border-t-transparent rounded-full animate-spin" /></div>}
         {error && <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 z-20 text-white"><div className="text-5xl mb-4">!</div><p className="text-lg mb-4">{error}</p><button onClick={(e) => { e.stopPropagation(); videoRef.current?.load(); setError(null) }} className="px-4 py-2 bg-neo-pink rounded-lg hover:bg-neo-red transition">Повторить</button></div>}
         
-        {openingEnd && currentTime >= openingStart && currentTime < openingEnd && <button onClick={(e) => { e.stopPropagation(); skipOpening() }} className="absolute bottom-24 left-4 bg-neo-pink/90 hover:bg-neo-pink text-white px-4 py-2 rounded-lg text-sm font-semibold backdrop-blur-sm transition z-10">Пропустить опенинг</button>}
-        {endingStart && currentTime >= endingStart - 30 && currentTime < endingStart && <button onClick={(e) => { e.stopPropagation(); skipToEnding() }} className="absolute bottom-24 right-4 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm font-semibold backdrop-blur-sm transition z-10">К эндингу</button>}
+        {/* Исправленные кнопки пропуска опенинга и эндинга */}
+        {openingEnd && openingStart != null && currentTime >= openingStart && currentTime < openingEnd && (
+          <button onClick={(e) => { e.stopPropagation(); skipOpening() }} className="absolute bottom-24 left-4 bg-neo-pink/90 hover:bg-neo-pink text-white px-4 py-2 rounded-lg text-sm font-semibold backdrop-blur-sm transition z-10">
+            Пропустить опенинг
+          </button>
+        )}
+        {endingStart != null && currentTime >= endingStart - 30 && currentTime < endingStart && (
+          <button onClick={(e) => { e.stopPropagation(); skipToEnding() }} className="absolute bottom-24 right-4 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm font-semibold backdrop-blur-sm transition z-10">
+            К эндингу
+          </button>
+        )}
         
         {nextCountdown !== null && nextCountdown > 0 && <div className="absolute top-4 right-4 bg-black/70 backdrop-blur-sm text-white px-4 py-2 rounded-lg z-30 flex items-center gap-3"><span className="text-sm">След. серия через {nextCountdown}s</span><button onClick={(e) => { e.stopPropagation(); cancelNextEpisode() }} className="text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded">Отмена</button></div>}
 
