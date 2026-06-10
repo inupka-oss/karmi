@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
 import { useFavorites } from '@/hooks/useFavorites'
 import { useNotifications } from '@/hooks/useNotifications'
-import { BellIcon, SunIcon, MoonIcon, PaletteIcon, MenuIcon, XIcon, HeartIcon, UserIcon, UsersIcon } from './Icons'
+import { BellIcon, SunIcon, MoonIcon, PaletteIcon, MenuIcon, XIcon, HeartIcon, UserIcon, UsersIcon, SearchIcon } from './Icons'
 
 type Theme = 'dark' | 'light' | 'blue'
 
@@ -14,6 +14,7 @@ export default function Header() {
   const [loggedIn, setLoggedIn] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [friendsCount, setFriendsCount] = useState(0)
+  const [scrolled, setScrolled] = useState(false)
   const { favorites } = useFavorites()
   const { clearNotifications, unreadCount } = useNotifications()
 
@@ -21,24 +22,16 @@ export default function Header() {
     try {
       const token = document.cookie.match(/sb-access-token=([^;]+)/)?.[1]
       if (!token) return
-      
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
       const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      
       const res = await fetch(`${supabaseUrl}/rest/v1/user_friends?status=eq.accepted`, {
-        headers: {
-          'apikey': supabaseAnonKey,
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: { 'apikey': supabaseAnonKey, 'Authorization': `Bearer ${token}` },
       })
-      
       if (res.ok) {
         const data = await res.json()
         setFriendsCount(data.length || 0)
       }
-    } catch (e) {
-      console.error('Load friends count error:', e)
-    }
+    } catch {}
   }, [])
 
   useEffect(() => {
@@ -47,10 +40,7 @@ export default function Header() {
     else if (saved === 'blue') setTheme('blue')
     const hasToken = document.cookie.includes('sb-access-token=')
     setLoggedIn(hasToken)
-    
-    if (hasToken) {
-      loadFriendsCount()
-    }
+    if (hasToken) loadFriendsCount()
   }, [loadFriendsCount])
 
   useEffect(() => {
@@ -60,19 +50,15 @@ export default function Header() {
     localStorage.setItem('karmi-theme', theme)
   }, [theme])
 
-  const toggleTheme = useCallback(() => {
-    setTheme((prev) => {
-      if (prev === 'dark') return 'light'
-      if (prev === 'light') return 'blue'
-      return 'dark'
-    })
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const themeLabels: Record<Theme, string> = {
-    dark: 'Тёмная',
-    light: 'Светлая',
-    blue: 'Синяя',
-  }
+  const toggleTheme = useCallback(() => {
+    setTheme(p => p === 'dark' ? 'light' : p === 'light' ? 'blue' : 'dark')
+  }, [])
 
   const themeIcons: Record<Theme, React.ReactNode> = {
     dark: <SunIcon className="w-4 h-4" />,
@@ -80,206 +66,135 @@ export default function Header() {
     blue: <PaletteIcon className="w-4 h-4" />,
   }
 
-  const linkClass = (href: string) =>
-    `px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-      pathname === href
-        ? 'bg-neo-purple text-white shadow-[0_0_20px_rgba(139,92,246,0.4)]'
-        : 'text-gray-300 hover:text-white hover:bg-white/10'
-    }`
+  const navLink = (href: string, label: string) => {
+    const active = pathname === href
+    return (
+      <Link
+        key={href}
+        href={href}
+        className={`relative px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+          active
+            ? 'text-white'
+            : 'text-white/50 hover:text-white/80'
+        }`}
+      >
+        {active && (
+          <span className="absolute inset-0 bg-gradient-to-r from-neo-purple to-neo-pink rounded-full opacity-90" />
+        )}
+        <span className="relative z-10">{label}</span>
+      </Link>
+    )
+  }
 
   const handleNavClick = useCallback(() => setMenuOpen(false), [])
 
   return (
     <header
-      className="sticky top-0 z-50 glass backdrop-blur-md border-b border-white/10 w-full overflow-x-hidden"
-      role="banner"
+      className={`sticky top-0 z-50 w-full transition-all duration-500 ${
+        scrolled
+          ? 'glass border-b border-white/5 shadow-[0_4px_30px_rgba(0,0,0,0.3)]'
+          : 'border-b border-transparent'
+      }`}
     >
-      <div className="max-w-7xl mx-auto flex items-center justify-between px-3 sm:px-4 py-3 w-full overflow-x-hidden">
-        <Link
-          href="/"
-          className="text-2xl font-bold text-glow-white"
-          onClick={handleNavClick}
-          aria-label="Karmi - на главную"
-        >
-          Kar<span className="text-neo-pink">mi</span>
+      <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 h-16">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-1 shrink-0" onClick={handleNavClick}>
+          <span className="text-xl font-bold">
+            <span className="text-white">Kar</span>
+            <span className="bg-gradient-to-r from-neo-purple to-neo-pink bg-clip-text text-transparent">mi</span>
+          </span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-2" role="navigation" aria-label="Основная навигация">
-          <Link href="/" className={linkClass('/')} aria-current={pathname === '/' ? 'page' : undefined}>
-            Главная
-          </Link>
-          <Link href="/catalog" className={linkClass('/catalog')} aria-current={pathname === '/catalog' ? 'page' : undefined}>
-            Каталог
-          </Link>
-          <Link href="/schedule" className={linkClass('/schedule')} aria-current={pathname === '/schedule' ? 'page' : undefined}>
-            Расписание
-          </Link>
-          <Link href="/ongoing" className={linkClass('/ongoing')} aria-current={pathname === '/ongoing' ? 'page' : undefined}>
-            Онгоинги
-          </Link>
-          <Link href="/top" className={linkClass('/top')} aria-current={pathname === '/top' ? 'page' : undefined}>
-            Топ-100
-          </Link>
-          <Link
-            href="/favorites"
-            className={linkClass('/favorites')}
-            aria-current={pathname === '/favorites' ? 'page' : undefined}
-          >
-            <span className="inline-flex items-center gap-1">
-              <HeartIcon className="w-4 h-4 text-neo-purple-light" />
-              Избранное
-            </span>
-            {favorites.length > 0 && (
-              <span className="ml-1 text-xs bg-neo-purple text-white px-1.5 py-0.5 rounded-full" aria-label={`${favorites.length} избранных`}>
-                {favorites.length}
-              </span>
-            )}
-          </Link>
-          {loggedIn ? (
-            <Link href="/profile" className={linkClass('/profile')} aria-current={pathname === '/profile' ? 'page' : undefined}>
-              Профиль
-            </Link>
-          ) : (
-            <Link href="/login" className={linkClass('/login')}>
-              Войти
-            </Link>
-          )}
+        {/* Desktop Nav */}
+        <nav className="hidden lg:flex items-center gap-1 p-1 rounded-full bg-white/[0.03] border border-white/[0.06]">
+          {navLink('/', 'Главная')}
+          {navLink('/catalog', 'Каталог')}
+          {navLink('/ongoing', 'Онгоинги')}
+          {navLink('/top', 'Топ-100')}
+          {navLink('/schedule', 'Расписание')}
         </nav>
 
-        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+        {/* Right Actions */}
+        <div className="flex items-center gap-2">
           <Link
             href="/notifications"
-            className="relative p-2 rounded-xl bg-white/10 hover:bg-white/20 transition flex-shrink-0"
+            className="relative p-2 rounded-xl hover:bg-white/10 transition-colors"
             onClick={() => clearNotifications()}
-            aria-label={`Уведомления${unreadCount > 0 ? `: ${unreadCount} новых` : ''}`}
           >
-            <BellIcon className="w-4 h-4" />
+            <BellIcon className="w-[18px] h-[18px] text-white/60 hover:text-white transition-colors" />
             {unreadCount > 0 && (
-              <span
-                className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] sm:text-xs w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center rounded-full"
-                role="status"
-              >
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-gradient-to-r from-neo-pink to-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
           </Link>
 
-          <button
-            onClick={toggleTheme}
-            className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition flex-shrink-0 flex items-center gap-1.5"
-            title={`Тема: ${themeLabels[theme]}`}
-            aria-label={`Переключить тему (сейчас: ${themeLabels[theme]})`}
-          >
-            {themeIcons[theme]}
+          <button onClick={toggleTheme} className="p-2 rounded-xl hover:bg-white/10 transition-colors" title={theme}>
+            <span className="text-white/60 hover:text-white transition-colors">{themeIcons[theme]}</span>
           </button>
+
+          <Link
+            href={loggedIn ? '/profile' : '/login'}
+            className={`hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+              loggedIn
+                ? 'text-white/70 hover:text-white hover:bg-white/10'
+                : 'btn-primary text-white'
+            }`}
+          >
+            {loggedIn ? 'Профиль' : 'Войти'}
+          </Link>
 
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden text-white p-2 rounded-xl bg-white/10 hover:bg-white/20 transition flex-shrink-0 min-w-[44px] flex items-center justify-center"
+            className="lg:hidden p-2 rounded-xl hover:bg-white/10 transition-colors"
             aria-label="Меню"
-            aria-expanded={menuOpen}
-            aria-controls="mobile-menu"
           >
-            {menuOpen ? <XIcon className="w-5 h-5" /> : <MenuIcon className="w-5 h-5" />}
+            {menuOpen ? <XIcon className="w-5 h-5 text-white/70" /> : <MenuIcon className="w-5 h-5 text-white/70" />}
           </button>
         </div>
       </div>
 
+      {/* Mobile Menu */}
       {menuOpen && (
-        <div
-          id="mobile-menu"
-          className="md:hidden glass border-t border-white/10 px-4 py-4 space-y-1 animate-fade-in max-h-[80vh] overflow-y-auto"
-          role="menu"
-          aria-label="Мобильное меню"
-        >
-          <Link
-            href="/"
-            onClick={handleNavClick}
-            className={`${linkClass('/')} block whitespace-nowrap overflow-hidden text-ellipsis min-h-[44px] flex items-center`}
-            role="menuitem"
-          >
-            Главная
-          </Link>
-          <Link
-            href="/catalog"
-            onClick={handleNavClick}
-            className={`${linkClass('/catalog')} block whitespace-nowrap overflow-hidden text-ellipsis min-h-[44px] flex items-center`}
-            role="menuitem"
-          >
-            Каталог
-          </Link>
-          <Link
-            href="/schedule"
-            onClick={handleNavClick}
-            className={`${linkClass('/schedule')} block whitespace-nowrap overflow-hidden text-ellipsis min-h-[44px] flex items-center`}
-            role="menuitem"
-          >
-            Расписание
-          </Link>
-          <Link
-            href="/ongoing"
-            onClick={handleNavClick}
-            className={`${linkClass('/ongoing')} block whitespace-nowrap overflow-hidden text-ellipsis min-h-[44px] flex items-center`}
-            role="menuitem"
-          >
-            Онгоинги
-          </Link>
-          <Link
-            href="/top"
-            onClick={handleNavClick}
-            className={`${linkClass('/top')} block whitespace-nowrap overflow-hidden text-ellipsis min-h-[44px] flex items-center`}
-            role="menuitem"
-          >
-            Топ-100
-          </Link>
-          <Link
-            href="/favorites"
-            onClick={handleNavClick}
-            className={`${linkClass('/favorites')} block whitespace-nowrap overflow-hidden text-ellipsis min-h-[44px] flex items-center`}
-            role="menuitem"
-          >
-            <HeartIcon className="w-4 h-4 text-neo-purple-light" /> Избранное
-            {favorites.length > 0 && (
-              <span className="ml-2 text-xs bg-neo-purple text-white px-2 py-0.5 rounded-full">
-                {favorites.length}
-              </span>
-            )}
-          </Link>
-          {loggedIn && (
-            <Link
-              href="/profile#friends"
-              onClick={handleNavClick}
-              className={`${linkClass('/profile')} block whitespace-nowrap overflow-hidden text-ellipsis min-h-[44px] flex items-center`}
-              role="menuitem"
-            >
-              <UsersIcon className="w-4 h-4" /> Друзья
-              {friendsCount > 0 && (
-                <span className="ml-2 text-xs bg-neo-purple text-white px-2 py-0.5 rounded-full">
-                  {friendsCount}
-                </span>
+        <div className="lg:hidden glass border-t border-white/5 animate-fade-in">
+          <div className="max-w-7xl mx-auto px-4 py-4 space-y-1">
+            {[
+              { href: '/', label: 'Главная' },
+              { href: '/catalog', label: 'Каталог' },
+              { href: '/ongoing', label: 'Онгоинги' },
+              { href: '/top', label: 'Топ-100' },
+              { href: '/schedule', label: 'Расписание' },
+              { href: '/favorites', label: 'Избранное' },
+            ].map(item => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={handleNavClick}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                  pathname === item.href
+                    ? 'bg-gradient-to-r from-neo-purple/20 to-neo-pink/20 text-white border border-neo-purple/20'
+                    : 'text-white/50 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                {item.label}
+                {item.href === '/favorites' && favorites.length > 0 && (
+                  <span className="ml-auto text-xs bg-neo-purple/30 text-neo-purple-light px-2 py-0.5 rounded-full">
+                    {favorites.length}
+                  </span>
+                )}
+              </Link>
+            ))}
+            <div className="pt-3 border-t border-white/5">
+              {loggedIn ? (
+                <Link href="/profile" onClick={handleNavClick} className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-white/50 hover:text-white hover:bg-white/5">
+                  <UserIcon className="w-4 h-4" /> Профиль
+                </Link>
+              ) : (
+                <Link href="/login" onClick={handleNavClick} className="btn-primary block text-center text-sm">
+                  Войти
+                </Link>
               )}
-            </Link>
-          )}
-          <div className="pt-3 border-t border-white/10">
-            {loggedIn ? (
-              <Link
-                href="/profile"
-                onClick={handleNavClick}
-                className={`${linkClass('/profile')} block whitespace-nowrap overflow-hidden text-ellipsis min-h-[44px] flex items-center`}
-                role="menuitem"
-              >
-                <UserIcon className="w-4 h-4" /> Профиль
-              </Link>
-            ) : (
-              <Link
-                href="/login"
-                onClick={handleNavClick}
-                className={`${linkClass('/login')} block whitespace-nowrap overflow-hidden text-ellipsis min-h-[44px] flex items-center`}
-                role="menuitem"
-              >
-                Войти
-              </Link>
-            )}
+            </div>
           </div>
         </div>
       )}
