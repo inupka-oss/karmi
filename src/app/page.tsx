@@ -6,7 +6,7 @@ import RandomAnimeButton from '@/components/RandomAnimeButton'
 import RecentUpdatesSlider from '@/components/RecentUpdatesSlider'
 import ContinueWatching from '@/components/ContinueWatching'
 import Recommendations from '@/components/Recommendations'
-import HeroSlider from '@/components/HeroSlider'
+import { PremiumHero } from '@/components/PremiumHero'
 import Link from 'next/link'
 import { FireIcon, RocketIcon, TvIcon, SearchIcon } from '@/components/Icons'
 
@@ -39,7 +39,7 @@ export default async function HomePage({ searchParams }: { searchParams?: Promis
   const { data: popular } = await supabase
     .from('anime').select('*, genres(name, slug)').order('rating', { ascending: false }).limit(10)
 
-  const heroItems = (popular || []).slice(0, 5).map(a => ({
+  const heroItems = (popular || []).slice(0, 6).map(a => ({
     id: a.id, title_ru: a.title_ru, title_en: a.title_en, description: a.description,
     poster_url: a.poster_url, banner_url: a.banner_url, rating: a.rating, genres: a.genres, year: a.year,
   }))
@@ -69,23 +69,11 @@ export default async function HomePage({ searchParams }: { searchParams?: Promis
 
   return (
     <div className="min-h-screen">
-      {/* Hero */}
-      {heroItems.length > 0 && (
-        <section className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pt-4">
-          <HeroSlider items={heroItems} />
-        </section>
-      )}
+      {/* Premium Hero with Floating Posters */}
+      {heroItems.length > 0 && <PremiumHero items={heroItems} />}
 
       <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-7xl mx-auto">
-        {/* Title */}
-        <div className="mb-10">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold">
-            <span className="text-white">Kar</span>
-            <span className="bg-gradient-to-r from-neo-purple to-neo-pink bg-clip-text text-transparent">mi</span>
-          </h1>
-          <p className="text-white/30 mt-2 text-sm sm:text-base">Смотри аниме онлайн бесплатно</p>
-        </div>
-
+        {/* Continue Watching & Recommendations */}
         <ContinueWatching />
         <Recommendations />
 
@@ -105,7 +93,7 @@ export default async function HomePage({ searchParams }: { searchParams?: Promis
           <button type="submit" className="btn-primary text-sm px-6">Фильтровать</button>
         </form>
 
-        {/* Sections */}
+        {/* Sections with SVG icons */}
         {uniqueRecent.length > 0 && (
           <section className="mb-14">
             <h2 className="section-title">
