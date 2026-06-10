@@ -112,6 +112,7 @@ export default function Header() {
           {navLink('/ongoing', 'Онгоинги')}
           {navLink('/top', 'Топ-100')}
           {navLink('/schedule', 'Расписание')}
+          {navLink('/favorites', 'Избранное')}
         </nav>
 
         {/* Right Actions */}
