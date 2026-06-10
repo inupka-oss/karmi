@@ -6,7 +6,9 @@ import RandomAnimeButton from '@/components/RandomAnimeButton'
 import RecentUpdatesSlider from '@/components/RecentUpdatesSlider'
 import ContinueWatching from '@/components/ContinueWatching'
 import Recommendations from '@/components/Recommendations'
+import HeroSlider from '@/components/HeroSlider'
 import Link from 'next/link'
+import { FireIcon, RocketIcon, TvIcon, SearchIcon } from '@/components/Icons'
 
 const PAGE_SIZE = 20
 
@@ -54,12 +56,25 @@ export default async function HomePage({
 
   const uniqueRecent = recentlyUpdated || []
 
-  // Популярное
+  // Популярное для HeroSlider и сетки
   const { data: popular } = await supabase
     .from('anime')
     .select(`*, genres(name, slug)`)
     .order('rating', { ascending: false })
     .limit(10)
+
+  // Для HeroSlider берём топ-5 с баннерами
+  const heroItems = (popular || []).slice(0, 5).map(a => ({
+    id: a.id,
+    title_ru: a.title_ru,
+    title_en: a.title_en,
+    description: a.description,
+    poster_url: a.poster_url,
+    banner_url: a.banner_url,
+    rating: a.rating,
+    genres: a.genres,
+    year: a.year,
+  }))
 
   // Онгоинги
   const { data: ongoing } = await supabase
@@ -98,108 +113,121 @@ export default async function HomePage({
   }
 
   return (
-    <div className="min-h-screen px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-7xl mx-auto">
-      <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-6 sm:mb-8 text-glow-white">
-        Kar<span className="text-neo-purple text-glow-purple">mi</span>
-      </h1>
+    <div className="min-h-screen">
+      {/* Hero Slider */}
+      {heroItems.length > 0 && (
+        <section className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pt-4">
+          <HeroSlider items={heroItems} />
+        </section>
+      )}
 
-      {/* Продолжить просмотр */}
-      <ContinueWatching />
+      <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-7xl mx-auto">
+        {/* Заголовок */}
+        <div className="mb-8">
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold text-glow-white">
+            Kar<span className="text-neo-purple text-glow-purple">mi</span>
+          </h1>
+          <p className="text-gray-400 mt-2 text-sm sm:text-base">Смотри аниме онлайн бесплатно</p>
+        </div>
 
-      {/* Рекомендации */}
-      <Recommendations />
+        {/* Продолжить просмотр */}
+        <ContinueWatching />
 
-      {/* Поиск и случайное аниме */}
-      <div className="flex flex-wrap items-center gap-3 mb-6 sm:mb-8">
-        <SearchBar />
-        <RandomAnimeButton />
+        {/* Рекомендации */}
+        <Recommendations />
+
+        {/* Поиск и случайное аниме */}
+        <div className="flex flex-wrap items-center gap-3 mb-6 sm:mb-8">
+          <SearchBar />
+          <RandomAnimeButton />
+        </div>
+
+        {/* Фильтры */}
+        <form className="flex flex-wrap items-center gap-3 mb-8">
+          <select 
+            name="genre" 
+            defaultValue={sp?.genre || ''} 
+            className="bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-white text-sm sm:text-base w-full sm:w-auto focus:outline-none focus:border-neo-pink focus:ring-1 focus:ring-neo-pink/50 transition-all"
+          >
+            <option value="">Все жанры</option>
+            {genres.map((g: any) => (
+              <option key={g.slug} value={g.slug}>{g.name}</option>
+            ))}
+          </select>
+          <input 
+            type="number" 
+            name="year" 
+            placeholder="Год" 
+            defaultValue={sp?.year || ''} 
+            className="bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-white text-sm sm:text-base w-full sm:w-28 focus:outline-none focus:border-neo-pink focus:ring-1 focus:ring-neo-pink/50 transition-all" 
+          />
+          <button 
+            type="submit" 
+            className="bg-neo-purple hover:bg-neo-purple-dark text-white px-6 py-2.5 rounded-xl text-sm sm:text-base transition-all duration-200 hover:scale-105 font-medium shadow-neon hover:shadow-neon-hover"
+          >
+            Фильтровать
+          </button>
+        </form>
+
+        {uniqueRecent.length > 0 && (
+          <section className="mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-6 flex items-center gap-2">
+              <FireIcon className="w-6 h-6 text-neo-pink" /> Последние обновления
+            </h2>
+            <RecentUpdatesSlider items={uniqueRecent} />
+          </section>
+        )}
+
+        {popular && popular.length > 0 && (
+          <section className="mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-6 flex items-center gap-2">
+              <RocketIcon className="w-6 h-6 text-neo-purple" /> Популярное
+            </h2>
+            <AnimeGrid anime={popular} />
+          </section>
+        )}
+
+        {ongoing && ongoing.length > 0 && (
+          <section className="mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-6 flex items-center gap-2">
+              <TvIcon className="w-6 h-6 text-neo-pink" /> Сейчас выходит
+            </h2>
+            <AnimeGrid anime={ongoing} />
+          </section>
+        )}
+
+        {searchResults && searchResults.length > 0 && (sp?.q || sp?.genre || sp?.year) && (
+          <section className="mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-6 flex items-center gap-2">
+              <SearchIcon className="w-6 h-6 text-neo-purple" /> Результаты поиска
+            </h2>
+            <AnimeGrid anime={searchResults} />
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-4 mt-8">
+                {currentPage > 1 && (
+                  <Link 
+                    href={buildPageUrl(currentPage - 1)} 
+                    className="bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-xl text-sm sm:text-base transition-all duration-200 hover:scale-105 font-medium"
+                  >
+                    ← Назад
+                  </Link>
+                )}
+                <span className="text-gray-300 text-sm sm:text-base font-medium">
+                  Страница {currentPage} из {totalPages}
+                </span>
+                {currentPage < totalPages && (
+                  <Link 
+                    href={buildPageUrl(currentPage + 1)} 
+                    className="bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-xl text-sm sm:text-base transition-all duration-200 hover:scale-105 font-medium"
+                  >
+                    Вперед →
+                  </Link>
+                )}
+              </div>
+            )}
+          </section>
+        )}
       </div>
-
-      {/* Фильтры */}
-      <form className="flex flex-wrap items-center gap-3 mb-8">
-        <select 
-          name="genre" 
-          defaultValue={sp?.genre || ''} 
-          className="bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-white text-sm sm:text-base w-full sm:w-auto focus:outline-none focus:border-neo-pink focus:ring-1 focus:ring-neo-pink/50 transition-all"
-        >
-          <option value="">Все жанры</option>
-          {genres.map((g: any) => (
-            <option key={g.slug} value={g.slug}>{g.name}</option>
-          ))}
-        </select>
-        <input 
-          type="number" 
-          name="year" 
-          placeholder="Год" 
-          defaultValue={sp?.year || ''} 
-          className="bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-white text-sm sm:text-base w-full sm:w-28 focus:outline-none focus:border-neo-pink focus:ring-1 focus:ring-neo-pink/50 transition-all" 
-        />
-        <button 
-          type="submit" 
-          className="bg-neo-purple hover:bg-neo-purple-dark text-white px-6 py-2.5 rounded-xl text-sm sm:text-base transition-all duration-200 hover:scale-105 font-medium shadow-neon hover:shadow-neon-hover"
-        >
-          Фильтровать
-        </button>
-      </form>
-
-      {uniqueRecent.length > 0 && (
-        <section className="mb-12">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-6 flex items-center gap-2">
-            <span>🔥</span> Последние обновления
-          </h2>
-          <RecentUpdatesSlider items={uniqueRecent} />
-        </section>
-      )}
-
-      {popular && popular.length > 0 && (
-        <section className="mb-12">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-6 flex items-center gap-2">
-            <span>⭐</span> Популярное
-          </h2>
-          <AnimeGrid anime={popular} />
-        </section>
-      )}
-
-      {ongoing && ongoing.length > 0 && (
-        <section className="mb-12">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-6 flex items-center gap-2">
-            <span>📺</span> Сейчас выходит
-          </h2>
-          <AnimeGrid anime={ongoing} />
-        </section>
-      )}
-
-      {searchResults && searchResults.length > 0 && (sp?.q || sp?.genre || sp?.year) && (
-        <section className="mb-12">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-6 flex items-center gap-2">
-            <span>🔍</span> Результаты поиска
-          </h2>
-          <AnimeGrid anime={searchResults} />
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-4 mt-8">
-              {currentPage > 1 && (
-                <Link 
-                  href={buildPageUrl(currentPage - 1)} 
-                  className="bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-xl text-sm sm:text-base transition-all duration-200 hover:scale-105 font-medium"
-                >
-                  ← Назад
-                </Link>
-              )}
-              <span className="text-gray-300 text-sm sm:text-base font-medium">
-                Страница {currentPage} из {totalPages}
-              </span>
-              {currentPage < totalPages && (
-                <Link 
-                  href={buildPageUrl(currentPage + 1)} 
-                  className="bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-xl text-sm sm:text-base transition-all duration-200 hover:scale-105 font-medium"
-                >
-                  Вперед →
-                </Link>
-              )}
-            </div>
-          )}
-        </section>
-      )}
     </div>
   )
 }

@@ -2,13 +2,14 @@
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { HomeIcon, BookOpenIcon, TvIcon, TrophyIcon, HeartIcon } from './Icons'
 
 const navItems = [
-  { href: '/', label: 'Главная', icon: '🏠' },
-  { href: '/catalog', label: 'Каталог', icon: '📖' },
-  { href: '/ongoing', label: 'Онгоинги', icon: '📺' },
-  { href: '/top', label: 'Топ', icon: '🏆' },
-  { href: '/favorites', label: 'Избранное', icon: '❤️' },
+  { href: '/', label: 'Главная', Icon: HomeIcon },
+  { href: '/catalog', label: 'Каталог', Icon: BookOpenIcon },
+  { href: '/ongoing', label: 'Онгоинги', Icon: TvIcon },
+  { href: '/top', label: 'Топ', Icon: TrophyIcon },
+  { href: '/favorites', label: 'Избранное', Icon: HeartIcon },
 ]
 
 export default function BottomNav() {
@@ -20,14 +21,12 @@ export default function BottomNav() {
     const handleScroll = () => {
       const currentScrollY = window.scrollY
       
-      // Показываем всегда на верхней позиции
       if (currentScrollY < 50) {
         setIsVisible(true)
         setLastScrollY(currentScrollY)
         return
       }
       
-      // Скрываем при скролле вниз, показываем при скролле вверх
       if (currentScrollY > lastScrollY) {
         setIsVisible(false)
       } else {
@@ -61,7 +60,7 @@ export default function BottomNav() {
                     : 'text-gray-400 hover:text-white hover:bg-white/5'
                 }`}
               >
-                <span className="text-xl">{item.icon}</span>
+                <item.Icon className="w-5 h-5" />
                 <span className="text-[11px] font-medium">{item.label}</span>
               </Link>
             )

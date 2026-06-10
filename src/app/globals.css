@@ -3,12 +3,14 @@
 @theme {
   --font-sans: 'Rubik', sans-serif;
   
-  /* Новая фиолетовая палитра */
+  /* Палитра */
   --color-neo-purple: #8b5cf6;
   --color-neo-purple-light: #a78bfa;
   --color-neo-purple-dark: #7c3aed;
   --color-neo-pink: #f472b6;
-  --color-neo-dark: #0d0d0d;
+  --color-neo-pink-light: #f9a8d4;
+  --color-neo-pink-dark: #ec4899;
+  --color-neo-dark: #0a0a0f;
   --color-neo-light-bg: #f2f2f2;
   --color-neo-light-text: #111;
   --color-neo-light-card: #ffffff;
@@ -38,6 +40,8 @@
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3);
   --shadow-neon: 0 0 20px rgba(139, 92, 246, 0.3);
   --shadow-neon-hover: 0 0 30px rgba(139, 92, 246, 0.5);
+  --shadow-glow-pink: 0 0 20px rgba(244, 114, 182, 0.3);
+  --shadow-glow-pink-hover: 0 0 30px rgba(244, 114, 182, 0.5);
   
   /* Design tokens - Transitions */
   --transition-fast: 150ms ease;

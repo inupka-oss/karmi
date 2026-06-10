@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
 import { useFavorites } from '@/hooks/useFavorites'
 import { useNotifications } from '@/hooks/useNotifications'
+import { BellIcon, SunIcon, MoonIcon, PaletteIcon, MenuIcon, XIcon, HeartIcon, UserIcon, UsersIcon } from './Icons'
 
 type Theme = 'dark' | 'light' | 'blue'
 
@@ -73,10 +74,10 @@ export default function Header() {
     blue: 'Синяя',
   }
 
-  const themeIcons: Record<Theme, string> = {
-    dark: '☀️',
-    light: '🌙',
-    blue: '🌌',
+  const themeIcons: Record<Theme, React.ReactNode> = {
+    dark: <SunIcon className="w-4 h-4" />,
+    light: <MoonIcon className="w-4 h-4" />,
+    blue: <PaletteIcon className="w-4 h-4" />,
   }
 
   const linkClass = (href: string) =>
@@ -124,7 +125,10 @@ export default function Header() {
             className={linkClass('/favorites')}
             aria-current={pathname === '/favorites' ? 'page' : undefined}
           >
-            <span className="text-neo-purple-light" aria-hidden="true">♥</span> Избранное
+            <span className="inline-flex items-center gap-1">
+              <HeartIcon className="w-4 h-4 text-neo-purple-light" />
+              Избранное
+            </span>
             {favorites.length > 0 && (
               <span className="ml-1 text-xs bg-neo-purple text-white px-1.5 py-0.5 rounded-full" aria-label={`${favorites.length} избранных`}>
                 {favorites.length}
@@ -149,7 +153,7 @@ export default function Header() {
             onClick={() => clearNotifications()}
             aria-label={`Уведомления${unreadCount > 0 ? `: ${unreadCount} новых` : ''}`}
           >
-            <span aria-hidden="true">🔔</span>
+            <BellIcon className="w-4 h-4" />
             {unreadCount > 0 && (
               <span
                 className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] sm:text-xs w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center rounded-full"
@@ -162,21 +166,21 @@ export default function Header() {
 
           <button
             onClick={toggleTheme}
-            className="text-base sm:text-lg px-2 sm:px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 transition flex-shrink-0"
+            className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition flex-shrink-0 flex items-center gap-1.5"
             title={`Тема: ${themeLabels[theme]}`}
             aria-label={`Переключить тему (сейчас: ${themeLabels[theme]})`}
           >
-            <span aria-hidden="true">{themeIcons[theme]}</span>
+            {themeIcons[theme]}
           </button>
 
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden text-white p-2 rounded-xl bg-white/10 hover:bg-white/20 transition flex-shrink-0 min-w-[44px]"
+            className="md:hidden text-white p-2 rounded-xl bg-white/10 hover:bg-white/20 transition flex-shrink-0 min-w-[44px] flex items-center justify-center"
             aria-label="Меню"
             aria-expanded={menuOpen}
             aria-controls="mobile-menu"
           >
-            <span aria-hidden="true">{menuOpen ? '✕' : '☰'}</span>
+            {menuOpen ? <XIcon className="w-5 h-5" /> : <MenuIcon className="w-5 h-5" />}
           </button>
         </div>
       </div>
@@ -184,7 +188,7 @@ export default function Header() {
       {menuOpen && (
         <div
           id="mobile-menu"
-          className="md:hidden glass border-t border-white/10 px-4 py-4 space-y-2 animate-fade-in max-h-[80vh] overflow-y-auto"
+          className="md:hidden glass border-t border-white/10 px-4 py-4 space-y-1 animate-fade-in max-h-[80vh] overflow-y-auto"
           role="menu"
           aria-label="Мобильное меню"
         >
@@ -234,7 +238,7 @@ export default function Header() {
             className={`${linkClass('/favorites')} block whitespace-nowrap overflow-hidden text-ellipsis min-h-[44px] flex items-center`}
             role="menuitem"
           >
-            <span className="text-neo-purple-light" aria-hidden="true">♥</span> Избранное
+            <HeartIcon className="w-4 h-4 text-neo-purple-light" /> Избранное
             {favorites.length > 0 && (
               <span className="ml-2 text-xs bg-neo-purple text-white px-2 py-0.5 rounded-full">
                 {favorites.length}
@@ -248,7 +252,7 @@ export default function Header() {
               className={`${linkClass('/profile')} block whitespace-nowrap overflow-hidden text-ellipsis min-h-[44px] flex items-center`}
               role="menuitem"
             >
-              👥 Друзья
+              <UsersIcon className="w-4 h-4" /> Друзья
               {friendsCount > 0 && (
                 <span className="ml-2 text-xs bg-neo-purple text-white px-2 py-0.5 rounded-full">
                   {friendsCount}
@@ -264,7 +268,7 @@ export default function Header() {
                 className={`${linkClass('/profile')} block whitespace-nowrap overflow-hidden text-ellipsis min-h-[44px] flex items-center`}
                 role="menuitem"
               >
-                Профиль
+                <UserIcon className="w-4 h-4" /> Профиль
               </Link>
             ) : (
               <Link
