@@ -137,15 +137,15 @@ export default function HeroSlider({ items }: { items: AnimeItem[] }) {
                   <div className="flex flex-wrap justify-center md:justify-start gap-3">
                     <Link
                       href={`/anime/${item.id}`}
-                      className="bg-neo-purple hover:bg-neo-purple-dark text-white px-6 sm:px-8 py-2.5 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 text-sm sm:text-base shadow-neon hover:shadow-neon-hover"
-                    >
-                      ▶ Смотреть
+                       className="inline-flex items-center gap-2 bg-gradient-to-r from-neo-purple to-neo-pink hover:from-neo-purple-dark hover:to-neo-pink-dark text-white px-6 sm:px-8 py-2.5 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 text-sm sm:text-base shadow-[0_0_30px_rgba(139,92,246,0.3)] hover:shadow-[0_0_40px_rgba(139,92,246,0.5)]"
+                     >
+                       Смотреть
                     </Link>
                     <Link
                       href={`/anime/${item.id}`}
-                      className="bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white px-6 sm:px-8 py-2.5 rounded-xl font-semibold transition-all duration-200 text-sm sm:text-base"
-                    >
-                      ℹ Подробнее
+                       className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white px-6 sm:px-8 py-2.5 rounded-full font-semibold transition-all duration-300 text-sm sm:text-base border border-white/10 hover:border-white/20"
+                     >
+                       Подробнее
                     </Link>
                   </div>
                 </div>
@@ -160,7 +160,7 @@ export default function HeroSlider({ items }: { items: AnimeItem[] }) {
         <>
           <button
             onClick={goToPrevious}
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-200 opacity-60 hover:opacity-100 hover:scale-105 ring-1 ring-neo-purple/30"
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/70 backdrop-blur-md text-white w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-300 opacity-0 group-hover:opacity-100 hover:scale-110 border border-white/10"
             aria-label="Предыдущий"
           >
             <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -169,7 +169,7 @@ export default function HeroSlider({ items }: { items: AnimeItem[] }) {
           </button>
           <button
             onClick={goToNext}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-200 opacity-60 hover:opacity-100 hover:scale-105 ring-1 ring-neo-purple/30"
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/70 backdrop-blur-md text-white w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-300 opacity-0 group-hover:opacity-100 hover:scale-110 border border-white/10"
             aria-label="Следующий"
           >
             <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -186,10 +186,10 @@ export default function HeroSlider({ items }: { items: AnimeItem[] }) {
             <button
               key={index}
               onClick={() => goToSlide(index)}
-              className={`transition-all duration-300 rounded-full ${
+              className={`transition-all duration-500 rounded-full ${
                 index === currentIndex
-                  ? 'w-8 h-3 bg-neo-purple shadow-neon'
-                  : 'w-3 h-3 bg-white/40 hover:bg-white/70'
+                  ? 'w-8 h-3 bg-gradient-to-r from-neo-purple to-neo-pink shadow-[0_0_15px_rgba(139,92,246,0.5)]'
+                  : 'w-3 h-3 bg-white/30 hover:bg-white/60'
               }`}
               aria-label={`Слайд ${index + 1}`}
             />

@@ -24,7 +24,7 @@ const AnimeCard = memo(({ item }: AnimeCardProps) => {
   return (
     <Link href={`/anime/${item.id}`} className="block group">
       <div
-        className="relative rounded-2xl overflow-hidden transition-all duration-300 bg-white/[0.03] border border-white/[0.06] hover:border-neo-purple/30 hover:shadow-[0_0_30px_rgba(139,92,246,0.15)] hover:-translate-y-1"
+        className="relative rounded-2xl overflow-hidden transition-all duration-500 bg-white/[0.03] border border-white/[0.06] hover:border-neo-purple/40 hover:shadow-[0_8px_40px_rgba(139,92,246,0.2)] hover:-translate-y-2 gradient-glow"
         role="article"
         aria-label={item.title_ru}
       >
@@ -69,7 +69,7 @@ const AnimeCard = memo(({ item }: AnimeCardProps) => {
         
         {/* Контент */}
         <div className="p-3 space-y-2">
-          <h3 className="font-semibold text-white text-sm truncate group-hover:text-neo-purple-light transition-colors duration-200" title={item.title_ru}>
+          <h3 className="font-semibold text-white text-sm truncate group-hover:text-neo-purple-light transition-colors duration-300" title={item.title_ru}>
             {item.title_ru}
           </h3>
           <div className="flex flex-wrap gap-1">
